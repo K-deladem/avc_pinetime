@@ -1,0 +1,20 @@
+{
+  "buildFiles": [
+    "/Users/deladem/fvm/versions/stable/packages/flutter_tools/gradle/src/main/groovy/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/Users/deladem/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/Users/deladem/StudioProjets/avc_pinetime/android/app/.cxx/Debug/5c6z5i4y/armeabi-v7a",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/Users/deladem/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/Users/deladem/StudioProjets/avc_pinetime/android/app/.cxx/Debug/5c6z5i4y/armeabi-v7a",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {}
+}

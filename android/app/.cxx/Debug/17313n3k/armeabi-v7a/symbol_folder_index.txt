@@ -1,0 +1,1 @@
+/Users/deladem/StudioProjects/avc_pinetime/build/app/intermediates/cxx/Debug/17313n3k/obj/armeabi-v7a

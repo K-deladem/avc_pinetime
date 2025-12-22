@@ -1,0 +1,10 @@
+export 'package:flutter_bloc_app_template/ui/about/about_screen.dart';
+export 'package:flutter_bloc_app_template/ui/history/history_screen.dart';
+export 'package:flutter_bloc_app_template/ui/home/home_screen.dart';
+export 'package:flutter_bloc_app_template/ui/setting/page/about_page.dart';
+export 'package:flutter_bloc_app_template/ui/setting/page/contact_support_page.dart';
+export 'package:flutter_bloc_app_template/ui/setting/page/language_settings_page.dart';
+export 'package:flutter_bloc_app_template/ui/setting/page/privacy_policy_page.dart';
+export 'package:flutter_bloc_app_template/ui/setting/page/theme_settings_page.dart';
+export 'package:flutter_bloc_app_template/ui/setting/page/watch_management_page.dart';
+export 'package:flutter_bloc_app_template/ui/setting/settings_screen.dart';

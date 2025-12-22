@@ -1,0 +1,1027 @@
+// ui/home/home_screen.dart
+// VERSION OPTIMISÉE: Performances améliorées avec SensorData
+
+import 'dart:async';
+import 'package:flutter_bloc_app_template/generated/l10n.dart';
+
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_bloc_app_template/bloc/infinitime/dual_infinitime_bloc.dart';
+import 'package:flutter_bloc_app_template/bloc/infinitime/dual_infinitime_event.dart';
+import 'package:flutter_bloc_app_template/bloc/infinitime/dual_infinitime_state.dart';
+import 'package:flutter_bloc_app_template/bloc/settings/settings_bloc.dart';
+import 'package:flutter_bloc_app_template/bloc/settings/settings_states.dart';
+import 'package:flutter_bloc_app_template/bloc/watch/watch_bloc.dart';
+import 'package:flutter_bloc_app_template/bloc/watch/watch_event.dart';
+import 'package:flutter_bloc_app_template/bloc/watch/watch_state.dart';
+import 'package:flutter_bloc_app_template/models/app_settings.dart';
+import 'package:flutter_bloc_app_template/models/arm_side.dart';
+import 'package:flutter_bloc_app_template/models/chart_preferences.dart';
+import 'package:flutter_bloc_app_template/models/watch_device.dart';
+import 'package:flutter_bloc_app_template/service/chart_data_adapter.dart';
+import 'package:flutter_bloc_app_template/service/data_simulator.dart';
+import 'package:flutter_bloc_app_template/ui/home/chart/asymmetry_gauge_chart.dart';
+import 'package:flutter_bloc_app_template/ui/home/page/new/bluetooth_scan_page_improved.dart';
+import 'package:flutter_bloc_app_template/ui/home/widget/info_card.dart';
+import 'package:flutter_bloc_app_template/ui/home/widget/carousel_with_chart.dart';
+import 'package:flutter_bloc_app_template/ui/home/widget/firmware_selection_dialog.dart';
+import 'package:flutter_bloc_app_template/ui/home/widget/profil_header_bar.dart';
+import 'package:flutter_bloc_app_template/ui/home/widget/watch_button_card.dart';
+
+import 'chart/asymmetry_heatmap_card.dart';
+import 'chart/reusable_comparison_chart.dart' as reusable;
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  Timer? _batteryRefreshTimer;
+  Timer? _timeRefreshTimer;
+
+  // Tracking des états de connexion précédents
+  bool _previousLeftConnected = false;
+  bool _previousRightConnected = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeApp();
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadInitialData();
+    });
+  }
+
+  @override
+  void dispose() {
+    _batteryRefreshTimer?.cancel();
+    _timeRefreshTimer?.cancel();
+    super.dispose();
+  }
+
+  // =================== INITIALISATION ===================
+
+  void _initializeApp() {
+    _startBatteryRefreshTimer();
+    _startTimeRefreshTimer();
+
+    // Initialiser les états précédents
+    final currentState = context.read<DualInfiniTimeBloc>().state;
+    _previousLeftConnected = currentState.left.connected;
+    _previousRightConnected = currentState.right.connected;
+  }
+
+  void _loadInitialData() {
+    // Charger les liaisons sauvegardées
+    context.read<DualInfiniTimeBloc>().add(DualLoadBindingsRequested());
+    context.read<DualInfiniTimeBloc>().loadAvailableFirmwares();
+  }
+
+  // =================== TIMERS ===================
+
+  void _startBatteryRefreshTimer() {
+    _batteryRefreshTimer = Timer.periodic(
+      const Duration(minutes: 5),
+      (_) => _refreshBatteryLevels(),
+    );
+  }
+
+  void _startTimeRefreshTimer() {
+    _timeRefreshTimer = Timer.periodic(
+      const Duration(hours: 1),
+      (_) => _syncWatchTime(),
+    );
+  }
+
+  void _refreshBatteryLevels() {
+    final bloc = context.read<DualInfiniTimeBloc>();
+    final state = bloc.state;
+
+    if (state.left.connected) {
+      bloc.add(DualReadBatteryRequested(ArmSide.left));
+    }
+    if (state.right.connected) {
+      bloc.add(DualReadBatteryRequested(ArmSide.right));
+    }
+  }
+
+  void _syncWatchTime() {
+    final bloc = context.read<DualInfiniTimeBloc>();
+    final state = bloc.state;
+
+    if (state.left.connected) {
+      bloc.add(DualSyncTimeRequested(ArmSide.left));
+    }
+    if (state.right.connected) {
+      bloc.add(DualSyncTimeRequested(ArmSide.right));
+    }
+  }
+
+  // =================== BUILD ===================
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiBlocListener(
+      listeners: [
+        _buildConnectionListener(),
+        _buildUnbindListener(),
+        _buildDataSyncListener(),
+      ],
+      child: BlocBuilder<SettingsBloc, SettingsState>(
+        // Optimisation: ne rebuild que si les settings changent vraiment
+        buildWhen: (previous, current) {
+          if (previous is! SettingsLoaded || current is! SettingsLoaded) {
+            return true;
+          }
+          // Ne rebuild que si affectedSide, userName ou profileImagePath changent
+          return previous.settings.affectedSide !=
+                  current.settings.affectedSide ||
+              previous.settings.userName != current.settings.userName ||
+              previous.settings.profileImagePath !=
+                  current.settings.profileImagePath ||
+              previous.settings.leftWatchName !=
+                  current.settings.leftWatchName ||
+              previous.settings.rightWatchName !=
+                  current.settings.rightWatchName;
+        },
+        builder: (context, settingsState) {
+          if (settingsState is! SettingsLoaded) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final settings = settingsState.settings;
+          final body = _buildScrollView(context, settings);
+
+          if (Theme.of(context).platform == TargetPlatform.iOS) {
+            return CupertinoPageScaffold(child: body);
+          }
+
+          return Scaffold(
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            body: body,
+            //  BOUTON SIMULATEUR - À RETIRER EN PRODUCTION
+            floatingActionButton: _buildSimulatorButton(context),
+          );
+        },
+      ),
+    );
+  }
+
+  // =================== LISTENERS ===================
+
+  BlocListener<DualInfiniTimeBloc, DualInfiniTimeState>
+      _buildConnectionListener() {
+    return BlocListener<DualInfiniTimeBloc, DualInfiniTimeState>(
+      listenWhen: (previous, current) =>
+          previous.left.connected != current.left.connected ||
+          previous.right.connected != current.right.connected,
+      listener: (context, state) {
+        _handleConnectionChanges(state);
+      },
+    );
+  }
+
+  BlocListener<DualInfiniTimeBloc, DualInfiniTimeState> _buildUnbindListener() {
+    return BlocListener<DualInfiniTimeBloc, DualInfiniTimeState>(
+      listenWhen: (previous, current) =>
+          (previous.left.deviceId != null && current.left.deviceId == null) ||
+          (previous.right.deviceId != null && current.right.deviceId == null),
+      listener: (context, state) {
+        if (kDebugMode) {
+          print(
+              'UNBIND détecté - Left: ${state.left.deviceId}, Right: ${state.right.deviceId}');
+        }
+
+        // Note: Pas besoin de setState ici car les BlocBuilder vont se mettre à jour automatiquement
+        // setState retiré pour éviter les rafraîchissements brusques
+      },
+    );
+  }
+
+  BlocListener<DualInfiniTimeBloc, DualInfiniTimeState>
+      _buildDataSyncListener() {
+    return BlocListener<DualInfiniTimeBloc, DualInfiniTimeState>(
+      listenWhen: (previous, current) =>
+          previous.left.battery != current.left.battery ||
+          previous.left.steps != current.left.steps ||
+          previous.right.battery != current.right.battery ||
+          previous.right.steps != current.right.steps,
+      listener: (context, state) {
+        // Les données sont automatiquement enregistrées en BD par le bloc
+      },
+    );
+  }
+
+  void _handleConnectionChanges(DualInfiniTimeState state) {
+    // Bras gauche
+    if (state.left.connected && !_previousLeftConnected) {
+      _showSuccessMessage("Montre gauche connectée");
+    } else if (!state.left.connected && _previousLeftConnected) {
+      _showErrorMessage("Montre gauche déconnectée");
+    }
+
+    // Bras droit
+    if (state.right.connected && !_previousRightConnected) {
+      _showSuccessMessage("Montre droite connectée");
+    } else if (!state.right.connected && _previousRightConnected) {
+      _showErrorMessage("Montre droite déconnectée");
+    }
+
+    _previousLeftConnected = state.left.connected;
+    _previousRightConnected = state.right.connected;
+  }
+
+  // =================== UI BUILDERS ===================
+
+  Widget _buildScrollView(BuildContext context, AppSettings settings) {
+    return BlocBuilder<WatchBloc, WatchState>(
+      builder: (context, watchState) {
+        WatchDevice? leftWatch;
+        WatchDevice? rightWatch;
+
+        if (watchState is WatchLoaded) {
+          for (final device in watchState.devices) {
+            if (device.armSide == ArmSide.left) leftWatch = device;
+            if (device.armSide == ArmSide.right) rightWatch = device;
+          }
+        }
+
+        return CustomScrollView(
+          slivers: [
+            ProfileHeader(),
+            SliverList(
+              delegate: SliverChildListDelegate([
+                _buildInfoCard(context),
+                _buildWatchButtonsRow(context, settings, leftWatch, rightWatch),
+              ]),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildInfoCard(BuildContext context) {
+    return BlocBuilder<DualInfiniTimeBloc, DualInfiniTimeState>(
+      // Optimisation: ne rebuild les graphiques que lors de changements significatifs
+      buildWhen: (previous, current) {
+        // Ne pas rebuild pour chaque petit changement
+        // Les graphiques chargeront leurs propres données de la BD
+        return false; // Les graphiques gèrent leurs propres mises à jour via FutureBuilder
+      },
+      builder: (context, dualState) {
+        return _buildChartsFromCombinedData(context, dualState);
+      },
+    );
+  }
+
+  /// Construire les graphiques à partir des données combinées de tous les capteurs
+  Widget _buildChartsFromCombinedData(
+    BuildContext context,
+    DualInfiniTimeState dualState,
+  ) {
+    return BlocBuilder<SettingsBloc, SettingsState>(
+      // Optimisation: rebuild si affectedSide ou chartPreferences changent
+      buildWhen: (previous, current) {
+        if (previous is! SettingsLoaded || current is! SettingsLoaded) {
+          return true;
+        }
+        return previous.settings.affectedSide !=
+                current.settings.affectedSide ||
+            previous.settings.chartPreferences !=
+                current.settings.chartPreferences;
+      },
+      builder: (context, settingsState) {
+        // Récupérer le membre atteint depuis les settings
+        final affectedSide = settingsState is SettingsLoaded
+            ? settingsState.settings.affectedSide
+            : ArmSide.left;
+
+        final chartPrefs = settingsState is SettingsLoaded
+            ? settingsState.settings.chartPreferences
+            : const ChartPreferences();
+
+        final adapter = ChartDataAdapter();
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+          child: InfoCard(
+            title: "Données Historiques",
+            subtitle: "Capteurs InfiniTime",
+            description:
+                "Suivi complet de la batterie, fréquence cardiaque, pas et autres métriques "
+                "collectées depuis vos montres PineTime.",
+            buttonText: "En savoir plus",
+            icon: Icons.assessment_outlined,
+            onButtonPressed: () => debugPrint("En savoir plus cliqué"),
+            onClosePressed: () => debugPrint("Carte fermée"),
+            alternativeWidget: CarouselWithChart(
+              carouselItems: [
+                // ========== GRAPHIQUE 1 & 2: ASYMÉTRIE MAGNITUDE & AXIS (GAUGE FUSIONNÉ) ==========
+                if (chartPrefs.showAsymmetryGauge)
+                  AsymmetryGaugeChart(
+                    title: 'Asymétrie',
+                    icon: Icons.assessment_outlined,
+                    magnitudeDataProvider: adapter.getMagnitudeAsymmetry,
+                    axisDataProvider: adapter.getAxisAsymmetry,
+                    unit: 'min',
+                    affectedSide:
+                        affectedSide, // Membre atteint depuis settings
+                  ),
+
+                // ========== GRAPHIQUE 4: COMPARAISON BATTERIE ==========
+                if (chartPrefs.showBatteryComparison)
+                  reusable.ReusableComparisonChart(
+                    title: 'Niveau de Batterie',
+                    icon: Icons.battery_charging_full_outlined,
+                    dataProvider: adapter.getBatteryData,
+                    unit: '%',
+                    leftColor: Colors.blue,
+                    rightColor: Colors.green,
+                    defaultMode: reusable.ChartMode.line,
+                    showTrendLine: true,
+                    fixedMinY: 0,
+                    fixedMaxY: 100,
+                    affectedSide:
+                        affectedSide, // Membre atteint depuis settings
+                  ),
+
+                // ========== GRAPHIQUE 5: HEATMAP MAGNITUDE/AXIS ==========
+                if (chartPrefs.showAsymmetryHeatmap)
+                  SizedBox(
+                    height: 400,
+                    child: AsymmetryHeatMapCard(
+                      title: 'Objectif Équilibre',
+                      icon: Icons.calendar_month_outlined,
+                      targetRatio: 50.0,
+                      tolerance: 5.0,
+                      affectedSide:
+                          affectedSide, // Membre atteint depuis settings
+                    ),
+                  ),
+
+                // ========== GRAPHIQUES BONUS: COMPARAISON PAS ==========
+                if (chartPrefs.showStepsComparison)
+                  reusable.ReusableComparisonChart(
+                    title: 'Nombre de Pas',
+                    icon: Icons.directions_walk_outlined,
+                    dataProvider: adapter.getStepsData,
+                    unit: 'pas',
+                    leftColor: Colors.blueAccent,
+                    rightColor: Colors.greenAccent,
+                    defaultMode: reusable.ChartMode.bar,
+                    affectedSide:
+                        affectedSide, // Membre atteint depuis settings
+                  ),
+              ],
+              infoIcon: Icons.assessment_outlined,
+              autoPlay: false,
+              enableInfiniteScroll: false,
+              viewportFraction: 1.0,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // =================== WATCH BUTTONS ===================
+
+  Widget _buildWatchButtonsRow(
+    BuildContext context,
+    AppSettings settings,
+    WatchDevice? leftWatch,
+    WatchDevice? rightWatch,
+  ) {
+    return Row(
+      children: [
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(left: 10, top: 10),
+            child: BlocBuilder<DualInfiniTimeBloc, DualInfiniTimeState>(
+              buildWhen: (previous, current) => _shouldRebuildWatchButton(
+                previous.left,
+                current.left,
+              ),
+              builder: (context, dualState) {
+                return _buildWatchButton(
+                  context,
+                  settings.leftWatchName,
+                  ArmSide.left,
+                  leftWatch,
+                  dualState,
+                );
+              },
+            ),
+          ),
+        ),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(right: 10, top: 10),
+            child: BlocBuilder<DualInfiniTimeBloc, DualInfiniTimeState>(
+              buildWhen: (previous, current) => _shouldRebuildWatchButton(
+                previous.right,
+                current.right,
+              ),
+              builder: (context, dualState) {
+                return _buildWatchButton(
+                  context,
+                  settings.rightWatchName,
+                  ArmSide.right,
+                  rightWatch,
+                  dualState,
+                );
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  bool _shouldRebuildWatchButton(
+    ArmDeviceState previous,
+    ArmDeviceState current,
+  ) {
+    return previous.deviceId != current.deviceId ||
+        previous.connected != current.connected ||
+        previous.battery != current.battery ||
+        previous.steps != current.steps ||
+        previous.rssi != current.rssi ||
+        previous.lastSync != current.lastSync ||
+        previous.log != current.log ||
+        previous.dfuPercent != current.dfuPercent ||
+        previous.dfuPhase != current.dfuPhase ||
+        previous.dfuRunning != current.dfuRunning ||
+        !listEquals(previous.motion, current.motion);
+  }
+
+  Widget _buildWatchButton(
+    BuildContext context,
+    String label,
+    ArmSide side,
+    WatchDevice? watch,
+    DualInfiniTimeState dualState,
+  ) {
+    final arm = side == ArmSide.left ? dualState.left : dualState.right;
+
+    return WatchButtonCardPlus(
+      icon: Icons.watch,
+      label: label,
+      subStatus: _formatSyncTime(arm.lastSync),
+      batteryLevel: arm.battery ?? 0,
+      connectionState: _resolveConnectionStateFromDual(arm),
+      steps: arm.steps,
+      motionData: arm.motion,
+      rssi: arm.rssi,
+      side: side,
+      deviceInfo: _extractDeviceInfo(arm),
+      onTapConnect: () => _connectToWatch(side),
+      onDisconnect: () => _disconnectWatch(side, watch),
+      onReconnect: () => _reconnectWatch(side, watch),
+      onForget: () => _forgetWatch(side, watch),
+      onUpdateWatchface: () => _showWatchfaceUpdateDialog(side),
+      onRequestDeviceInfo: () => _requestDeviceInfo(side),
+      onUpdateFirmware: () => _showFirmwareOptions(side),
+    );
+  }
+
+  // =================== ACTIONS DE MONTRES ===================
+
+  Future<void> _connectToWatch(ArmSide position) async {
+    try {
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ImprovedBluetoothScanPage(position: position),
+        ),
+      );
+
+      if (result != null && result['verified'] == true) {
+        if (kDebugMode) print('Connection successful for $position');
+        _showSuccessMessage("Connexion réussie pour ${position.name}");
+      }
+    } catch (e) {
+      if (kDebugMode) print('Error in connecting to watch: $e');
+      _showErrorMessage("Erreur de connexion: $e");
+    }
+  }
+
+  void _disconnectWatch(ArmSide position, WatchDevice? _) {
+    context
+        .read<DualInfiniTimeBloc>()
+        .add(DualDisconnectArmRequested(position));
+    _showSuccessMessage("Déconnexion de ${position.name}");
+  }
+
+  void _reconnectWatch(ArmSide position, WatchDevice? _) {
+    context.read<DualInfiniTimeBloc>().add(DualConnectArmRequested(position));
+    _showSuccessMessage("Reconnexion en cours pour ${position.name}");
+  }
+
+  void _forgetWatch(ArmSide position, WatchDevice? watch) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Oublier la montre ${position.name} ?"),
+        content: const Text(
+          "Cette action va :\n"
+          "• Déconnecter la montre\n"
+          "• Supprimer les données de liaison\n"
+          "• Effacer l'historique de connexion\n\n"
+          "Vous devrez la reconnecter manuellement.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(S.of(context).cancel),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _performForgetWatch(position, watch);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text("Oublier"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _performForgetWatch(ArmSide position, WatchDevice? watch) async {
+    try {
+      // Feedback immédiat
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation(Colors.white),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text("Suppression de la montre ${position.name}..."),
+            ],
+          ),
+          duration: const Duration(seconds: 2),
+          backgroundColor: Colors.orange,
+        ),
+      );
+
+      // Debug
+      final currentState = context.read<DualInfiniTimeBloc>().state;
+      final currentArm =
+          position == ArmSide.left ? currentState.left : currentState.right;
+
+      if (kDebugMode) {
+        print("=== DEBUG FORGET WATCH ===");
+        print("Position: ${position.name}");
+        print("Device ID avant: ${currentArm.deviceId}");
+        print("Connected avant: ${currentArm.connected}");
+      }
+
+      // Supprimer du WatchBloc
+      if (watch != null) {
+        context.read<WatchBloc>().add(DeleteWatchDevice(watch.id));
+      }
+
+      // Unbind du DualInfiniTimeBloc
+      context.read<DualInfiniTimeBloc>().add(DualUnbindArmRequested(position));
+
+      // Attendre la propagation
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // Vérifier le résultat
+      final newState = context.read<DualInfiniTimeBloc>().state;
+      final newArm = position == ArmSide.left ? newState.left : newState.right;
+
+      if (kDebugMode) {
+        print("Device ID après: ${newArm.deviceId}");
+        print("=========================");
+      }
+
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+      if (newArm.deviceId == null) {
+        _showSuccessMessage("Montre ${position.name} oubliée avec succès");
+
+        // Forcer un rebuild
+        if (mounted) {
+          setState(() {});
+        }
+      } else {
+        _showErrorMessage(
+            "Erreur lors de l'oubli de la montre ${position.name}");
+      }
+    } catch (e) {
+      if (kDebugMode) print("Erreur lors de l'oubli de la montre: $e");
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      _showErrorMessage("Erreur lors de l'oubli: $e");
+    }
+  }
+
+  void _showFirmwareOptions(ArmSide side) {
+    final bloc = context.read<DualInfiniTimeBloc>();
+
+    if (bloc.availableFirmwares.isEmpty && !bloc.isLoadingFirmwares) {
+      bloc.loadAvailableFirmwares();
+    }
+
+    showFirmwareUpdateDialog(context, side);
+  }
+
+  void showFirmwareUpdateDialog(BuildContext context, ArmSide side) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => FirmwareSelectionDialogScreen(side: side),
+    );
+  }
+
+  void _showWatchfaceUpdateDialog(ArmSide side) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Mettre à jour la montre ${side.name}"),
+        content: const Text("Que souhaitez-vous mettre à jour ?"),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _updateSystemFirmware(side);
+            },
+            child: Text(S.of(context).firmware),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(S.of(context).cancel),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _updateSystemFirmware(ArmSide side) {
+    const String firmware = "assets/watchfaces/infinitime-1.14.0.zip";
+    context.read<DualInfiniTimeBloc>().updateSystemFirmware(side, firmware);
+    _showSuccessMessage("Mise à jour du firmware en cours...");
+  }
+
+  void _requestDeviceInfo(ArmSide side) {
+    context.read<DualInfiniTimeBloc>().add(DualReadDeviceInfoRequested(side));
+    _showSuccessMessage("Demande d'informations device ${side.name}");
+  }
+
+  // =================== MESSAGES ===================
+
+  void _showErrorMessage(String message) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error, color: Colors.white),
+            const SizedBox(width: 12),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: Colors.red.shade600,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  void _showSuccessMessage(String message) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.green.shade400),
+            const SizedBox(width: 12),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: Colors.green.shade600,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  // =================== UTILITAIRES ===================
+
+  WatchConnectionState _resolveConnectionStateFromDual(ArmDeviceState arm) {
+    if (arm.deviceId == null) {
+      return WatchConnectionState.neverConnected;
+    }
+    return arm.connected
+        ? WatchConnectionState.connected
+        : WatchConnectionState.disconnected;
+  }
+
+  Map<String, String>? _extractDeviceInfo(ArmDeviceState arm) {
+    if (arm.log.isEmpty) return null;
+
+    final info = <String, String>{};
+    final lines = arm.log.split('\n');
+
+    for (final line in lines) {
+      if (line.contains("Firmware:")) {
+        info['firmware'] = line.split("Firmware:").last.trim();
+      } else if (line.contains("Model:")) {
+        info['model'] = line.split("Model:").last.trim();
+      } else if (line.contains("Manufacturer:")) {
+        info['manufacturer'] = line.split("Manufacturer:").last.trim();
+      } else if (line.contains("Hardware:")) {
+        info['hardware'] = line.split("Hardware:").last.trim();
+      }
+    }
+
+    return info.isNotEmpty ? info : null;
+  }
+
+  String _formatSyncTime(DateTime? time) {
+    if (time == null) return "Jamais synchronisée";
+
+    final now = DateTime.now();
+    final diff = now.difference(time);
+
+    if (diff.inSeconds < 60) return "Il y a ${diff.inSeconds} s";
+    if (diff.inMinutes < 60) return "Il y a ${diff.inMinutes} min";
+    if (diff.inHours < 24) return "Il y a ${diff.inHours} h";
+    return "Il y a ${diff.inDays} j";
+  }
+
+  // =================== SIMULATEUR DE DONNÉES (À RETIRER EN PRODUCTION) ===================
+
+  Widget? _buildSimulatorButton(BuildContext context) {
+    // Retournez null pour désactiver le bouton en production
+    // return null;
+
+    return FloatingActionButton.extended(
+      onPressed: () => _showSimulatorDialog(context),
+      icon: const Icon(Icons.science),
+      label: const Text('Simulateur'),
+      backgroundColor: Colors.deepPurple,
+    );
+  }
+
+  void _showSimulatorDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.science, color: Colors.deepPurple),
+            SizedBox(width: 8),
+            Text('Simulateur de Données'),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Mode Test Uniquement\n\n'
+                'Génère de fausses données pour tester les graphiques.',
+                style: TextStyle(fontSize: 12),
+              ),
+              const SizedBox(height: 20),
+
+              // Bouton: Générer 7 jours
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _generateTestData(days: 7);
+                },
+                icon: const Icon(Icons.calendar_view_week),
+                label: const Text('Générer 7 jours'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              // Bouton: Générer 30 jours
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _generateTestData(days: 30);
+                },
+                icon: const Icon(Icons.calendar_month),
+                label: const Text('Générer 30 jours'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              // Bouton: Asymétrie gauche dominante
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _generateAsymmetricData(leftDominance: 0.7);
+                },
+                icon: const Icon(Icons.trending_up),
+                label: const Text('Gauche Dominant (70%)'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              // Bouton: Asymétrie droite dominante
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _generateAsymmetricData(leftDominance: 0.3);
+                },
+                icon: const Icon(Icons.trending_down),
+                label: const Text('Droite Dominant (70%)'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.purple,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              // Bouton: Données équilibrées
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _generateAsymmetricData(leftDominance: 0.5);
+                },
+                icon: const Icon(Icons.balance),
+                label: const Text('Équilibré (50/50)'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.teal,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 8),
+
+              // Bouton: Afficher stats
+              OutlinedButton.icon(
+                onPressed: () async {
+                  final simulator = DataSimulator();
+                  await simulator.showDataStats();
+                  if (mounted) {
+                    _showSuccessMessage('Stats affichées dans la console');
+                  }
+                },
+                icon: const Icon(Icons.bar_chart),
+                label: const Text('Afficher Stats'),
+              ),
+
+              const SizedBox(height: 8),
+
+              // Bouton: Supprimer tout
+              OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _clearAllData();
+                },
+                icon: const Icon(Icons.delete_forever),
+                label: const Text('Supprimer Tout'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.red,
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(S.of(context).close),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _generateTestData({required int days}) async {
+    _showSuccessMessage('Génération de $days jours de données...');
+
+    final simulator = DataSimulator();
+    final startDate = DateTime.now().subtract(Duration(days: days));
+
+    try {
+      await simulator.generateTestData(
+        startDate: startDate,
+        endDate: DateTime.now(),
+        dataPointsPerDay: 24,
+      );
+
+      if (mounted) {
+        setState(() {}); // Rafraîchir l'UI
+        _showSuccessMessage(' $days jours de données générées!');
+      }
+    } catch (e) {
+      if (mounted) {
+        _showErrorMessage('Erreur: $e');
+      }
+    }
+  }
+
+  Future<void> _generateAsymmetricData({required double leftDominance}) async {
+    final percentage = (leftDominance * 100).toStringAsFixed(0);
+    _showSuccessMessage('Génération avec asymétrie ($percentage% gauche)...');
+
+    final simulator = DataSimulator();
+
+    try {
+      await simulator.generateAsymmetryPattern(
+        startDate: DateTime.now().subtract(const Duration(days: 7)),
+        endDate: DateTime.now(),
+        leftDominance: leftDominance,
+      );
+
+      if (mounted) {
+        setState(() {}); // Rafraîchir l'UI
+        _showSuccessMessage(' Données asymétriques générées!');
+      }
+    } catch (e) {
+      if (mounted) {
+        _showErrorMessage('Erreur: $e');
+      }
+    }
+  }
+
+  Future<void> _clearAllData() async {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmer la suppression'),
+        content: const Text(
+          'Êtes-vous sûr de vouloir supprimer TOUTES les données ?\n\n'
+          'Cette action est irréversible.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(S.of(context).cancel),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+
+              _showSuccessMessage('Suppression en cours...');
+
+              try {
+                final simulator = DataSimulator();
+                await simulator.clearAllData();
+
+                if (mounted) {
+                  setState(() {}); // Rafraîchir l'UI
+                  _showSuccessMessage(' Toutes les données supprimées');
+                }
+              } catch (e) {
+                if (mounted) {
+                  _showErrorMessage('Erreur: $e');
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    );
+  }
+}

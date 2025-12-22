@@ -1,0 +1,477 @@
+{
+  "@@locale": "en",
+
+  "_GENERAL": "=== GÉNÉRAL ===",
+  "appTitle": "InfiniTime Companion",
+  "@appTitle": {
+    "description": "Le titre de l'application"
+  },
+  "error": "Error",
+  "@error": {},
+  "emptyList": "Empty list",
+  "@emptyList": {},
+  "cancel": "Cancel",
+  "@cancel": {},
+  "ok": "OK",
+  "@ok": {},
+  "save": "Save",
+  "@save": {},
+  "close": "Close",
+  "@close": {},
+  "confirm": "Confirm",
+  "@confirm": {},
+  "delete": "Delete",
+  "@delete": {},
+  "apply": "Apply",
+  "@apply": {},
+  "back": "Back",
+  "@back": {},
+  "next": "Next",
+  "@next": {},
+  "finish": "Finish",
+  "@finish": {},
+  "retry": "Retry",
+  "@retry": {},
+  "refresh": "Refresh",
+  "@refresh": {},
+  "clear": "Clear",
+  "@clear": {},
+
+  "_NAVIGATION": "=== NAVIGATION ===",
+  "navHome": "Home",
+  "@navHome": {},
+  "navHistory": "History",
+  "@navHistory": {},
+  "navProfile": "Profile",
+  "@navProfile": {},
+  "navSettings": "Settings",
+  "@navSettings": {},
+
+  "_HOME_SCREEN": "=== ÉCRAN ACCUEIL ===",
+  "historicalData": "Historical Data",
+  "@historicalData": {},
+  "infinitimeSensors": "InfiniTime Sensors",
+  "@infinitimeSensors": {},
+  "learnMore": "Learn More",
+  "@learnMore": {},
+  "asymmetry": "Asymmetry",
+  "@asymmetry": {},
+  "batteryLevel": "Battery Level",
+  "@batteryLevel": {},
+  "balanceGoal": "Balance Goal",
+  "@balanceGoal": {},
+  "stepCount": "Step Count",
+  "@stepCount": {},
+  "forgetWatchTitle": "Forget watch {position}?",
+  "@forgetWatchTitle": {
+    "placeholders": {
+      "position": {
+        "type": "String"
+      }
+    }
+  },
+  "forget": "Forget",
+  "@forget": {},
+  "removingWatch": "Removing watch {position}...",
+  "@removingWatch": {
+    "placeholders": {
+      "position": {
+        "type": "String"
+      }
+    }
+  },
+  "updateWatchTitle": "Update watch {side}",
+  "@updateWatchTitle": {
+    "placeholders": {
+      "side": {
+        "type": "String"
+      }
+    }
+  },
+  "whatToUpdate": "What would you like to update?",
+  "@whatToUpdate": {},
+  "firmware": "Firmware",
+  "@firmware": {},
+  "simulator": "Simulator",
+  "@simulator": {},
+  "dataSimulator": "Data Simulator",
+  "@dataSimulator": {},
+  "generate7Days": "Generate 7 days",
+  "@generate7Days": {},
+  "generate30Days": "Generate 30 days",
+  "@generate30Days": {},
+  "leftDominant70": "Left Dominant (70%)",
+  "@leftDominant70": {},
+  "rightDominant70": "Right Dominant (70%)",
+  "@rightDominant70": {},
+  "balanced5050": "Balanced (50/50)",
+  "@balanced5050": {},
+  "showStats": "Show Stats",
+  "@showStats": {},
+  "deleteAll": "Delete All",
+  "@deleteAll": {},
+  "confirmDeletion": "Confirm deletion",
+  "@confirmDeletion": {},
+
+  "_HISTORY_SCREEN": "=== ÉCRAN HISTORIQUE ===",
+  "history": "History",
+  "@history": {},
+  "all": "All",
+  "@all": {},
+  "left": "Left",
+  "@left": {},
+  "right": "Right",
+  "@right": {},
+  "errorOccurred": "Error: {error}",
+  "@errorOccurred": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "noDataAvailable": "No data available",
+  "@noDataAvailable": {},
+  "endDateMustBeAfterStart": "End date must be after start date",
+  "@endDateMustBeAfterStart": {},
+  "exportInDevelopment": "Export in development...",
+  "@exportInDevelopment": {},
+  "chooseUniqueDate": "Choose a single date",
+  "@chooseUniqueDate": {},
+  "choosePeriod": "Choose a period",
+  "@choosePeriod": {},
+  "resetFilter": "Reset filter",
+  "@resetFilter": {},
+
+  "_SETTINGS_SCREEN": "=== ÉCRAN PARAMÈTRES ===",
+  "settings": "Settings",
+  "@settings": {},
+  "profile": "Profile",
+  "@profile": {},
+  "manageNameAndPhoto": "Manage name and profile photo",
+  "@manageNameAndPhoto": {},
+  "notifications": "Notifications",
+  "@notifications": {},
+  "receiveDailyReminders": "Receive daily reminders",
+  "@receiveDailyReminders": {},
+  "language": "Language",
+  "@language": {},
+  "theme": "Theme",
+  "@theme": {},
+  "bluetoothSettings": "Bluetooth Settings",
+  "@bluetoothSettings": {},
+  "connectionAndDataRecording": "Connection and data recording",
+  "@connectionAndDataRecording": {},
+  "displayedCharts": "Displayed Charts",
+  "@displayedCharts": {},
+  "chooseChartsToDisplay": "Choose charts to display",
+  "@chooseChartsToDisplay": {},
+  "collectionFrequency": "Collection Frequency",
+  "@collectionFrequency": {},
+  "dailyGoal": "Daily Goal",
+  "@dailyGoal": {},
+  "checkFrequency": "Check Frequency",
+  "@checkFrequency": {},
+  "leftWatch": "Left Watch",
+  "@leftWatch": {},
+  "rightWatch": "Right Watch",
+  "@rightWatch": {},
+  "pushUpdate": "Push Update",
+  "@pushUpdate": {},
+  "sendConfigToWatches": "Send config to watches",
+  "@sendConfigToWatches": {},
+  "updateWatches": "Update Watches",
+  "@updateWatches": {},
+  "installFirmware": "Install Firmware",
+  "@installFirmware": {},
+  "synchronization": "Synchronization",
+  "@synchronization": {},
+  "forceSyncWithWatches": "Force sync with watches",
+  "@forceSyncWithWatches": {},
+  "privacyPolicy": "Privacy Policy",
+  "@privacyPolicy": {},
+  "about": "About",
+  "@about": {},
+  "contactSupport": "Contact Support",
+  "@contactSupport": {},
+  "supportEmail": "support@monapp.com",
+  "@supportEmail": {},
+  "shareMyData": "Share My Data",
+  "@shareMyData": {},
+  "importData": "Import Data",
+  "@importData": {},
+  "exportMyData": "Export My Data",
+  "@exportMyData": {},
+  "saveToFile": "Save to file",
+  "@saveToFile": {},
+  "resetSettings": "Reset Settings",
+  "@resetSettings": {},
+  "resetAllConfigurations": "Reset all configurations",
+  "@resetAllConfigurations": {},
+  "resetData": "Reset Data",
+  "@resetData": {},
+  "deleteAllLocalData": "Delete all local data",
+  "@deleteAllLocalData": {},
+  "editName": "Edit Name",
+  "@editName": {},
+  "editNameTitle": "Edit Name",
+  "@editNameTitle": {},
+  "enterCodeToConfirm": "Please enter this code to confirm:",
+  "@enterCodeToConfirm": {},
+  "dataReset": "Data reset.",
+  "@dataReset": {},
+  "imageSelectionError": "Image selection error: {error}",
+  "@imageSelectionError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "_LANGUAGE_PAGE": "=== PAGE LANGUE ===",
+  "appLanguage": "Application Language",
+  "@appLanguage": {},
+  "languageChangedTo": "Language changed to {language}",
+  "@languageChangedTo": {
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+
+  "_ABOUT_PAGE": "=== PAGE À PROPOS ===",
+  "termsOfUse": "Terms of Use",
+  "@termsOfUse": {},
+  "privacyPolicyContent": "Privacy policy will be added here.",
+  "@privacyPolicyContent": {},
+  "termsOfUseContent": "Terms of use will be added here.",
+  "@termsOfUseContent": {},
+  "credits": "Credits",
+  "@credits": {},
+  "developedBy": "Developed by Health & Tech team – 2025",
+  "@developedBy": {},
+
+  "_BLUETOOTH_PAGE": "=== PAGE BLUETOOTH ===",
+  "bluetoothSettingsUpdated": "Bluetooth settings updated",
+  "@bluetoothSettingsUpdated": {},
+  "applyProfile": "Apply profile?",
+  "@applyProfile": {},
+  "connectionTimeout": "Connection timeout. Check that the watch is nearby.",
+  "@connectionTimeout": {},
+  "initializationError": "Initialization error: {error}",
+  "@initializationError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "permissionsRequired": "Permissions Required",
+  "@permissionsRequired": {},
+  "settingsButton": "Settings",
+  "@settingsButton": {},
+  "autoConnectingTo": "Auto-connecting to {name}...",
+  "@autoConnectingTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "pleaseWaitBetweenConnections": "Please wait between connection attempts",
+  "@pleaseWaitBetweenConnections": {},
+  "connectingTo": "Connecting to {name}...",
+  "@connectingTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "connectionSuccessful": "Connection successful!",
+  "@connectionSuccessful": {},
+  "pinetimePosition": "PineTime ({position})",
+  "@pinetimePosition": {
+    "placeholders": {
+      "position": {
+        "type": "String"
+      }
+    }
+  },
+  "removedFromFavorites": "{name} removed from favorites",
+  "@removedFromFavorites": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "addedToFavorites": "{name} added to favorites",
+  "@addedToFavorites": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "connect": "Connect",
+  "@connect": {},
+  "restartScan": "Restart Scan",
+  "@restartScan": {},
+  "startScan": "Start Scan",
+  "@startScan": {},
+  "searchDevice": "Search Device",
+  "@searchDevice": {},
+
+  "_WATCH_MANAGEMENT": "=== GESTION MONTRES ===",
+  "renameWatch": "Rename Watch",
+  "@renameWatch": {},
+  "vibrationTested": "Vibration tested successfully",
+  "@vibrationTested": {},
+  "watchSynced": "Watch synchronized",
+  "@watchSynced": {},
+  "currentBattery": "Current battery: {level}%",
+  "@currentBattery": {
+    "placeholders": {
+      "level": {
+        "type": "int"
+      }
+    }
+  },
+  "checkingFirmware": "Checking firmware...",
+  "@checkingFirmware": {},
+  "firmwareUpToDate": "Firmware up to date.",
+  "@firmwareUpToDate": {},
+  "deleteWatchQuestion": "Delete watch?",
+  "@deleteWatchQuestion": {},
+  "actionIsDefinitive": "This action is permanent.",
+  "@actionIsDefinitive": {},
+  "watchDeleted": "Watch deleted.",
+  "@watchDeleted": {},
+  "watchLeftRight": "Watch {side}",
+  "@watchLeftRight": {
+    "placeholders": {
+      "side": {
+        "type": "String"
+      }
+    }
+  },
+  "testVibration": "Test Vibration",
+  "@testVibration": {},
+  "firmwareUpdate": "Firmware Update",
+  "@firmwareUpdate": {},
+
+  "_PROFILE_PAGE": "=== PAGE PROFIL ===",
+  "nameCannotBeEmpty": "Name cannot be empty",
+  "@nameCannotBeEmpty": {},
+  "profileUpdated": "Profile updated successfully",
+  "@profileUpdated": {},
+  "deletePhoto": "Delete Photo",
+  "@deletePhoto": {},
+
+  "_THEME_PAGE": "=== PAGE THÈME ===",
+  "themeUpdated": "Theme updated.",
+  "@themeUpdated": {},
+  "appTheme": "Application Theme",
+  "@appTheme": {},
+  "systemTheme": "System Theme",
+  "@systemTheme": {},
+  "lightTheme": "Light Theme",
+  "@lightTheme": {},
+  "darkTheme": "Dark Theme",
+  "@darkTheme": {},
+  "lightGold": "Light Gold",
+  "@lightGold": {},
+  "darkGold": "Dark Gold",
+  "@darkGold": {},
+  "lightMint": "Light Mint",
+  "@lightMint": {},
+  "darkMint": "Dark Mint",
+  "@darkMint": {},
+  "experimentalTheme": "Experimental Theme",
+  "@experimentalTheme": {},
+
+  "_CHART_PREFERENCES": "=== PRÉFÉRENCES GRAPHIQUES ===",
+  "chartPreferences": "Chart Preferences",
+  "@chartPreferences": {},
+
+  "_CONTACT_PAGE": "=== PAGE CONTACT ===",
+  "messageSentToSupport": "Message sent to support.",
+  "@messageSentToSupport": {},
+
+  "_FIRMWARE_DIALOG": "=== DIALOGUE FIRMWARE ===",
+  "firmwareFor": "Firmware for {side}",
+  "@firmwareFor": {
+    "placeholders": {
+      "side": {
+        "type": "String"
+      }
+    }
+  },
+  "loadingFirmwares": "Loading firmwares...",
+  "@loadingFirmwares": {},
+  "noFirmwareAvailable": "No firmware available",
+  "@noFirmwareAvailable": {},
+  "reload": "Reload",
+  "@reload": {},
+  "install": "Install",
+  "@install": {},
+  "updating": "Updating",
+  "@updating": {},
+  "updateComplete": "Update Complete",
+  "@updateComplete": {},
+  "updateFailed": "Error",
+  "@updateFailed": {},
+  "doNotDisconnectWatch": "Do not disconnect the watch",
+  "@doNotDisconnectWatch": {},
+  "updateInstalledSuccessfully": "Update installed successfully!",
+  "@updateInstalledSuccessfully": {},
+  "watchWillRestart": "Your watch will restart automatically.",
+  "@watchWillRestart": {},
+  "updateErrorOccurred": "An error occurred during the update.",
+  "@updateErrorOccurred": {},
+  "tryAgainOrContact": "Please try again or contact support.",
+  "@tryAgainOrContact": {},
+
+  "_WATCH_BUTTON_CARD": "=== CARTE BOUTON MONTRE ===",
+  "metrics": "Metrics",
+  "@metrics": {},
+  "cannotCancel": "Cannot cancel: {error}",
+  "@cannotCancel": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "systemInformation": "System Information",
+  "@systemInformation": {},
+  "disconnect": "Disconnect",
+  "@disconnect": {},
+  "reconnect": "Reconnect",
+  "@reconnect": {},
+  "forgetThisWatch": "Forget This Watch",
+  "@forgetThisWatch": {},
+  "scanPineTime": "Scan a PineTime",
+  "@scanPineTime": {},
+
+  "_CHART_WIDGETS": "=== WIDGETS GRAPHIQUES ===",
+  "balance": "Balance",
+  "@balance": {},
+  "magnitude": "Magnitude",
+  "@magnitude": {},
+  "axis": "Axis",
+  "@axis": {},
+
+  "_ONBOARDING": "=== ONBOARDING ===",
+  "newName": "New Name",
+  "@newName": {},
+
+  "_EMPTY_STATE": "=== ÉTATS VIDES ===",
+  "sorryNoProductWishlist": "Sorry, you have no product in your wishlist",
+  "@sorryNoProductWishlist": {},
+  "startAdding": "Start Adding",
+  "@startAdding": {}
+}

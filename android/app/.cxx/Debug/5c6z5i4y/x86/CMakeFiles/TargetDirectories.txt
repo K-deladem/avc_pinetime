@@ -1,0 +1,2 @@
+/Users/deladem/StudioProjets/avc_pinetime/android/app/.cxx/Debug/5c6z5i4y/x86/CMakeFiles/edit_cache.dir
+/Users/deladem/StudioProjets/avc_pinetime/android/app/.cxx/Debug/5c6z5i4y/x86/CMakeFiles/rebuild_cache.dir

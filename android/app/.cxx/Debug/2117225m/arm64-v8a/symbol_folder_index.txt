@@ -1,0 +1,1 @@
+/Users/deladem/StudioProjets/avc_pinetime/build/app/intermediates/cxx/Debug/2117225m/obj/arm64-v8a
