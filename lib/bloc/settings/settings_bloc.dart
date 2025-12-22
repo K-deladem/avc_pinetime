@@ -21,9 +21,13 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       if (settings != null) {
         emit(SettingsLoaded(settings));
       } else {
+        // Ne devrait jamais arriver car le repository retourne defaultSettings
+        // mais on gère le cas par sécurité
+        print('ATTENTION: repository.fetchSettings() a retourné null');
         emit(SettingsError("Aucun paramètre trouvé dans la base de données."));
       }
     } catch (e) {
+      print('Erreur dans SettingsBloc._onLoad: $e');
       emit(SettingsError("Erreur lors du chargement : $e"));
     }
   }

@@ -35,6 +35,9 @@ class AsymmetryGaugeChart extends StatefulWidget {
   /// Périodes disponibles
   final List<String> availablePeriods;
 
+  /// Valeur de l'objectif à afficher (ratio en %)
+  final double? goalValue;
+
   const AsymmetryGaugeChart({
     super.key,
     required this.title,
@@ -44,6 +47,7 @@ class AsymmetryGaugeChart extends StatefulWidget {
     required this.unit,
     required this.affectedSide,
     this.availablePeriods = const ['Jour', 'Semaine', 'Mois'],
+    this.goalValue,
   });
 
   @override
@@ -116,6 +120,7 @@ class _AsymmetryGaugeChartState extends State<AsymmetryGaugeChart> {
                       rightValue: latestPoint.rightValue,
                       unit: widget.unit,
                       affectedSide: widget.affectedSide,
+                      goalValue: widget.goalValue,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -374,6 +379,7 @@ class _GaugeWidget extends StatelessWidget {
   final double rightValue;
   final String unit;
   final ArmSide? affectedSide; // "left" ou "right"
+  final double? goalValue; // Objectif en %
 
   const _GaugeWidget({
     required this.value,
@@ -381,6 +387,7 @@ class _GaugeWidget extends StatelessWidget {
     required this.rightValue,
     required this.unit,
     this.affectedSide,
+    this.goalValue,
   });
 
   @override
@@ -396,6 +403,7 @@ class _GaugeWidget extends StatelessWidget {
                   painter: _GaugePainter(
                     value: value,
                     affectedSide: affectedSide,
+                    goalValue: goalValue,
                   ),
                 ),
               ),
@@ -456,10 +464,12 @@ class _GaugeWidget extends StatelessWidget {
 class _GaugePainter extends CustomPainter {
   final double value;
   final ArmSide? affectedSide; // "left" ou "right"
+  final double? goalValue; // Objectif en %
 
   _GaugePainter({
     required this.value,
     this.affectedSide,
+    this.goalValue,
   });
 
   @override
@@ -472,6 +482,9 @@ class _GaugePainter extends CustomPainter {
 
     _drawBackgroundArc(canvas, center, radius);
     _drawMarkers(canvas, center, radius);
+    if (goalValue != null) {
+      _drawGoalMarker(canvas, center, radius);
+    }
     _drawNeedle(canvas, center, radius);
     _drawCenter(canvas, center);
   }
@@ -484,19 +497,31 @@ class _GaugePainter extends CustomPainter {
       Color color;
       final midPercent = (startPercent + endPercent) / 2;
 
-      // Zone verte au centre (45-55%)
-      if (midPercent >= 0.45 && midPercent <= 0.55) {
+      // Calculer les zones selon l'objectif (ou 50% par défaut)
+      final targetPercent = (goalValue ?? 50.0) / 100.0;
+      const tolerance = 0.05; // ±5%
+
+      final greenMin = (targetPercent - tolerance).clamp(0.0, 1.0);
+      final greenMax = (targetPercent + tolerance).clamp(0.0, 1.0);
+
+      // Zone verte (optimal) : autour de l'objectif (±5%)
+      if (midPercent >= greenMin && midPercent <= greenMax) {
         color = Colors.green;
       }
-      // Zone jaune côté bras NON-atteint (bon)
-      else if (affectedSide == ArmSide.left && midPercent > 0.55) {
-        // Membre gauche atteint : jaune à droite (bras NON-atteint = bon)
-        color = Colors.yellow;
-      } else if (affectedSide == ArmSide.right && midPercent < 0.45) {
-        // Membre droit atteint : jaune à gauche (bras NON-atteint = bon)
+      // Zone jaune (acceptable) : entre l'objectif et l'équilibre parfait (50%)
+      else if ((targetPercent < 0.5 && midPercent > greenMax && midPercent <= 0.5) ||
+               (targetPercent > 0.5 && midPercent >= 0.5 && midPercent < greenMin)) {
         color = Colors.yellow;
       }
-      // Zone rouge côté bras atteint (mauvais, surcharge)
+      // Zone orange (à surveiller) : s'éloigne de l'objectif mais pas encore critique
+      else if (affectedSide == ArmSide.left && midPercent > 0.5 && midPercent < 0.65) {
+        // Membre gauche atteint : orange à droite (utilise trop le bras sain)
+        color = Colors.orange;
+      } else if (affectedSide == ArmSide.right && midPercent < 0.5 && midPercent > 0.35) {
+        // Membre droit atteint : orange à gauche (utilise trop le bras sain)
+        color = Colors.orange;
+      }
+      // Zone rouge (critique) : très loin de l'objectif
       else {
         color = Colors.red;
       }
@@ -628,9 +653,48 @@ class _GaugePainter extends CustomPainter {
     canvas.drawCircle(center, 10, centerBorderPaint);
   }
 
+  /// Dessine un marqueur vert pour l'objectif
+  void _drawGoalMarker(Canvas canvas, Offset center, double radius) {
+    const startAngle = math.pi;
+    const sweepAngle = math.pi;
+
+    // Convertir la valeur d'objectif (0-100) en angle
+    final goalPercent = goalValue! / 100.0;
+    final goalAngle = startAngle + sweepAngle * goalPercent;
+
+    // Calculer la position du marqueur
+    final markerX = center.dx + radius * math.cos(goalAngle);
+    final markerY = center.dy + radius * math.sin(goalAngle);
+
+    // Dessiner un cercle vert pour le marqueur d'objectif
+    final markerPaint = Paint()
+      ..color = Colors.green
+      ..style = PaintingStyle.fill;
+
+    canvas.drawCircle(
+      Offset(markerX, markerY),
+      8,
+      markerPaint,
+    );
+
+    // Bordure blanche pour le contraste
+    final borderPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+
+    canvas.drawCircle(
+      Offset(markerX, markerY),
+      8,
+      borderPaint,
+    );
+  }
+
   @override
   bool shouldRepaint(_GaugePainter oldDelegate) {
-    return oldDelegate.value != value || oldDelegate.affectedSide != affectedSide;
+    return oldDelegate.value != value ||
+           oldDelegate.affectedSide != affectedSide ||
+           oldDelegate.goalValue != goalValue;
   }
 }
 

@@ -1515,7 +1515,7 @@ class DualInfiniTimeBloc
   }
 
   void _onArmSteps(OnArmSteps e, Emitter<DualInfiniTimeState> emit) {
-    _log('📡 Steps data received: side=${e.side.displayName}, value=${e.v} steps');
+    _log(' Steps data received: side=${e.side.displayName}, value=${e.v} steps');
     emit(_withArm(e.side, _armState(e.side).copyWith(steps: e.v)));
 
     // Enregistrer immédiatement sans throttling
@@ -1583,7 +1583,7 @@ class DualInfiniTimeBloc
       'timestamp': DateTime.now(),
     });
 
-    _log('📊 Buffered $infoType for ${side.displayName}: $value (buffer size: ${buffer.length})');
+    _log('Buffered $infoType for ${side.displayName}: $value (buffer size: ${buffer.length})');
 
     // Flush automatique toutes les 5 entrées (réduit de 20 pour des résultats plus rapides)
     if (buffer.length >= 5) {
@@ -1615,7 +1615,7 @@ class DualInfiniTimeBloc
 
     buffer.add(movement);
 
-    _log('🏃 Buffered movement for ${side.displayName}: mag=${movement.magnitudeActiveTime}ms, axis=${movement.axisActiveTime}ms (buffer size: ${buffer.length})');
+    _log('Buffered movement for ${side.displayName}: mag=${movement.magnitudeActiveTime}ms, axis=${movement.axisActiveTime}ms (buffer size: ${buffer.length})');
 
     // Flush automatique toutes les 10 entrées (réduit de 30 pour des résultats plus rapides)
     if (buffer.length >= 10) {
@@ -1637,7 +1637,7 @@ class DualInfiniTimeBloc
       }
 
       _log(
-          '💾 Flushing ${buffer.length} device info records for ${side.displayName}...');
+          'Flushing ${buffer.length} device info records for ${side.displayName}...');
 
       final dataToInsert = List<Map<String, dynamic>>.from(buffer);
 
@@ -1645,9 +1645,9 @@ class DualInfiniTimeBloc
         await _db.insertBatchDeviceInfo(dataToInsert);
         buffer.clear();
         _log(
-            '✅ Flushed ${dataToInsert.length} device info records for ${side.displayName}', level: _LOG_INFO);
+            'Flushed ${dataToInsert.length} device info records for ${side.displayName}', level: _LOG_INFO);
       } catch (e) {
-        _log('❌ Error flushing device info buffer: $e', level: _LOG_ERROR);
+        _log('Error flushing device info buffer: $e', level: _LOG_ERROR);
       }
     });
   }
@@ -1665,7 +1665,7 @@ class DualInfiniTimeBloc
       }
 
       _log(
-          '💾 Flushing ${buffer.length} movement records for ${side.displayName}...');
+          'Flushing ${buffer.length} movement records for ${side.displayName}...');
 
       final dataToInsert = List<MovementData>.from(buffer);
 
@@ -1673,16 +1673,16 @@ class DualInfiniTimeBloc
         await _db.insertBatchMovementData(side.name, dataToInsert);
         buffer.clear();
         _log(
-            '✅ Flushed ${dataToInsert.length} movement records for ${side.displayName}', level: _LOG_INFO);
+            'Flushed ${dataToInsert.length} movement records for ${side.displayName}', level: _LOG_INFO);
       } catch (e) {
-        _log('❌ Error flushing movement buffer: $e', level: _LOG_ERROR);
+        _log('Error flushing movement buffer: $e', level: _LOG_ERROR);
       }
     });
   }
 
   /// Flush tous les buffers
   Future<void> _flushAllBuffers() async {
-    _log('🔄 Periodic flush check starting...');
+    _log('Periodic flush check starting...');
     bool hasFlushed = false;
     for (final side in ArmSide.values) {
       // Skip ArmSide.none as it has no buffers
@@ -1703,9 +1703,9 @@ class DualInfiniTimeBloc
       }
     }
     if (hasFlushed) {
-      _log('✅ Periodic buffer flush completed', level: _LOG_INFO);
+      _log('Periodic buffer flush completed', level: _LOG_INFO);
     } else {
-      _log('ℹ️  No data to flush (all buffers empty)');
+      _log('No data to flush (all buffers empty)');
     }
   }
 
@@ -1835,7 +1835,7 @@ class DualInfiniTimeBloc
       // Movement Stream - NOUVELLE GESTION (Enregistrement immédiat)
       _movementSubs[side] = session.movementStream.listen(
         (movement) {
-          _log('📡 Movement data received for ${side.displayName}: mag=${movement.magnitudeActiveTime}ms, axis=${movement.axisActiveTime}ms');
+          _log(' Movement data received for ${side.displayName}: mag=${movement.magnitudeActiveTime}ms, axis=${movement.axisActiveTime}ms');
 
           // Enregistrer immédiatement sans throttling
           _bufferMovement(
@@ -1915,7 +1915,7 @@ class DualInfiniTimeBloc
         } catch (e) {
           _log('Notification attempt ${attempt + 1} failed: $e', level: _LOG_WARNING);
           if (attempt == 2) {
-            _log('❌ Failed to send notification to ${side.displayName} after 3 attempts: $e', level: _LOG_ERROR);
+            _log('Failed to send notification to ${side.displayName} after 3 attempts: $e', level: _LOG_ERROR);
           } else {
             await Future.delayed(_DELAY_BETWEEN_OPERATIONS * (attempt + 1));
           }

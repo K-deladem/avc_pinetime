@@ -39,6 +39,7 @@ class ProfileHeader extends StatelessWidget {
       backgroundColor: Theme.of(context).colorScheme.background,
       elevation: 0,
       floating: true,
+      automaticallyImplyLeading: false,
       expandedHeight: 130,
       flexibleSpace: FlexibleSpaceBar(
         collapseMode: CollapseMode.none,

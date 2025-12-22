@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_bloc_app_template/app/lang_helper.dart';
 import 'package:flutter_bloc_app_template/app/theme_helper.dart';
+import 'package:flutter_bloc_app_template/service/background_infinitime_service.dart';
 import 'package:flutter_bloc_app_template/service/firmware_source.dart';
+import 'package:flutter_bloc_app_template/service/goal_check_service.dart';
 import 'package:flutter_bloc_app_template/bloc/infinitime/dual_infinitime_bloc.dart';
 import 'package:flutter_bloc_app_template/bloc/infinitime/dual_infinitime_event.dart';
 import 'package:flutter_bloc_app_template/bloc/init/init_bloc.dart';
@@ -23,12 +25,21 @@ import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:infinitime_dfu_library/infinitime_dfu_library.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import 'app_database.dart';
+
 class MyApp extends StatelessWidget {
   MyApp({super.key});
 
   final watchRepository = WatchRepository();
   final ble = FlutterReactiveBle();
   final firmwareManager = FirmwareManager(FirmwareSource());
+
+  // Variable pour éviter les rechargements en boucle
+  static int _retryCount = 0;
+  static const int _maxRetries = 3;
+
+  // Variable pour éviter de démarrer plusieurs fois les services
+  static bool _servicesStarted = false;
 
   @override
   Widget build(BuildContext context) {
@@ -52,8 +63,19 @@ class MyApp extends StatelessWidget {
               create: (_) =>
                   SettingsBloc(SettingsRepositoryImpl())..add(LoadSettings())),
           BlocProvider<DualInfiniTimeBloc>(
-            create: (ctx) => DualInfiniTimeBloc(ctx.read<FlutterReactiveBle>())
-              ..add(DualLoadBindingsRequested()),
+            create: (ctx) {
+              if (kDebugMode) {print(' Création du DualInfiniTimeBloc...');
+              }
+              final bloc = DualInfiniTimeBloc(ctx.read<FlutterReactiveBle>());
+              // Charger les bindings de manière asynchrone sans bloquer
+              Future.microtask(() {
+                if (kDebugMode) {
+                  print('Chargement des bindings...');
+                }
+                bloc.add(DualLoadBindingsRequested());
+              });
+              return bloc;
+            },
           )
         ],
         child: Builder(
@@ -63,23 +85,72 @@ class MyApp extends StatelessWidget {
 
             return BlocBuilder<SettingsBloc, SettingsState>(
               buildWhen: (previous, current) {
-                // Only rebuild when:
-                // 1. Transitioning from non-loaded to loaded (initial load)
-                // 2. Settings are loaded and changed (subsequent updates)
-                // This prevents splash screen flickering during initial load
-                return current is SettingsLoaded;
+                // Rebuild when settings are loaded OR when there's an error
+                if (kDebugMode) {
+                  print('BlocBuilder: previous=${previous.runtimeType}, current=${current.runtimeType}');
+                }
+                return current is SettingsLoaded || current is SettingsError;
               },
               builder: (context, state) {
-                if (state is! SettingsLoaded) {
+                if (kDebugMode) {
+                  print(' Building app with state: ${state.runtimeType}');
+                }
+
+                // Gestion des erreurs: charger les paramètres par défaut
+                if (state is SettingsError) {
+                  if (kDebugMode) {
+                    print('Erreur chargement settings: ${state.message}');
+                    print('Tentative n°${_retryCount + 1}/$_maxRetries');
+                  }
+
+                  // Limiter le nombre de tentatives pour éviter la boucle infinie
+                  if (_retryCount < _maxRetries) {
+                    _retryCount++;
+                    // Recharger avec les paramètres par défaut
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (kDebugMode) {
+                        print('Tentative de rechargement des settings...');
+                      }
+                      context.read<SettingsBloc>().add(LoadSettings());
+                    });
+                  } else {
+                    // Après 3 tentatives, forcer l'utilisation des paramètres par défaut
+                    if (kDebugMode) {
+                      print('Nombre max de tentatives atteint, utilisation des paramètres par défaut');
+                    }
+                    final defaultSettings = AppDatabase.defaultSettings;
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      context.read<SettingsBloc>().add(UpdateSettings(defaultSettings));
+                    });
+                  }
+
                   return const MaterialApp(
                       debugShowCheckedModeBanner: false, home: SplashScreen());
                 }
+
+                if (state is! SettingsLoaded) {
+                  if (kDebugMode) {
+                    print(' Affichage du SplashScreen (state: ${state.runtimeType})');
+                  }
+                  return const MaterialApp(
+                      debugShowCheckedModeBanner: false, home: SplashScreen());
+                }
+
+                if (kDebugMode) {
+                  print('Settings chargés, construction de l\'app principale');
+                }
                 final settings = state.settings;
+
+                // Démarrer les services en arrière-plan UNIQUEMENT après chargement complet
+                _startBackgroundServices();
 
                 // Mettre à jour la configuration du DualInfiniTimeBloc quand les settings changent
                 context
                     .read<DualInfiniTimeBloc>()
                     .updateConfiguration(settings);
+
+                // Démarrer/mettre à jour le service de vérification des objectifs
+                GoalCheckService().start(settings);
 
                 // Sécurise les valeurs pour éviter les crash
                 final themeEnum = settings.themeMode;
@@ -89,9 +160,11 @@ class MyApp extends StatelessWidget {
                 final darkTheme = ThemeHelper.getDarkTheme(themeEnum);
 
                 // Determine initial route based on whether this is first launch
+                print('App: isFirstLaunch=${settings.isFirstLaunch}');
                 final initialRoute = settings.isFirstLaunch
                     ? AppRoutes.onboarding
                     : AppRoutes.app;
+                print('App: initialRoute=$initialRoute');
 
                 return MaterialApp(
                   debugShowCheckedModeBanner: kDebugMode,
@@ -135,6 +208,28 @@ class MyApp extends StatelessWidget {
   Future<void> _initializeApp() async {
     // Demander les permissions nécessaires
     await _requestPermissions();
+  }
+
+  Future<void> _startBackgroundServices() async {
+    // Démarrer les services une seule fois
+    if (_servicesStarted) return;
+    _servicesStarted = true;
+
+    if (kDebugMode) {
+      print('Démarrage des services en arrière-plan...');
+    }
+
+    try {
+      await BackgroundInfiniTimeService.initialize();
+      await BackgroundInfiniTimeService.start();
+      if (kDebugMode) {
+        print('Services en arrière-plan démarrés avec succès');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Erreur démarrage services background: $e');
+      }
+    }
   }
 
   Future<void> _requestPermissions() async {

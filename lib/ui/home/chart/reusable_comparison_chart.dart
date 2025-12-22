@@ -46,6 +46,15 @@ class ReusableComparisonChart extends StatefulWidget {
   /// Membre atteint: "left" pour bras gauche, "right" pour bras droit, null si non applicable
   final ArmSide? affectedSide;
 
+  /// Valeur de l'objectif à afficher (optionnel)
+  final double? goalValue;
+
+  /// Afficher ou non la ligne d'objectif
+  final bool showGoalLine;
+
+  /// Afficher ou non les données de droite (par défaut true)
+  final bool showRightData;
+
   const ReusableComparisonChart({
     super.key,
     required this.title,
@@ -61,6 +70,9 @@ class ReusableComparisonChart extends StatefulWidget {
     this.fixedMaxY,
     this.fixedMinY,
     this.affectedSide,
+    this.goalValue,
+    this.showGoalLine = false,
+    this.showRightData = true,
   });
 
   @override
@@ -248,6 +260,27 @@ class _ReusableComparisonChartState extends State<ReusableComparisonChart> {
     );
   }
 
+  /// Calcule la moyenne des valeurs pour la ligne d'objectif
+  double _calculateAverage(List<ChartDataPoint> data) {
+    if (data.isEmpty) return 0.0;
+
+    double sum = 0.0;
+    int count = 0;
+
+    for (final point in data) {
+      if (point.leftValue != null && point.leftValue! > 0) {
+        sum += point.leftValue!;
+        count++;
+      }
+      if (widget.showRightData && point.rightValue != null && point.rightValue! > 0) {
+        sum += point.rightValue!;
+        count++;
+      }
+    }
+
+    return count > 0 ? sum / count : 0.0;
+  }
+
   Widget _buildBarChart(List<ChartDataPoint> data, double chartWidth) {
     if (data.isEmpty) {
       return const Center(child: Text('Aucune donnée disponible'));
@@ -277,19 +310,23 @@ class _ReusableComparisonChartState extends State<ReusableComparisonChart> {
                 topRight: Radius.circular(4),
               ),
             ),
-            BarChartRodData(
-              toY: rightValue,
-              color: widget.rightColor,
-              width: 4,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(4),
-                topRight: Radius.circular(4),
+            if (widget.showRightData)
+              BarChartRodData(
+                toY: rightValue,
+                color: widget.rightColor,
+                width: 4,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(4),
+                  topRight: Radius.circular(4),
+                ),
               ),
-            ),
           ],
         ),
       );
     }
+
+    // Calculer la moyenne pour la ligne d'objectif
+    final averageGoal = widget.showGoalLine ? _calculateAverage(data) : null;
 
     return BarChart(
       BarChartData(
@@ -297,6 +334,28 @@ class _ReusableComparisonChartState extends State<ReusableComparisonChart> {
         maxY: widget.fixedMaxY ?? (maxValue * 1.2),
         minY: widget.fixedMinY ?? 0,
         barGroups: barGroups,
+        extraLinesData: widget.showGoalLine && averageGoal != null && averageGoal > 0
+            ? ExtraLinesData(
+                horizontalLines: [
+                  HorizontalLine(
+                    y: averageGoal,
+                    color: Colors.red,
+                    strokeWidth: 2,
+                    dashArray: [5, 5],
+                    label: HorizontalLineLabel(
+                      show: true,
+                      labelResolver: (line) => 'Moy: ${averageGoal.toStringAsFixed(1)} ${widget.unit}',
+                      style: const TextStyle(
+                        color: Colors.red,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      alignment: Alignment.topRight,
+                    ),
+                  ),
+                ],
+              )
+            : null,
         titlesData: FlTitlesData(
           leftTitles: AxisTitles(
             axisNameWidget: Text(
@@ -390,6 +449,9 @@ class _ReusableComparisonChartState extends State<ReusableComparisonChart> {
       maxValue = [maxValue, leftValue, rightValue].reduce((a, b) => a > b ? a : b);
     }
 
+    // Calculer la moyenne pour la ligne d'objectif
+    final averageGoal = widget.showGoalLine ? _calculateAverage(data) : null;
+
     final lineBars = <LineChartBarData>[
       LineChartBarData(
         spots: leftSpots,
@@ -413,20 +475,21 @@ class _ReusableComparisonChartState extends State<ReusableComparisonChart> {
           color: widget.leftColor.withOpacity(0.1),
         ),
       ),
-      LineChartBarData(
-        spots: rightSpots,
-        isCurved: true,
-        color: widget.rightColor,
-        barWidth: 3,
-        isStrokeCapRound: true,
-        dotData: FlDotData(
-          show: true,
-          getDotPainter: (spot, percent, barData, index) {
-            return FlDotCirclePainter(
-              radius: 3,
-              color: widget.rightColor,
-              strokeWidth: 2,
-              strokeColor: Colors.white,
+      if (widget.showRightData)
+        LineChartBarData(
+          spots: rightSpots,
+          isCurved: true,
+          color: widget.rightColor,
+          barWidth: 3,
+          isStrokeCapRound: true,
+          dotData: FlDotData(
+            show: true,
+            getDotPainter: (spot, percent, barData, index) {
+              return FlDotCirclePainter(
+                radius: 3,
+                color: widget.rightColor,
+                strokeWidth: 2,
+                strokeColor: Colors.white,
             );
           },
         ),
@@ -444,6 +507,28 @@ class _ReusableComparisonChartState extends State<ReusableComparisonChart> {
 
     return LineChart(
       LineChartData(
+        extraLinesData: widget.showGoalLine && averageGoal != null && averageGoal > 0
+            ? ExtraLinesData(
+                horizontalLines: [
+                  HorizontalLine(
+                    y: averageGoal,
+                    color: Colors.red,
+                    strokeWidth: 2,
+                    dashArray: [5, 5],
+                    label: HorizontalLineLabel(
+                      show: true,
+                      labelResolver: (line) => 'Moy: ${averageGoal.toStringAsFixed(1)} ${widget.unit}',
+                      style: const TextStyle(
+                        color: Colors.red,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      alignment: Alignment.topRight,
+                    ),
+                  ),
+                ],
+              )
+            : null,
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
@@ -587,6 +672,7 @@ class _ReusableComparisonChartState extends State<ReusableComparisonChart> {
       case 'Semaine':
         return DateFormat('E', 'fr').format(date).substring(0, 3);
       case 'Mois':
+        // Afficher le mois (Jan, Fév, Mar, etc.)
         return DateFormat('MMM', 'fr').format(date).substring(0, 3);
       default:
         return DateFormat('dd/MM').format(date);
@@ -603,8 +689,8 @@ class _ReusableComparisonChartState extends State<ReusableComparisonChart> {
         // Pour 7 jours, afficher tous les jours
         return 1;
       case 'Mois':
-        // Pour 12 mois, afficher tous les mois
-        return 1;
+        // Pour 12 mois, afficher tous les 2 mois (Jan, Mar, Mai, Jul, Sep, Nov)
+        return 2;
       default:
         return (dataLength / 6).ceilToDouble().clamp(1, double.infinity);
     }

@@ -13,7 +13,6 @@ dependencies:
   flutter_reactive_ble: ^5.4.0
   archive: ^4.0.7
   path_provider: ^2.1.5
-  nordic_dfu: ^7.0.0
 
 dev_dependencies:
   flutter_test:

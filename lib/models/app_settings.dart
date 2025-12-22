@@ -6,6 +6,7 @@ import 'package:flutter_bloc_app_template/extension/vibration_mode.dart';
 
 import 'arm_side.dart';
 import 'chart_preferences.dart';
+import 'goal_config.dart';
 
 class AppSettings {
   final bool isFirstLaunch;
@@ -36,6 +37,10 @@ class AppSettings {
   final int
       movementRecordInterval; // Intervalle enregistrement mouvement (secondes)
 
+  // ========== NOUVEAUX PARAMÈTRES ==========
+  final int checkRatioFrequencyMin; // Fréquence de vérification périodique du ratio (minutes)
+  final GoalConfig goalConfig; // Configuration de l'objectif (fixe ou dynamique)
+
   AppSettings({
     this.isFirstLaunch = true,
     required this.userName,
@@ -61,6 +66,8 @@ class AppSettings {
     required this.bluetoothMaxRetries,
     required this.dataRecordInterval,
     required this.movementRecordInterval,
+    required this.checkRatioFrequencyMin,
+    required this.goalConfig,
   });
 
   Map<String, dynamic> toMap() => {
@@ -88,6 +95,8 @@ class AppSettings {
         'bluetoothMaxRetries': bluetoothMaxRetries,
         'dataRecordInterval': dataRecordInterval,
         'movementRecordInterval': movementRecordInterval,
+        'checkRatioFrequencyMin': checkRatioFrequencyMin,
+        ...goalConfig.toMap(),
       };
 
   factory AppSettings.fromMap(Map<String, dynamic> map) => AppSettings(
@@ -122,6 +131,8 @@ class AppSettings {
         bluetoothMaxRetries: map['bluetoothMaxRetries'] as int? ?? 5,
         dataRecordInterval: map['dataRecordInterval'] as int? ?? 2,
         movementRecordInterval: map['movementRecordInterval'] as int? ?? 30,
+        checkRatioFrequencyMin: map['checkRatioFrequencyMin'] as int? ?? 30,
+        goalConfig: GoalConfig.fromMap(map),
       );
 
   factory AppSettings.fromJson(Map<String, dynamic> json) => AppSettings(
@@ -160,6 +171,8 @@ class AppSettings {
         bluetoothMaxRetries: json['bluetoothMaxRetries'] as int? ?? 5,
         dataRecordInterval: json['dataRecordInterval'] as int? ?? 2,
         movementRecordInterval: json['movementRecordInterval'] as int? ?? 30,
+        checkRatioFrequencyMin: json['checkRatioFrequencyMin'] as int? ?? 30,
+        goalConfig: GoalConfig.fromJson(json),
       );
 
   Map<String, dynamic> toJson() => {
@@ -187,6 +200,8 @@ class AppSettings {
         'bluetoothMaxRetries': bluetoothMaxRetries,
         'dataRecordInterval': dataRecordInterval,
         'movementRecordInterval': movementRecordInterval,
+        'checkRatioFrequencyMin': checkRatioFrequencyMin,
+        ...goalConfig.toJson(),
       };
 
   AppSettings copyWith({
@@ -214,6 +229,8 @@ class AppSettings {
     int? bluetoothMaxRetries,
     int? dataRecordInterval,
     int? movementRecordInterval,
+    int? checkRatioFrequencyMin,
+    GoalConfig? goalConfig,
   }) {
     return AppSettings(
       isFirstLaunch: isFirstLaunch ?? this.isFirstLaunch,
@@ -242,6 +259,9 @@ class AppSettings {
       dataRecordInterval: dataRecordInterval ?? this.dataRecordInterval,
       movementRecordInterval:
           movementRecordInterval ?? this.movementRecordInterval,
+      checkRatioFrequencyMin:
+          checkRatioFrequencyMin ?? this.checkRatioFrequencyMin,
+      goalConfig: goalConfig ?? this.goalConfig,
     );
   }
 }

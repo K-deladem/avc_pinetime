@@ -22,7 +22,7 @@ class DataSimulator {
     final start = startDate ?? DateTime.now().subtract(const Duration(days: 30));
     final end = endDate ?? DateTime.now();
 
-    print('📊 SIMULATEUR: Génération de données de test...');
+    print('SIMULATEUR: Génération de données de test...');
     print('   Période: ${start.toString().split('.')[0]} -> ${end.toString().split('.')[0]}');
 
     // Générer les données pour chaque jour
@@ -167,7 +167,7 @@ class DataSimulator {
   Future<void> clearAllData() async {
     final db = await _db.database;
 
-    print('🗑️  SIMULATEUR: Suppression de toutes les données...');
+    print('SIMULATEUR: Suppression de toutes les données...');
 
     await db.delete('device_info_data');
     await db.delete('movement_data');
@@ -184,7 +184,7 @@ class DataSimulator {
     final start = startDate ?? DateTime.now().subtract(const Duration(days: 7));
     final end = endDate ?? DateTime.now();
 
-    print('📊 SIMULATEUR: Génération avec asymétrie...');
+    print('SIMULATEUR: Génération avec asymétrie...');
     print('   Dominance gauche: ${(leftDominance * 100).toStringAsFixed(0)}%');
 
     DateTime current = start;
@@ -295,7 +295,7 @@ class DataSimulator {
       columns: ['COUNT(*) as count'],
     );
 
-    print('\n📊 STATISTIQUES DES DONNÉES:');
+    print('\nSTATISTIQUES DES DONNÉES:');
     print('   Device Info: ${deviceInfoCount.first['count']}');
     print('   Movement Data: ${movementCount.first['count']}');
     print('   Bras Gauche: ${leftCount.first['count']}');

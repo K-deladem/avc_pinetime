@@ -5,6 +5,7 @@ import 'package:flutter_bloc_app_template/ui/setting/page/about_page.dart';
 import 'package:flutter_bloc_app_template/ui/setting/page/bluetooth_settings_page.dart';
 import 'package:flutter_bloc_app_template/ui/setting/page/chart_preferences_page.dart';
 import 'package:flutter_bloc_app_template/ui/setting/page/contact_support_page.dart';
+import 'package:flutter_bloc_app_template/ui/setting/page/goal_settings_page.dart';
 import 'package:flutter_bloc_app_template/ui/setting/page/language_settings_page.dart';
 import 'package:flutter_bloc_app_template/ui/setting/page/privacy_policy_page.dart';
 import 'package:flutter_bloc_app_template/ui/setting/page/profile_settings_page.dart';
@@ -26,6 +27,7 @@ class RouteGenerator {
     AppRoutes.themeSettings: (context, _) => const ThemeSettingsPage(),
     AppRoutes.bluetoothSettings: (context, _) => const BluetoothSettingsPage(),
     AppRoutes.chartPreferences: (context, _) => const ChartPreferencesPage(),
+    AppRoutes.goalSettings: (context, _) => const GoalSettingsPage(),
     AppRoutes.watchLeft: (context, args) {
       final device = args as WatchDevice;
       return WatchManagementPage(watch: device);

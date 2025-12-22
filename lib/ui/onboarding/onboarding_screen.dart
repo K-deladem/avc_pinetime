@@ -5,7 +5,6 @@ import 'package:flutter_bloc_app_template/bloc/settings/settings_bloc.dart';
 import 'package:flutter_bloc_app_template/bloc/settings/settings_event.dart';
 import 'package:flutter_bloc_app_template/bloc/settings/settings_states.dart';
 import 'package:flutter_bloc_app_template/models/arm_side.dart';
-import 'package:flutter_bloc_app_template/models/chart_preferences.dart';
 import 'package:flutter_bloc_app_template/routes/app_routes.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -21,12 +20,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   ArmSide _affectedSide = ArmSide.left;
   int _currentStep = 0;
 
-  // Préférences de graphiques
-  bool _showAsymmetryGauge = true;
-  bool _showBatteryComparison = true;
-  bool _showAsymmetryHeatmap = true;
-  bool _showStepsComparison = true;
-
   @override
   void dispose() {
     _nameController.dispose();
@@ -40,10 +33,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           _currentStep = 1;
         });
       }
-    } else if (_currentStep == 1) {
-      setState(() {
-        _currentStep = 2;
-      });
     } else {
       _completeOnboarding();
     }
@@ -62,19 +51,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final currentState = settingsBloc.state;
 
     if (currentState is SettingsLoaded) {
-      final chartPreferences = ChartPreferences(
-        showAsymmetryGauge: _showAsymmetryGauge,
-        showBatteryComparison: _showBatteryComparison,
-        showAsymmetryHeatmap: _showAsymmetryHeatmap,
-        showStepsComparison: _showStepsComparison,
-      );
-
+      print('Onboarding: État actuel isFirstLaunch=${currentState.settings.isFirstLaunch}');
       final updatedSettings = currentState.settings.copyWith(
         isFirstLaunch: false,
         userName: _nameController.text.trim(),
         affectedSide: _affectedSide,
-        chartPreferences: chartPreferences,
       );
+      print('Onboarding: Nouveau état isFirstLaunch=${updatedSettings.isFirstLaunch}');
 
       settingsBloc.add(UpdateSettings(updatedSettings));
 
@@ -96,7 +79,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             children: [
               // Progress indicator
               LinearProgressIndicator(
-                value: (_currentStep + 1) / 3,
+                value: (_currentStep + 1) / 2,
                 backgroundColor: theme.colorScheme.surfaceVariant,
                 valueColor: AlwaysStoppedAnimation<Color>(
                   theme.colorScheme.primary,
@@ -127,9 +110,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               Expanded(
                 child: _currentStep == 0
                     ? _buildNameStep(theme)
-                    : _currentStep == 1
-                        ? _buildAffectedSideStep(theme)
-                        : _buildChartPreferencesStep(theme),
+                    : _buildAffectedSideStep(theme),
               ),
 
               // Navigation buttons
@@ -154,20 +135,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       icon: Icon(_currentStep == 0
                           ? Icons.arrow_forward
                           : Icons.check),
-                      label: Text(_currentStep == 0 ? 'Suivant' : 'Terminer'),
+                      label: Text(_currentStep == 0 ? 'Suivant' : 'Commencer'),
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         minimumSize: const Size.fromHeight(56),
                         side: BorderSide(
                           color: theme.colorScheme.primary,
-                          width: 2,           // épaisseur
+                          width: 2,
                         ),
                         shape: RoundedRectangleBorder(
                           side: BorderSide(
                             color: theme.colorScheme.primary,
                             width: 2,
                           ),
-                          borderRadius: BorderRadius.circular(12), // coins
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                     ),
@@ -358,119 +339,4 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Widget _buildChartPreferencesStep(ThemeData theme) {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          Text(
-            'Sélectionnez les graphiques à afficher',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Vous pourrez modifier ces préférences plus tard dans les paramètres',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 32),
-          _buildChartCheckbox(
-            theme,
-            title: 'Asymétrie (Magnitude & Axe)',
-            subtitle: 'Graphique gauge fusionné montrant l\'asymétrie',
-            icon: Icons.assessment_outlined,
-            value: _showAsymmetryGauge,
-            onChanged: (value) {
-              setState(() => _showAsymmetryGauge = value!);
-            },
-          ),
-          const SizedBox(height: 16),
-          _buildChartCheckbox(
-            theme,
-            title: 'Niveau de Batterie',
-            subtitle: 'Comparaison du niveau de batterie des deux montres',
-            icon: Icons.battery_charging_full_outlined,
-            value: _showBatteryComparison,
-            onChanged: (value) {
-              setState(() => _showBatteryComparison = value!);
-            },
-          ),
-          const SizedBox(height: 16),
-          _buildChartCheckbox(
-            theme,
-            title: 'Objectif Équilibre',
-            subtitle: 'Heatmap magnitude/axis pour le suivi de l\'équilibre',
-            icon: Icons.calendar_month_outlined,
-            value: _showAsymmetryHeatmap,
-            onChanged: (value) {
-              setState(() => _showAsymmetryHeatmap = value!);
-            },
-          ),
-          const SizedBox(height: 16),
-          _buildChartCheckbox(
-            theme,
-            title: 'Nombre de Pas',
-            subtitle: 'Comparaison du nombre de pas entre les deux bras',
-            icon: Icons.directions_walk_outlined,
-            value: _showStepsComparison,
-            onChanged: (value) {
-              setState(() => _showStepsComparison = value!);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildChartCheckbox(
-    ThemeData theme, {
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required bool value,
-    required ValueChanged<bool?> onChanged,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: CheckboxListTile(
-        value: value,
-        onChanged: onChanged,
-        title: Row(
-          children: [
-            Icon(
-              icon,
-              color: value
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                title,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: value ? FontWeight.bold : FontWeight.normal,
-                ),
-              ),
-            ),
-          ],
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(left: 36, top: 4),
-          child: Text(
-            subtitle,
-            style: TextStyle(fontSize: 11),
-          ),
-        ),
-        activeColor: theme.colorScheme.primary,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      ),
-    );
-  }
 }

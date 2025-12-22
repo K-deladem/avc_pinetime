@@ -15,6 +15,7 @@ class AppRoutes {
   static const themeSettings = '/themeSettings';
   static const bluetoothSettings = '/bluetoothSettings';
   static const chartPreferences = '/settings/chartPreferences';
+  static const goalSettings = '/settings/goalSettings';
 
   // Montres
   static const watchLeft = '/settings/watchLeft';

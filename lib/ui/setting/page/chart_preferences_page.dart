@@ -71,17 +71,11 @@ class _ChartPreferencesPageState extends State<ChartPreferencesPage> {
             ),
           ),
           const SizedBox(height: 24),
-          _buildChartSwitch(
+          _buildLockedChartItem(
             theme,
             title: 'Asymétrie (Magnitude & Axe)',
-            subtitle: 'Graphique gauge fusionné montrant l\'asymétrie',
+            subtitle: 'Graphique gauge fusionné montrant l\'asymétrie - Toujours activé',
             icon: Icons.assessment_outlined,
-            value: _preferences.showAsymmetryGauge,
-            onChanged: (value) {
-              _updatePreferences(
-                _preferences.copyWith(showAsymmetryGauge: value),
-              );
-            },
           ),
           const Divider(),
           _buildChartSwitch(
@@ -106,6 +100,19 @@ class _ChartPreferencesPageState extends State<ChartPreferencesPage> {
             onChanged: (value) {
               _updatePreferences(
                 _preferences.copyWith(showAsymmetryHeatmap: value),
+              );
+            },
+          ),
+          const Divider(),
+          _buildChartSwitch(
+            theme,
+            title: 'Asymétrie de Mouvement',
+            subtitle: 'Graphique ratio d\'asymétrie avec filtre Magnitude/Axe et objectif',
+            icon: Icons.balance_outlined,
+            value: _preferences.showAsymmetryRatioChart,
+            onChanged: (value) {
+              _updatePreferences(
+                _preferences.copyWith(showAsymmetryRatioChart: value),
               );
             },
           ),
@@ -191,6 +198,39 @@ class _ChartPreferencesPageState extends State<ChartPreferencesPage> {
         ),
       ),
       activeThumbColor: theme.colorScheme.primary,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    );
+  }
+
+  Widget _buildLockedChartItem(
+    ThemeData theme, {
+    required String title,
+    required String subtitle,
+    required IconData icon,
+  }) {
+    return ListTile(
+      leading: Icon(
+        icon,
+        color: theme.colorScheme.primary,
+        size: 24,
+      ),
+      title: Text(
+        title,
+        style: theme.textTheme.titleSmall?.copyWith(
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: Text(
+          subtitle,
+          style: theme.textTheme.bodySmall,
+        ),
+      ),
+      trailing: Icon(
+        Icons.lock_outlined,
+        color: theme.colorScheme.primary,
+      ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
     );
   }

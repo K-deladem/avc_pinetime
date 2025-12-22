@@ -306,7 +306,7 @@ class WatchButtonCardPlus extends StatelessWidget {
                           ),
                           child: Text(
                             isConnected
-                                ? "Connectée ⚡ TEMPS RÉEL"
+                                ? "Connectée - TEMPS RÉEL"
                                 : "Déconnectée",
                             style: TextStyle(
                               fontSize: 11,

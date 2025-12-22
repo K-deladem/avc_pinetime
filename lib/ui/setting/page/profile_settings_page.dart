@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter_bloc_app_template/generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_bloc_app_template/bloc/settings/settings_bloc.dart';
@@ -43,6 +42,8 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
         final fileName = 'profile_${DateTime.now().millisecondsSinceEpoch}${path.extension(image.path)}';
         final savedImage = File('${appDir.path}/$fileName');
         await File(image.path).copy(savedImage.path);
+
+        if (!mounted) return;
 
         setState(() {
           _selectedImagePath = savedImage.path;

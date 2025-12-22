@@ -21,6 +21,7 @@ import 'package:flutter_bloc_app_template/extension/vibration_arm.dart';
 import 'package:flutter_bloc_app_template/extension/vibration_mode.dart';
 import 'package:flutter_bloc_app_template/models/app_settings.dart';
 import 'package:flutter_bloc_app_template/models/arm_side.dart';
+import 'package:flutter_bloc_app_template/models/goal_config.dart';
 import 'package:flutter_bloc_app_template/models/watch_device.dart';
 import 'package:flutter_bloc_app_template/routes/app_routes.dart';
 import 'package:flutter_bloc_app_template/ui/setting/page/watchface_Install_Page.dart';
@@ -131,11 +132,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
         padding: const EdgeInsets.all(16),
         children: [
           _buildProfileSection(),
-          _buildPreferencesSection(),
-          _buildConfigurationSection(),
+          _buildAppearanceSection(),
+          _buildNotificationsSection(),
+          _buildTherapyConfigSection(),
           _buildWatchesSection(),
-          _buildSupportSection(),
           _buildDataSection(),
+          _buildSupportSection(),
           _buildResetSection(),
         ],
       ),
@@ -147,6 +149,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       title: Text(S.of(context).settings),
       elevation: 0,
       scrolledUnderElevation: 3,
+      automaticallyImplyLeading: false,
       backgroundColor: Theme.of(context).colorScheme.surface,
       foregroundColor: Theme.of(context).colorScheme.onSurface,
       centerTitle: true,
@@ -237,33 +240,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildPreferencesSection() {
+  Widget _buildAppearanceSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Préférences'),
-        _buildProfileNavigation(),
-        _buildNotificationSwitch(),
+        _buildSectionTitle('Apparence'),
         _buildLanguageNavigation(),
         _buildThemeNavigation(),
-        _buildBluetoothNavigation(),
         _buildChartPreferencesNavigation(),
       ],
     );
   }
 
-  Widget _buildConfigurationSection() {
+  Widget _buildNotificationsSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Configuration'),
-        _buildCollectionFrequencyTile(),
-        _buildDailyObjectiveTile(),
-        _buildCheckFrequencyTile(),
-        _buildVibrationArmDropdown(),
+        _buildSectionTitle('Notifications & Vibrations'),
+        _buildNotificationSwitch(),
         _buildNotificationStrategyDropdown(),
         _buildVibrationTypeDropdown(),
+        _buildVibrationArmDropdown(),
+      ],
+    );
+  }
+
+  Widget _buildTherapyConfigSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionTitle('Configuration Thérapie'),
         _buildAffectedSideSelector(),
+        _buildGoalSettingsNavigation(),
+        _buildBluetoothNavigation(),
       ],
     );
   }
@@ -287,6 +296,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionTitle('Montres'),
+        _buildSyncTile(),
         if (leftWatch != null) _buildLeftWatchTile(leftWatch),
         if (rightWatch != null) _buildRightWatchTile(rightWatch),
         _buildPushUpdateTile(),
@@ -300,7 +310,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionTitle('Support'),
-        _buildSyncTile(),
         _buildPrivacyTile(),
         _buildAboutTile(),
         _buildContactTile(),
@@ -336,14 +345,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // ============================================================================
 
   Widget _buildSectionTitle(String title) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(top: 32, bottom: 6),
       child: Text(
         title.toUpperCase(),
-        style: const TextStyle(
+        style: TextStyle(
           fontWeight: FontWeight.bold,
-          color: Colors.grey,
+          color: theme.colorScheme.primary,
           fontSize: 13,
+          letterSpacing: 0.5,
         ),
       ),
     );
@@ -355,12 +366,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
     bool value,
     ValueChanged<bool> onChanged,
   ) {
+    final theme = Theme.of(context);
     return SwitchListTile(
-      secondary: Icon(icon),
-      title: Text(title),
+      secondary: Icon(
+        icon,
+        color: theme.colorScheme.primary,
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: theme.colorScheme.onSurface,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      subtitle: Text(
+        'Recevoir des rappels quotidiens',
+        style: TextStyle(
+          color: theme.colorScheme.onSurfaceVariant,
+          fontSize: 13,
+        ),
+      ),
       value: value,
       onChanged: onChanged,
-      subtitle: const Text('Recevoir des rappels quotidiens'),
+      activeColor: theme.colorScheme.primary,
     );
   }
 
@@ -370,11 +398,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
     String subtitle,
     VoidCallback onTap,
   ) {
+    final theme = Theme.of(context);
     return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
-      subtitle: subtitle.isNotEmpty ? Text(subtitle) : null,
-      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+      leading: Icon(
+        icon,
+        color: theme.colorScheme.primary,
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: theme.colorScheme.onSurface,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      subtitle: subtitle.isNotEmpty
+          ? Text(
+              subtitle,
+              style: TextStyle(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontSize: 13,
+              ),
+            )
+          : null,
+      trailing: Icon(
+        Icons.arrow_forward_ios,
+        size: 16,
+        color: theme.colorScheme.onSurfaceVariant,
+      ),
       onTap: onTap,
     );
   }
@@ -404,6 +454,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       () async {
         await Navigator.pushNamed(context, AppRoutes.profile);
         // Recharger les paramètres après modification
+        if (!mounted) return;
         context.read<SettingsBloc>().add(LoadSettings());
       },
     );
@@ -416,6 +467,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       language.displayName,
       () async {
         final selected = await Navigator.pushNamed(context, AppRoutes.language);
+        if (!mounted) return;
         if (selected is AppLanguage && selected != language) {
           language = selected;
           _saveSettings();
@@ -432,6 +484,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       () async {
         final selected =
             await Navigator.pushNamed(context, AppRoutes.themeSettings);
+        if (!mounted) return;
         if (selected is AppTheme && selected != themeMode) {
           themeMode = selected;
           _saveSettings();
@@ -448,6 +501,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       () async {
         await Navigator.pushNamed(context, AppRoutes.bluetoothSettings);
         // Recharger les paramètres après modification
+        if (!mounted) return;
         context.read<SettingsBloc>().add(LoadSettings());
       },
     );
@@ -461,6 +515,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
       () async {
         await Navigator.pushNamed(context, AppRoutes.chartPreferences);
         // Recharger les paramètres après modification
+        if (!mounted) return;
+        context.read<SettingsBloc>().add(LoadSettings());
+      },
+    );
+  }
+
+  Widget _buildGoalSettingsNavigation() {
+    return _buildNavTile(
+      Icons.flag_outlined,
+      'Configuration des objectifs',
+      'Définir les objectifs et la vérification',
+      () async {
+        await Navigator.pushNamed(context, AppRoutes.goalSettings);
+        // Recharger les paramètres après modification
+        if (!mounted) return;
         context.read<SettingsBloc>().add(LoadSettings());
       },
     );
@@ -578,19 +647,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
     List<String> options,
     ValueChanged<String> onChanged,
   ) {
+    final theme = Theme.of(context);
     final isVibrationType = title == 'Type de vibration';
     final isCustomSelected =
         isVibrationType && value.toLowerCase().contains('custom');
     final customSubtitle = '$customOn ms / $customOff ms × $customRepeat';
 
     return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
+      leading: Icon(
+        icon,
+        color: theme.colorScheme.primary,
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: theme.colorScheme.onSurface,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
       subtitle: Text(
         isCustomSelected ? customSubtitle : value,
-        style: const TextStyle(color: Colors.black54),
+        style: TextStyle(
+          color: theme.colorScheme.onSurfaceVariant,
+          fontSize: 13,
+        ),
       ),
-      trailing: const Icon(Icons.arrow_drop_down),
+      trailing: Icon(
+        Icons.arrow_drop_down,
+        color: theme.colorScheme.onSurfaceVariant,
+      ),
       onTap: () {
         showModalBottomSheet(
           context: context,
@@ -615,28 +700,66 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildAffectedSideSelector() {
+    final theme = Theme.of(context);
     return Container(
-      margin: const EdgeInsets.only(top: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      margin: const EdgeInsets.only(top: 12, bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.3),
+        ),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Côté atteint',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+          Row(
+            children: [
+              Icon(
+                Icons.accessibility_new,
+                color: theme.colorScheme.primary,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Côté atteint',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           DropdownButton<ArmSide>(
             value: affectedSide,
             isExpanded: true,
             underline: const SizedBox(),
-            items: const [
-              DropdownMenuItem(value: ArmSide.left, child: Text('Gauche')),
-              DropdownMenuItem(value: ArmSide.right, child: Text('Droit')),
+            dropdownColor: theme.colorScheme.surface,
+            style: TextStyle(
+              color: theme.colorScheme.onSurface,
+              fontSize: 15,
+            ),
+            icon: Icon(
+              Icons.arrow_drop_down,
+              color: theme.colorScheme.primary,
+            ),
+            items: [
+              DropdownMenuItem(
+                value: ArmSide.left,
+                child: Text(
+                  'Gauche',
+                  style: TextStyle(color: theme.colorScheme.onSurface),
+                ),
+              ),
+              DropdownMenuItem(
+                value: ArmSide.right,
+                child: Text(
+                  'Droit',
+                  style: TextStyle(color: theme.colorScheme.onSurface),
+                ),
+              ),
             ],
             onChanged: (val) {
               affectedSide = val!;
@@ -817,6 +940,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           bluetoothMaxRetries: bluetoothMaxRetries,
           dataRecordInterval: dataRecordInterval,
           movementRecordInterval: movementRecordInterval,
+          checkRatioFrequencyMin: checkFrequencyMin,
+          goalConfig: const GoalConfig.fixed(ratio: 80),
         )));
   }
 
@@ -1155,6 +1280,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       await _resetAppData(context);
     } catch (e) {
+      if (!mounted) return;
       _showErrorSnackBar('Erreur lors de la réinitialisation : $e');
     }
   }
@@ -1217,8 +1343,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       //   PURE BLOC: Nettoyer le cache AVANT la mise à jour
       await _clearImageCache();
 
+      if (!mounted) return;
+
       //   PURE BLOC: Sauvegarder avec nom unique
       final saved = await _saveImagePermanently(File(picked.path));
+
+      if (!mounted) return;
 
       //   PURE BLOC: Mise à jour UNIQUEMENT via BLoC
       profileImage = saved;
@@ -1227,6 +1357,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       _showSuccessSnackBar('Photo de profil mise à jour !');
     } catch (e) {
+      if (!mounted) return;
       _showErrorSnackBar('Erreur lors de la sélection de l\'image : $e');
     }
   }
@@ -1332,8 +1463,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         subject: 'Sauvegarde paramètres PineTime',
       );
 
+      if (!mounted) return;
+
       _showSuccessSnackBar('Données exportées avec succès ($fileSize octets)');
     } catch (e) {
+      if (!mounted) return;
       _showErrorSnackBar('Erreur lors de l\'exportation : ${e.toString()}');
     }
   }
@@ -1375,6 +1509,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final file = File(result!.files.single.path!);
 
       if (!await file.exists()) {
+        if (!mounted) return;
         _showErrorSnackBar('Fichier introuvable');
         return;
       }
@@ -1382,6 +1517,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final jsonStr = await file.readAsString();
 
       if (jsonStr.isEmpty) {
+        if (!mounted) return;
         _showErrorSnackBar('Le fichier est vide');
         return;
       }
@@ -1397,15 +1533,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       final settings = _convertSerializableToSettings(settingsData);
 
+      if (!mounted) return;
+
       context.read<SettingsBloc>().add(UpdateSettings(settings));
 
       await Future.delayed(const Duration(milliseconds: 500));
+
+      if (!mounted) return;
+
       context.read<SettingsBloc>().add(LoadSettings());
 
       _showSuccessSnackBar('Paramètres importés avec succès !');
     } on FormatException catch (e) {
+      if (!mounted) return;
       _showErrorSnackBar('Format de fichier invalide : ${e.message}');
     } catch (e) {
+      if (!mounted) return;
       _showErrorSnackBar('Erreur lors de l\'importation : ${e.toString()}');
     }
   }
@@ -1470,6 +1613,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       bluetoothMaxRetries: data['bluetoothMaxRetries'] ?? 5,
       dataRecordInterval: data['dataRecordInterval'] ?? 2,
       movementRecordInterval: data['movementRecordInterval'] ?? 30,
+      checkRatioFrequencyMin: data['checkRatioFrequencyMin'] ?? 30,
+      goalConfig: data['goalConfig'] != null
+          ? GoalConfig.fromJson(data['goalConfig'])
+          : const GoalConfig.fixed(ratio: 80),
     );
   }
 

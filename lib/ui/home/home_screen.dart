@@ -22,6 +22,7 @@ import 'package:flutter_bloc_app_template/models/chart_preferences.dart';
 import 'package:flutter_bloc_app_template/models/watch_device.dart';
 import 'package:flutter_bloc_app_template/service/chart_data_adapter.dart';
 import 'package:flutter_bloc_app_template/service/data_simulator.dart';
+import 'package:flutter_bloc_app_template/service/goal_calculator_service.dart';
 import 'package:flutter_bloc_app_template/ui/home/chart/asymmetry_gauge_chart.dart';
 import 'package:flutter_bloc_app_template/ui/home/page/new/bluetooth_scan_page_improved.dart';
 import 'package:flutter_bloc_app_template/ui/home/widget/info_card.dart';
@@ -31,6 +32,7 @@ import 'package:flutter_bloc_app_template/ui/home/widget/profil_header_bar.dart'
 import 'package:flutter_bloc_app_template/ui/home/widget/watch_button_card.dart';
 
 import 'chart/asymmetry_heatmap_card.dart';
+import 'chart/asymmetry_ratio_chart.dart';
 import 'chart/reusable_comparison_chart.dart' as reusable;
 
 class HomeScreen extends StatefulWidget {
@@ -293,7 +295,7 @@ class _HomeScreenState extends State<HomeScreen> {
     DualInfiniTimeState dualState,
   ) {
     return BlocBuilder<SettingsBloc, SettingsState>(
-      // Optimisation: rebuild si affectedSide ou chartPreferences changent
+      // Optimisation: rebuild si affectedSide, chartPreferences ou goalConfig changent
       buildWhen: (previous, current) {
         if (previous is! SettingsLoaded || current is! SettingsLoaded) {
           return true;
@@ -301,7 +303,9 @@ class _HomeScreenState extends State<HomeScreen> {
         return previous.settings.affectedSide !=
                 current.settings.affectedSide ||
             previous.settings.chartPreferences !=
-                current.settings.chartPreferences;
+                current.settings.chartPreferences ||
+            previous.settings.goalConfig !=
+                current.settings.goalConfig;
       },
       builder: (context, settingsState) {
         // Récupérer le membre atteint depuis les settings
@@ -313,8 +317,23 @@ class _HomeScreenState extends State<HomeScreen> {
             ? settingsState.settings.chartPreferences
             : const ChartPreferences();
 
+        final settings = settingsState is SettingsLoaded
+            ? settingsState.settings
+            : null;
+
         final adapter = ChartDataAdapter();
-        return Padding(
+
+        // Calculer l'objectif de manière asynchrone
+        // Key pour éviter les recalculs inutiles (optimisation batterie)
+        return FutureBuilder<int>(
+          key: ValueKey(settings?.goalConfig),
+          future: settings != null
+              ? GoalCalculatorService().calculateGoalFromSettings(settings)
+              : Future.value(80),
+          builder: (context, goalSnapshot) {
+            final goalValue = goalSnapshot.data?.toDouble();
+
+            return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
           child: InfoCard(
             title: "Données Historiques",
@@ -336,8 +355,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     magnitudeDataProvider: adapter.getMagnitudeAsymmetry,
                     axisDataProvider: adapter.getAxisAsymmetry,
                     unit: 'min',
-                    affectedSide:
-                        affectedSide, // Membre atteint depuis settings
+                    affectedSide: affectedSide,
+                    goalValue: goalValue, // Passe l'objectif au graphique
                   ),
 
                 // ========== GRAPHIQUE 4: COMPARAISON BATTERIE ==========
@@ -357,14 +376,24 @@ class _HomeScreenState extends State<HomeScreen> {
                         affectedSide, // Membre atteint depuis settings
                   ),
 
-                // ========== GRAPHIQUE 5: HEATMAP MAGNITUDE/AXIS ==========
+                // ========== GRAPHIQUE 5: ASYMÉTRIE DE MOUVEMENT (RATIO) ==========
+                if (chartPrefs.showAsymmetryRatioChart)
+                  AsymmetryRatioChart(
+                    title: 'Asymétrie de Mouvement',
+                    icon: Icons.balance_outlined,
+                    affectedSide: affectedSide,
+                    goalConfig: settings?.goalConfig,
+                  ),
+
+                // ========== GRAPHIQUE 6: HEATMAP MAGNITUDE/AXIS ==========
                 if (chartPrefs.showAsymmetryHeatmap)
                   SizedBox(
                     height: 400,
                     child: AsymmetryHeatMapCard(
                       title: 'Objectif Équilibre',
                       icon: Icons.calendar_month_outlined,
-                      targetRatio: 50.0,
+                      targetRatio: goalValue ?? 50.0,
+                      goalConfig: settings?.goalConfig, // Passe la config pour objectif quotidien
                       tolerance: 5.0,
                       affectedSide:
                           affectedSide, // Membre atteint depuis settings
@@ -391,6 +420,8 @@ class _HomeScreenState extends State<HomeScreen> {
               viewportFraction: 1.0,
             ),
           ),
+        );
+          },
         );
       },
     );
@@ -508,12 +539,15 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
 
+      if (!mounted) return;
+
       if (result != null && result['verified'] == true) {
         if (kDebugMode) print('Connection successful for $position');
         _showSuccessMessage("Connexion réussie pour ${position.name}");
       }
     } catch (e) {
       if (kDebugMode) print('Error in connecting to watch: $e');
+      if (!mounted) return;
       _showErrorMessage("Erreur de connexion: $e");
     }
   }
@@ -610,6 +644,8 @@ class _HomeScreenState extends State<HomeScreen> {
       // Attendre la propagation
       await Future.delayed(const Duration(milliseconds: 500));
 
+      if (!mounted) return;
+
       // Vérifier le résultat
       final newState = context.read<DualInfiniTimeBloc>().state;
       final newArm = position == ArmSide.left ? newState.left : newState.right;
@@ -634,6 +670,7 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     } catch (e) {
       if (kDebugMode) print("Erreur lors de l'oubli de la montre: $e");
+      if (!mounted) return;
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       _showErrorMessage("Erreur lors de l'oubli: $e");
     }
@@ -945,14 +982,13 @@ class _HomeScreenState extends State<HomeScreen> {
         dataPointsPerDay: 24,
       );
 
-      if (mounted) {
-        setState(() {}); // Rafraîchir l'UI
-        _showSuccessMessage(' $days jours de données générées!');
-      }
+      if (!mounted) return;
+
+      setState(() {}); // Rafraîchir l'UI
+      _showSuccessMessage(' $days jours de données générées!');
     } catch (e) {
-      if (mounted) {
-        _showErrorMessage('Erreur: $e');
-      }
+      if (!mounted) return;
+      _showErrorMessage('Erreur: $e');
     }
   }
 
@@ -969,14 +1005,13 @@ class _HomeScreenState extends State<HomeScreen> {
         leftDominance: leftDominance,
       );
 
-      if (mounted) {
-        setState(() {}); // Rafraîchir l'UI
-        _showSuccessMessage(' Données asymétriques générées!');
-      }
+      if (!mounted) return;
+
+      setState(() {}); // Rafraîchir l'UI
+      _showSuccessMessage(' Données asymétriques générées!');
     } catch (e) {
-      if (mounted) {
-        _showErrorMessage('Erreur: $e');
-      }
+      if (!mounted) return;
+      _showErrorMessage('Erreur: $e');
     }
   }
 
@@ -998,20 +1033,21 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () async {
               Navigator.pop(context);
 
+              if (!mounted) return;
+
               _showSuccessMessage('Suppression en cours...');
 
               try {
                 final simulator = DataSimulator();
                 await simulator.clearAllData();
 
-                if (mounted) {
-                  setState(() {}); // Rafraîchir l'UI
-                  _showSuccessMessage(' Toutes les données supprimées');
-                }
+                if (!mounted) return;
+
+                setState(() {}); // Rafraîchir l'UI
+                _showSuccessMessage(' Toutes les données supprimées');
               } catch (e) {
-                if (mounted) {
-                  _showErrorMessage('Erreur: $e');
-                }
+                if (!mounted) return;
+                _showErrorMessage('Erreur: $e');
               }
             },
             style: ElevatedButton.styleFrom(

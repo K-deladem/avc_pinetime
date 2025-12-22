@@ -3,6 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc_app_template/app/app_database.dart';
 import 'package:flutter_bloc_app_template/models/arm_side.dart';
+import 'package:flutter_bloc_app_template/models/goal_config.dart';
+import 'package:flutter_bloc_app_template/service/goal_calculator_service.dart';
 import 'package:intl/intl.dart';
 
 
@@ -10,11 +12,17 @@ import 'package:intl/intl.dart';
 ///
 /// Ce widget affiche une carte de chaleur mensuelle montrant
 /// si l'objectif d'équilibre gauche-droite est atteint chaque jour
+/// L'objectif affiché est spécifique à chaque jour (pour les objectifs dynamiques)
 class AsymmetryHeatMapCard extends StatefulWidget {
+  /// DÉPRÉCIÉ: Utiliser goalConfig à la place
   /// Objectif de ratio (en pourcentage)
   /// Par défaut 50% = équilibre parfait
   /// Une valeur entre 45-55% est considérée comme équilibrée
   final double targetRatio;
+
+  /// Configuration de l'objectif (fixe ou dynamique)
+  /// Si fourni, remplace targetRatio
+  final GoalConfig? goalConfig;
 
   /// Tolérance autour de l'objectif (en pourcentage)
   /// Par défaut ±5%
@@ -29,6 +37,7 @@ class AsymmetryHeatMapCard extends StatefulWidget {
   const AsymmetryHeatMapCard({
     super.key,
     this.targetRatio = 50.0,
+    this.goalConfig,
     this.tolerance = 5.0,
     this.title = "Objectif d'Équilibre Mensuel",
     this.icon = Icons.calendar_month,
@@ -46,9 +55,12 @@ class _AsymmetryHeatMapCardState extends State<AsymmetryHeatMapCard> {
   late int selectedYear;
   HeatMapType _selectedType = HeatMapType.magnitude;
   final AppDatabase _db = AppDatabase.instance;
+  final GoalCalculatorService _goalCalculator = GoalCalculatorService();
 
   // Cache pour les données du mois
   Map<DateTime, double> _monthlyAsymmetryData = {};
+  // Cache pour les objectifs quotidiens
+  Map<DateTime, double> _dailyGoals = {};
   bool _isLoading = false;
 
   @override
@@ -151,9 +163,24 @@ class _AsymmetryHeatMapCardState extends State<AsymmetryHeatMapCard> {
         }
       }
 
+      // Calculer les objectifs quotidiens si une goalConfig est fournie
+      final dailyGoals = <DateTime, double>{};
+      if (widget.goalConfig != null) {
+        for (int day = 1; day <= lastDay.day; day++) {
+          final date = DateTime(selectedYear, selectedMonth, day);
+          final goalForDate = await _goalCalculator.calculateGoalForDate(
+            widget.goalConfig!,
+            widget.affectedSide,
+            date,
+          );
+          dailyGoals[date] = goalForDate;
+        }
+      }
+
       if (mounted) {
         setState(() {
           _monthlyAsymmetryData = asymmetryData;
+          _dailyGoals = dailyGoals;
           _isLoading = false;
         });
       }
@@ -210,6 +237,7 @@ class _AsymmetryHeatMapCardState extends State<AsymmetryHeatMapCard> {
                             DateTime date = DateTime(selectedYear, selectedMonth, day);
 
                             final asymmetryRatio = _monthlyAsymmetryData[date];
+                            final goalForDay = _dailyGoals[date];
 
                             return Expanded(
                               child: AspectRatio(
@@ -219,18 +247,52 @@ class _AsymmetryHeatMapCardState extends State<AsymmetryHeatMapCard> {
                                   child: Container(
                                     margin: const EdgeInsets.all(2),
                                     decoration: BoxDecoration(
-                                      color: _getColorForAsymmetry(asymmetryRatio),
+                                      color: _getColorForAsymmetry(asymmetryRatio, date: date),
                                       borderRadius: BorderRadius.circular(4),
                                     ),
-                                    child: Center(
-                                      child: Text(
-                                        "$day",
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          color: asymmetryRatio != null
-                                              ? Colors.white
-                                              : Colors.black45,
-                                          fontWeight: FontWeight.bold,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(2),
+                                      child: FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            // Numéro du jour
+                                            Text(
+                                              "$day",
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: asymmetryRatio != null
+                                                    ? Colors.white
+                                                    : Colors.black45,
+                                                fontWeight: FontWeight.bold,
+                                                height: 1.0,
+                                              ),
+                                            ),
+                                            // Ratio réel
+                                            if (asymmetryRatio != null)
+                                              Text(
+                                                "${asymmetryRatio.toStringAsFixed(0)}%",
+                                                style: const TextStyle(
+                                                  fontSize: 8,
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.w500,
+                                                  height: 1.0,
+                                                ),
+                                              ),
+                                            // Objectif
+                                            if (goalForDay != null)
+                                              Text(
+                                                "↑${goalForDay.toStringAsFixed(0)}%",
+                                                style: TextStyle(
+                                                  fontSize: 7,
+                                                  color: Colors.white.withOpacity(0.8),
+                                                  fontWeight: FontWeight.normal,
+                                                  height: 1.0,
+                                                ),
+                                              ),
+                                          ],
                                         ),
                                       ),
                                     ),
@@ -644,6 +706,69 @@ class _AsymmetryHeatMapCardState extends State<AsymmetryHeatMapCard> {
                   color: _getColorForAsymmetry(calculatedRatio),
                 ),
               ),
+              // Afficher l'objectif du jour
+              if (_dailyGoals.containsKey(date)) ...[
+                const Divider(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Objectif du jour:',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade700,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        '${_dailyGoals[date]?.toStringAsFixed(1)}%',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                // Indicateur de réussite
+                if (calculatedRatio != null)
+                  Row(
+                    children: [
+                      Icon(
+                        calculatedRatio >= (_dailyGoals[date]! - 5) &&
+                        calculatedRatio <= (_dailyGoals[date]! + 5)
+                            ? Icons.check_circle
+                            : Icons.info_outline,
+                        size: 16,
+                        color: calculatedRatio >= (_dailyGoals[date]! - 5) &&
+                               calculatedRatio <= (_dailyGoals[date]! + 5)
+                            ? Colors.green
+                            : Colors.orange,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          calculatedRatio >= (_dailyGoals[date]! - 5) &&
+                          calculatedRatio <= (_dailyGoals[date]! + 5)
+                              ? 'Objectif atteint'
+                              : 'Objectif non atteint (écart: ${(calculatedRatio - _dailyGoals[date]!).abs().toStringAsFixed(1)}%)',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontStyle: FontStyle.italic,
+                            color: calculatedRatio >= (_dailyGoals[date]! - 5) &&
+                                   calculatedRatio <= (_dailyGoals[date]! + 5)
+                                ? Colors.green
+                                : Colors.orange,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
             ],
           ],
         ),
@@ -699,13 +824,25 @@ class _AsymmetryHeatMapCardState extends State<AsymmetryHeatMapCard> {
   /// - Équilibré (dans la tolérance): vert
   /// - Proche (hors tolérance mais < 2x tolérance): orange
   /// - Déséquilibré (> 2x tolérance): rouge
-  Color _getColorForAsymmetry(double? ratio) {
+  ///
+  /// Utilise l'objectif quotidien si disponible (pour les objectifs dynamiques)
+  Color _getColorForAsymmetry(double? ratio, {DateTime? date}) {
     if (ratio == null) {
       return Colors.grey.shade300;
     }
 
+    // Déterminer l'objectif à utiliser
+    double targetRatio;
+    if (date != null && _dailyGoals.containsKey(date)) {
+      // Utiliser l'objectif quotidien spécifique
+      targetRatio = _dailyGoals[date]!;
+    } else {
+      // Utiliser l'objectif par défaut
+      targetRatio = widget.targetRatio;
+    }
+
     // Calculer la distance par rapport à l'objectif
-    final distance = (ratio - widget.targetRatio).abs();
+    final distance = (ratio - targetRatio).abs();
 
     if (distance <= widget.tolerance) {
       // Dans la tolérance = équilibré

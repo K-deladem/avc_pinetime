@@ -24,7 +24,8 @@ class ChartDataAdapter {
         final monday = now.subtract(Duration(days: weekday - 1));
         return DateTime(monday.year, monday.month, monday.day);
       case 'Mois':
-        return DateTime(now.year, now.month, 1);
+        // Pour "Mois", afficher toute l'année (12 mois)
+        return DateTime(now.year, 1, 1);
       default:
         return DateTime(now.year, now.month, now.day);
     }
@@ -38,7 +39,8 @@ class ChartDataAdapter {
       case 'Semaine':
         return start.add(const Duration(days: 7));
       case 'Mois':
-        return DateTime(start.year, start.month + 1, 1);
+        // Pour "Mois", fin de l'année (12 mois)
+        return DateTime(start.year + 1, 1, 1);
       default:
         return start.add(const Duration(days: 1));
     }
@@ -465,7 +467,8 @@ class ChartDataAdapter {
         // Grouper par jour pour la vue semaine
         return DateTime(date.year, date.month, date.day);
       case 'Mois':
-        return DateTime(date.year, date.month, date.day);
+        // Grouper par mois pour la vue année (12 mois)
+        return DateTime(date.year, date.month, 1);
       default:
         return DateTime(date.year, date.month, date.day);
     }
@@ -478,7 +481,7 @@ class ChartDataAdapter {
   Future<List<AsymmetryDataPoint>> getStepsAsymmetry(
     String period,
     DateTime? selectedDate, {
-    String affectedSide = 'left',
+    ArmSide affectedSide = ArmSide.left,
   }) async {
     final start = _getStartDate(period, selectedDate);
     final end = _getEndDate(period, selectedDate);
@@ -532,13 +535,16 @@ class ChartDataAdapter {
       limit: 1000,
     );
 
-    return _aggregateAsymmetryDataFromMovement(
+    final asymmetryData = _aggregateAsymmetryDataFromMovement(
       leftData,
       rightData,
       period,
       'magnitudeActiveTime',
       affectedSide,
     );
+
+    // Normaliser pour avoir des abscisses fixes
+    return _normalizeAsymmetryDataPoints(asymmetryData, period, selectedDate);
   }
 
   /// Adaptateur pour ASYMÉTRIE AXIS ACTIVE TIME
@@ -565,13 +571,45 @@ class ChartDataAdapter {
       limit: 1000,
     );
 
-    return _aggregateAsymmetryDataFromMovement(
+    final asymmetryData = _aggregateAsymmetryDataFromMovement(
       leftData,
       rightData,
       period,
       'axisActiveTime',
       affectedSide,
     );
+
+    // Normaliser pour avoir des abscisses fixes
+    return _normalizeAsymmetryDataPoints(asymmetryData, period, selectedDate);
+  }
+
+  /// Adaptateur pour visualiser les VALEURS GAUCHE/DROITE du mouvement
+  /// Retourne les données formatées pour ReusableComparisonChart
+  /// leftValue = temps actif bras gauche (en minutes)
+  /// rightValue = temps actif bras droit (en minutes)
+  Future<List<ChartDataPoint>> getAsymmetryRatioData(
+    String period,
+    DateTime? selectedDate, {
+    ArmSide affectedSide = ArmSide.left,
+  }) async {
+    // Récupérer les données d'asymétrie
+    final asymmetryData = await getMagnitudeAsymmetry(
+      period,
+      selectedDate,
+      affectedSide: affectedSide,
+    );
+
+    // Convertir en ChartDataPoint avec les valeurs réelles gauche/droite
+    final chartData = asymmetryData.map((point) {
+      return ChartDataPoint(
+        timestamp: point.timestamp,
+        leftValue: point.leftValue,   // Valeur bras gauche
+        rightValue: point.rightValue,  // Valeur bras droit
+      );
+    }).toList();
+
+    // Normaliser pour avoir des abscisses fixes
+    return _normalizeDataPoints(chartData, period, selectedDate);
   }
 
   /// Méthode générique d'agrégation pour l'asymétrie
@@ -583,7 +621,7 @@ class ChartDataAdapter {
     List<T> rightData,
     String period,
     double Function(T) valueExtractor,
-    String affectedSide,
+    ArmSide affectedSide,
   ) {
     final Map<DateTime, Map<String, List<double>>> grouped = {};
 
@@ -621,7 +659,7 @@ class ChartDataAdapter {
       // Calculer l'asymétrie (ratio membre atteint / total)
       // 50% = équilibré
       final total = leftAvg + rightAvg;
-      final affectedAvg = affectedSide == 'left' ? leftAvg : rightAvg;
+      final affectedAvg = affectedSide == ArmSide.left ? leftAvg : rightAvg;
       final asymmetryRatio = total > 0 ? (affectedAvg / total) * 100 : 50.0;
 
       // Catégoriser l'asymétrie
@@ -714,7 +752,7 @@ class ChartDataAdapter {
       // Calculer l'asymétrie (ratio membre atteint / total)
       // 50% = équilibré
       final total = leftAvg + rightAvg;
-      final affectedAvg = affectedSide == 'left' ? leftAvg : rightAvg;
+      final affectedAvg = affectedSide == ArmSide.left ? leftAvg : rightAvg;
       final asymmetryRatio = total > 0 ? (affectedAvg / total) * 100 : 50.0;
 
       // Catégoriser l'asymétrie
@@ -730,6 +768,152 @@ class ChartDataAdapter {
     }
 
     return points;
+  }
+
+  /// Normalise les données en ajoutant les points manquants avec valeurs nulles
+  /// pour avoir des abscisses fixes (toujours 24h, 7j ou 30-31j)
+  List<ChartDataPoint> _normalizeDataPoints(
+    List<ChartDataPoint> data,
+    String period,
+    DateTime? selectedDate,
+  ) {
+    if (data.isEmpty) return data;
+
+    final start = _getStartDate(period, selectedDate);
+    final end = _getEndDate(period, selectedDate);
+
+    // Créer un map avec timestamp => data pour un accès rapide
+    final dataMap = <DateTime, ChartDataPoint>{};
+    for (final point in data) {
+      dataMap[point.timestamp] = point;
+    }
+
+    // Générer tous les points attendus selon la période
+    final normalizedPoints = <ChartDataPoint>[];
+    DateTime current = start;
+
+    switch (period) {
+      case 'Jour':
+        // 24 points (1 par heure)
+        while (current.isBefore(end)) {
+          final existing = dataMap[current];
+          normalizedPoints.add(ChartDataPoint(
+            timestamp: current,
+            leftValue: existing?.leftValue,
+            rightValue: existing?.rightValue,
+          ));
+          current = current.add(const Duration(hours: 1));
+        }
+        break;
+
+      case 'Semaine':
+        // 7 points (1 par jour)
+        while (current.isBefore(end)) {
+          final existing = dataMap[current];
+          normalizedPoints.add(ChartDataPoint(
+            timestamp: current,
+            leftValue: existing?.leftValue,
+            rightValue: existing?.rightValue,
+          ));
+          current = current.add(const Duration(days: 1));
+        }
+        break;
+
+      case 'Mois':
+        // 12 points (1 par mois de l'année)
+        while (current.isBefore(end)) {
+          final existing = dataMap[current];
+          normalizedPoints.add(ChartDataPoint(
+            timestamp: current,
+            leftValue: existing?.leftValue,
+            rightValue: existing?.rightValue,
+          ));
+          // Passer au mois suivant
+          current = DateTime(current.year, current.month + 1, 1);
+        }
+        break;
+
+      default:
+        return data;
+    }
+
+    return normalizedPoints;
+  }
+
+  /// Normalise les données d'asymétrie en ajoutant les points manquants
+  /// pour avoir des abscisses fixes (toujours 24h, 7j ou 12 mois)
+  List<AsymmetryDataPoint> _normalizeAsymmetryDataPoints(
+    List<AsymmetryDataPoint> data,
+    String period,
+    DateTime? selectedDate,
+  ) {
+    if (data.isEmpty) return data;
+
+    final start = _getStartDate(period, selectedDate);
+    final end = _getEndDate(period, selectedDate);
+
+    // Créer un map avec timestamp => data pour un accès rapide
+    final dataMap = <DateTime, AsymmetryDataPoint>{};
+    for (final point in data) {
+      dataMap[point.timestamp] = point;
+    }
+
+    // Générer tous les points attendus selon la période
+    final normalizedPoints = <AsymmetryDataPoint>[];
+    DateTime current = start;
+
+    switch (period) {
+      case 'Jour':
+        // 24 points (1 par heure : 0h, 1h, 2h, ..., 23h)
+        while (current.isBefore(end)) {
+          final existing = dataMap[current];
+          normalizedPoints.add(AsymmetryDataPoint(
+            timestamp: current,
+            leftValue: existing?.leftValue ?? 0.0,
+            rightValue: existing?.rightValue ?? 0.0,
+            asymmetryRatio: existing?.asymmetryRatio ?? 50.0, // 50% = équilibré par défaut
+            asymmetryCategory: existing?.asymmetryCategory ?? AsymmetryCategory.balanced,
+          ));
+          current = current.add(const Duration(hours: 1));
+        }
+        break;
+
+      case 'Semaine':
+        // 7 points (Lun, Mar, Mer, Jeu, Ven, Sam, Dim)
+        while (current.isBefore(end)) {
+          final existing = dataMap[current];
+          normalizedPoints.add(AsymmetryDataPoint(
+            timestamp: current,
+            leftValue: existing?.leftValue ?? 0.0,
+            rightValue: existing?.rightValue ?? 0.0,
+            asymmetryRatio: existing?.asymmetryRatio ?? 50.0, // 50% = équilibré par défaut
+            asymmetryCategory: existing?.asymmetryCategory ?? AsymmetryCategory.balanced,
+          ));
+          current = current.add(const Duration(days: 1));
+        }
+        break;
+
+      case 'Mois':
+        // 12 points (1 par mois de l'année : Jan, Fév, Mar, ..., Déc)
+        while (current.isBefore(end)) {
+          final existing = dataMap[current];
+          normalizedPoints.add(AsymmetryDataPoint(
+            timestamp: current,
+            leftValue: existing?.leftValue ?? 0.0,
+            rightValue: existing?.rightValue ?? 0.0,
+            asymmetryRatio: existing?.asymmetryRatio ?? 50.0, // 50% = équilibré par défaut
+            asymmetryCategory: existing?.asymmetryCategory ?? AsymmetryCategory.balanced,
+          ));
+          // Passer au mois suivant
+          current = DateTime(current.year, current.month + 1, 1);
+        }
+        break;
+
+      default:
+        return data;
+    }
+
+    return normalizedPoints;
   }
 }
 

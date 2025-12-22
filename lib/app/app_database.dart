@@ -6,6 +6,7 @@ import 'package:flutter_bloc_app_template/extension/vibration_mode.dart';
 import 'package:flutter_bloc_app_template/models/app_settings.dart';
 import 'package:flutter_bloc_app_template/models/arm_side.dart';
 import 'package:flutter_bloc_app_template/models/connection_event.dart';
+import 'package:flutter_bloc_app_template/models/goal_config.dart';
 import 'package:flutter_bloc_app_template/models/watch_device.dart';
 import 'package:infinitime_dfu_library/infinitime_dfu_library.dart';
 import 'package:path/path.dart';
@@ -59,6 +60,9 @@ class AppDatabase {
 
     // Ajouter les champs de préférences de graphiques si nécessaire
     await _addChartPreferencesColumns(db);
+
+    // Ajouter les nouveaux champs pour la configuration des objectifs
+    await _addGoalConfigColumns(db);
   }
 
   /// Ajoute le champ isFirstLaunch à la table settings si il n'existe pas
@@ -76,7 +80,7 @@ class AppDatabase {
         print('Column isFirstLaunch added to settings table');
       }
     } catch (e) {
-      print('⚠️ Failed to add isFirstLaunch column (might already exist): $e');
+      print('Failed to add isFirstLaunch column (might already exist): $e');
     }
   }
 
@@ -90,6 +94,7 @@ class AppDatabase {
         'showAsymmetryGauge',
         'showBatteryComparison',
         'showAsymmetryHeatmap',
+        'showAsymmetryRatioChart',
         'showStepsComparison',
       ];
 
@@ -102,7 +107,34 @@ class AppDatabase {
         }
       }
     } catch (e) {
-      print('⚠️ Failed to add chart preferences columns: $e');
+      print('Failed to add chart preferences columns: $e');
+    }
+  }
+
+  /// Ajoute les nouveaux champs pour la configuration des objectifs
+  Future<void> _addGoalConfigColumns(Database db) async {
+    try {
+      final result = await db.rawQuery('PRAGMA table_info(settings)');
+      final columns = result.map((column) => column['name'] as String).toList();
+
+      final goalConfigColumns = {
+        'checkRatioFrequencyMin': 'INTEGER DEFAULT 30',
+        'goalType': 'TEXT DEFAULT "Fixe"',
+        'fixedRatio': 'INTEGER DEFAULT 80',
+        'periodDays': 'INTEGER',
+        'dailyIncreasePercentage': 'REAL',
+      };
+
+      for (final entry in goalConfigColumns.entries) {
+        if (!columns.contains(entry.key)) {
+          await db.execute('''
+            ALTER TABLE settings ADD COLUMN ${entry.key} ${entry.value}
+          ''');
+          print('Column ${entry.key} added to settings table');
+        }
+      }
+    } catch (e) {
+      print('Failed to add goal config columns: $e');
     }
   }
 
@@ -295,12 +327,18 @@ class AppDatabase {
         showAsymmetryGauge INTEGER DEFAULT 1,
         showBatteryComparison INTEGER DEFAULT 1,
         showAsymmetryHeatmap INTEGER DEFAULT 1,
+        showAsymmetryRatioChart INTEGER DEFAULT 1,
         showStepsComparison INTEGER DEFAULT 1,
         bluetoothScanTimeout INTEGER DEFAULT 15,
         bluetoothConnectionTimeout INTEGER DEFAULT 30,
         bluetoothMaxRetries INTEGER DEFAULT 5,
         dataRecordInterval INTEGER DEFAULT 2,
-        movementRecordInterval INTEGER DEFAULT 30
+        movementRecordInterval INTEGER DEFAULT 30,
+        checkRatioFrequencyMin INTEGER DEFAULT 30,
+        goalType TEXT DEFAULT "Fixe",
+        fixedRatio INTEGER DEFAULT 80,
+        periodDays INTEGER,
+        dailyIncreasePercentage REAL
       )
     ''');
 
@@ -874,14 +912,19 @@ class AppDatabase {
     bluetoothMaxRetries: 5,
     dataRecordInterval: 2,
     movementRecordInterval: 30,
+    checkRatioFrequencyMin: 30,
+    goalConfig: const GoalConfig.fixed(ratio: 80),
   );
 
   Future<AppSettings?> fetchSettings() async {
     final db = await instance.database;
     final maps = await db.query('settings', where: 'id = ?', whereArgs: [1]);
     if (maps.isNotEmpty) {
-      return AppSettings.fromMap(maps.first);
+      final settings = AppSettings.fromMap(maps.first);
+      print('Settings chargés depuis DB: isFirstLaunch=${settings.isFirstLaunch}');
+      return settings;
     } else {
+      print('Aucun settings dans DB, création avec isFirstLaunch=${defaultSettings.isFirstLaunch}');
       await saveSettings(defaultSettings);
       return defaultSettings;
     }
@@ -889,11 +932,14 @@ class AppDatabase {
 
   Future<void> saveSettings(AppSettings settings) async {
     final db = await instance.database;
+    final data = settings.toMap()..['id'] = 1;
+    print('Sauvegarde settings: isFirstLaunch=${settings.isFirstLaunch}, data[isFirstLaunch]=${data['isFirstLaunch']}');
     await db.insert(
       'settings',
-      settings.toMap()..['id'] = 1,
+      data,
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+    print('Settings sauvegardés avec succès');
   }
 
   // ============================================================================
