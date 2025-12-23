@@ -78,6 +78,34 @@ class InfiniTimeSession {
 
   String get deviceId => _deviceId;
 
+  // Version firmware de la montre
+  String? _firmwareVersion;
+  String? get firmwareVersion => _firmwareVersion;
+
+  /// Vérifie si la version firmware nécessite le mode compatibilité
+  /// compatibilityMode = true quand version > 1.13.5
+  bool get needsCompatibilityMode {
+    if (_firmwareVersion == null) return true; // Par défaut, utiliser compatibilité
+    return _compareVersions(_firmwareVersion!, '1.13.5') > 0;
+  }
+
+  /// Compare deux versions semver (ex: "1.13.5" vs "1.14.0")
+  /// Retourne: -1 si v1 < v2, 0 si égal, 1 si v1 > v2
+  int _compareVersions(String v1, String v2) {
+    final parts1 = v1.split('.').map((p) => int.tryParse(p) ?? 0).toList();
+    final parts2 = v2.split('.').map((p) => int.tryParse(p) ?? 0).toList();
+
+    // Pad les versions pour avoir la même longueur
+    while (parts1.length < 3) parts1.add(0);
+    while (parts2.length < 3) parts2.add(0);
+
+    for (int i = 0; i < 3; i++) {
+      if (parts1[i] > parts2[i]) return 1;
+      if (parts1[i] < parts2[i]) return -1;
+    }
+    return 0;
+  }
+
   // Connexion
   StreamSubscription<ConnectionStateUpdate>? _connSub;
   Completer<bool>? _connectCompleter;
@@ -162,7 +190,7 @@ class InfiniTimeSession {
   Duration _motionMinInterval = const Duration(milliseconds: 120);
 
   // MovementService
-  MovementService? _movementService;
+  late MovementService _movementService;
 
   InfiniTimeSession(this._ble, this._deviceId)
     : _dfuManager = DfuServiceManager(_ble);
@@ -509,7 +537,7 @@ class InfiniTimeSession {
 
     // Initialiser MovementService
     _movementService = MovementService(_ble, _deviceId);
-    _movementService!.onMovementChanged((data) {
+    _movementService.onMovementChanged((data) {
       _movementController.add(data);
       _onMovementChanged?.call(data);
     });
@@ -534,16 +562,11 @@ class InfiniTimeSession {
       }
     }
 
-    // Souscrire au MovementService seulement si la caractéristique est disponible
-    if (_charToService.containsKey(InfiniTimeUuids.movementData)) {
-      try {
-        await _movementService?.subscribe();
-        debugPrint('[BLE] MovementService abonné');
-      } catch (e) {
-        debugPrint('[BLE] Erreur MovementService: $e');
-      }
-    } else {
-      debugPrint('[BLE] MovementService non disponible (caractéristique absente)');
+    try {
+      await _movementService.subscribe();
+      debugPrint('[BLE] MovementService abonné');
+    } catch (e) {
+      debugPrint('[BLE] Erreur MovementService: $e');
     }
   }
 
@@ -679,10 +702,15 @@ class InfiniTimeSession {
 
     await Future.delayed(const Duration(milliseconds: 200));
 
+    final firmware = await read(InfiniTimeUuids.disFirmwareRev);
+    // Stocker la version firmware pour déterminer compatibilityMode
+    _firmwareVersion = firmware;
+    debugPrint('[BLE] Firmware version: $firmware (compatibilityMode: $needsCompatibilityMode)');
+
     return {
       'manufacturer': await read(InfiniTimeUuids.disManufacturer),
       'model': await read(InfiniTimeUuids.disModelNumber),
-      'firmware': await read(InfiniTimeUuids.disFirmwareRev),
+      'firmware': firmware,
       'hardware': await read(InfiniTimeUuids.disHardwareRev),
     };
   }
@@ -1152,10 +1180,11 @@ class InfiniTimeSession {
       );
 
       _dfuProgressSub = _dfuManager.progressStream.listen((progress) {
-        final percent = (progress * 80).round() + 10;
+        // Progression alignée avec la montre (0% -> 95% pendant transfert)
+        final percent = (progress * 100).round();
         _dfuProgressController.add(
           DfuProgress(
-            phase: 'Transfert firmware (${(progress * 100).round()}%)',
+            phase: 'Transfert firmware ($percent%)',
             percent: percent,
             part: 1,
             totalParts: 1,
@@ -1188,9 +1217,11 @@ class InfiniTimeSession {
 
       // === TRANSFERT FIRMWARE ===
       // Respecte la logique exacte du DfuServiceManager
+      // compatibilityMode = true si version firmware > 1.13.5
+      debugPrint('[DFU] Utilisation compatibilityMode: $needsCompatibilityMode (version: $_firmwareVersion)');
       final success = await _dfuManager.performCompleteFirmwareUpdate(
         dfuFiles,
-        compatibilityMode: true,
+        compatibilityMode: needsCompatibilityMode,
         //onProgress: (progress) => debugPrint('[DFU] Progrès: ${(progress * 100).toInt()}%'),
         //onStatusUpdate: (status) => debugPrint('[DFU] $status'),
       );
@@ -1314,17 +1345,23 @@ class InfiniTimeSession {
   }
 
   int _getPhasePercent(String phase) {
+    // Progression alignée avec la montre :
+    // - Phases d'init = 0% (pas d'affichage)
+    // - Transfert = 0% -> 95% (géré par progressStream)
+    // - Validation = 97%
+    // - Activation = 99%
+    // - Reconnexion = 100%
     switch (phase) {
       case 'Initialisation DFU':
-        return 8;
+        return 0;
       case 'Connexion DFU':
-        return 5;
+        return 0;
       case 'Validation firmware':
-        return 92;
+        return 97;
       case 'Activation firmware':
-        return 95;
+        return 99;
       case 'Redémarrage':
-        return 98;
+        return 99;
       case 'Firmware installé':
         return 100;
       case 'Erreur DFU':
@@ -1392,8 +1429,7 @@ class InfiniTimeSession {
     _subscriptions.clear();
 
     try {
-      await _movementService?.dispose();
-      _movementService = null;
+      await _movementService.dispose();
     } catch (e) {
       debugPrint('[BLE] Erreur MovementService: $e');
     }

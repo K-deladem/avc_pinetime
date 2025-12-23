@@ -382,8 +382,10 @@ class DfuServiceManager {
     }
 
     // Négociation MTU
+    // compatibilityMode = true quand version > 1.13.5 → négociation MTU
+    // compatibilityMode = false quand version ≤ 1.13.5 ou inconnue → MTU = 20
     int effectiveMtu = 20;
-    if (!compatibilityMode) {
+    if (compatibilityMode) {
       try {
         _updateStatus("Négociation MTU...");
         final negotiatedMtu = await _ble.requestMtu(
@@ -398,6 +400,7 @@ class DfuServiceManager {
         effectiveMtu = 20;
       }
     } else {
+      _updateStatus("MTU par défaut: 20 bytes (version ≤ 1.13.5)");
       effectiveMtu = 20;
     }
 
@@ -752,29 +755,33 @@ class _ProgressTracker {
   late final Map<String, double> _stageProgress;
 
   _ProgressTracker() {
-    // Définir la progression cible pour chaque étape (en % du total)
+    // Progression alignée avec la montre :
+    // - Transfert = 0% à 95% (comme la montre)
+    // - Validation/Activation = 95% à 99%
+    // - Reconnexion après installation = 100%
     _stageProgress = {
-      'initialization': 0.05,      // 0% -> 5%
-      'start_dfu': 0.08,           // 5% -> 8%
-      'size_packet': 0.10,         // 8% -> 10%
-      'init_part1': 0.12,          // 10% -> 12%
-      'init_packet': 0.15,         // 12% -> 15%
-      'init_part2': 0.17,          // 15% -> 17%
-      'packet_notification': 0.18, // 17% -> 18%
-      'receive_image': 0.20,       // 18% -> 20%
-      'transfer': 0.85,            // 20% -> 85% (transfert principal)
-      'validation': 0.92,          // 85% -> 92%
-      'activation': 0.98,          // 92% -> 98%
-      'finalization': 1.0,         // 98% -> 100%
+      'initialization': 0.0,       // 0%
+      'start_dfu': 0.0,            // 0%
+      'size_packet': 0.0,          // 0%
+      'init_part1': 0.0,           // 0%
+      'init_packet': 0.0,          // 0%
+      'init_part2': 0.0,           // 0%
+      'packet_notification': 0.0,  // 0%
+      'receive_image': 0.0,        // 0% - prêt à transférer
+      'transfer': 0.95,            // 0% -> 95% (transfert = comme la montre)
+      'validation': 0.97,          // 95% -> 97%
+      'activation': 0.99,          // 97% -> 99%
+      'finalization': 1.0,         // 100% (reconnexion terminée)
     };
   }
 
   double getProgress(String stage) => _stageProgress[stage] ?? 0.0;
 
   /// Calcule la progression interpolée pour le transfert
+  /// Correspond exactement à la progression affichée sur la montre (0% -> 95%)
   double getTransferProgress(int sentBytes, int totalBytes) {
-    const double transferStart = 0.20;
-    const double transferEnd = 0.85;
+    const double transferStart = 0.0;
+    const double transferEnd = 0.95;
     final progress = sentBytes / totalBytes;
     return transferStart + (progress * (transferEnd - transferStart));
   }
