@@ -5,7 +5,7 @@ class FirmwareSource extends FirmwareSourceDelegate {
   @override
   Future<List<String>> getAvailableFirmwares() async {
     return [
-      'assets/firmware/pinetime-mcuboot-app-dfu-1.15.2.zip',
+      'assets/firmware/pinetime-mcuboot-app-dfu-1.20.0.zip',
     ];
   }
 

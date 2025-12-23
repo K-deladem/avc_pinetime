@@ -7,6 +7,8 @@ import 'package:flutter_bloc_app_template/extension/vibration_mode.dart';
 import 'arm_side.dart';
 import 'chart_preferences.dart';
 import 'goal_config.dart';
+import 'movement_sampling_settings.dart';
+import 'time_preferences.dart';
 
 class AppSettings {
   final bool isFirstLaunch;
@@ -40,6 +42,8 @@ class AppSettings {
   // ========== NOUVEAUX PARAMÈTRES ==========
   final int checkRatioFrequencyMin; // Fréquence de vérification périodique du ratio (minutes)
   final GoalConfig goalConfig; // Configuration de l'objectif (fixe ou dynamique)
+  final TimePreferences timePreferences; // Préférences de synchronisation de l'heure
+  final MovementSamplingSettings movementSampling; // Paramètres d'échantillonnage mouvement
 
   AppSettings({
     this.isFirstLaunch = true,
@@ -68,6 +72,8 @@ class AppSettings {
     required this.movementRecordInterval,
     required this.checkRatioFrequencyMin,
     required this.goalConfig,
+    this.timePreferences = const TimePreferences(),
+    this.movementSampling = const MovementSamplingSettings(),
   });
 
   Map<String, dynamic> toMap() => {
@@ -97,6 +103,8 @@ class AppSettings {
         'movementRecordInterval': movementRecordInterval,
         'checkRatioFrequencyMin': checkRatioFrequencyMin,
         ...goalConfig.toMap(),
+        ...timePreferences.toMap(),
+        ...movementSampling.toMap(),
       };
 
   factory AppSettings.fromMap(Map<String, dynamic> map) => AppSettings(
@@ -133,6 +141,8 @@ class AppSettings {
         movementRecordInterval: map['movementRecordInterval'] as int? ?? 30,
         checkRatioFrequencyMin: map['checkRatioFrequencyMin'] as int? ?? 30,
         goalConfig: GoalConfig.fromMap(map),
+        timePreferences: TimePreferences.fromMap(map),
+        movementSampling: MovementSamplingSettings.fromMap(map),
       );
 
   factory AppSettings.fromJson(Map<String, dynamic> json) => AppSettings(
@@ -173,6 +183,8 @@ class AppSettings {
         movementRecordInterval: json['movementRecordInterval'] as int? ?? 30,
         checkRatioFrequencyMin: json['checkRatioFrequencyMin'] as int? ?? 30,
         goalConfig: GoalConfig.fromJson(json),
+        timePreferences: TimePreferences.fromJson(json),
+        movementSampling: MovementSamplingSettings.fromJson(json),
       );
 
   Map<String, dynamic> toJson() => {
@@ -202,6 +214,8 @@ class AppSettings {
         'movementRecordInterval': movementRecordInterval,
         'checkRatioFrequencyMin': checkRatioFrequencyMin,
         ...goalConfig.toJson(),
+        ...timePreferences.toJson(),
+        ...movementSampling.toJson(),
       };
 
   AppSettings copyWith({
@@ -231,6 +245,8 @@ class AppSettings {
     int? movementRecordInterval,
     int? checkRatioFrequencyMin,
     GoalConfig? goalConfig,
+    TimePreferences? timePreferences,
+    MovementSamplingSettings? movementSampling,
   }) {
     return AppSettings(
       isFirstLaunch: isFirstLaunch ?? this.isFirstLaunch,
@@ -262,6 +278,8 @@ class AppSettings {
       checkRatioFrequencyMin:
           checkRatioFrequencyMin ?? this.checkRatioFrequencyMin,
       goalConfig: goalConfig ?? this.goalConfig,
+      timePreferences: timePreferences ?? this.timePreferences,
+      movementSampling: movementSampling ?? this.movementSampling,
     );
   }
 }

@@ -636,7 +636,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
           // Card content
           Expanded(
-            child: Card(
+            child: Container(
               margin: const EdgeInsets.only(bottom: 8),
               child: Padding(
                 padding: const EdgeInsets.all(12),
@@ -753,7 +753,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
           // Card content
           Expanded(
-            child: Card(
+            child: Container(
               margin: const EdgeInsets.only(bottom: 8),
               child: Padding(
                 padding: const EdgeInsets.all(12),
@@ -852,7 +852,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
           // Card content
           Expanded(
-            child: Card(
+            child: Container(
               margin: const EdgeInsets.only(bottom: 8),
               child: Padding(
                 padding: const EdgeInsets.all(12),
@@ -988,7 +988,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
           // Card content
           Expanded(
-            child: Card(
+            child: Container(
               margin: const EdgeInsets.only(bottom: 8),
               child: Padding(
                 padding: const EdgeInsets.all(12),

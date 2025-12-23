@@ -4,7 +4,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:infinitime_dfu_library/src/exceptions/dfu_exceptions.dart';
-import 'package:infinitime_dfu_library/src/utils/operation_helper.dart';
 import '../models/infinitime_uuids.dart';
 import '../models/movement_data.dart';
 import '../utils/data_parser.dart';
@@ -53,31 +52,15 @@ class MovementService {
         deviceId: _deviceId,
       );
 
-      // ÉTAPE 1: Vérifier que la souscription fonctionne (avec timeout/retry)
-      await OperationHelper.withTimeoutAndRetry(
-            () => _ble.subscribeToCharacteristic(characteristic)
-            .first
-            .timeout(
-          Duration(seconds: 10),
-          onTimeout: () {
-            throw DfuTimeoutException(
-              'Subscribe to movement characteristic',
-              timeout: Duration(seconds: 10),
-            );
-          },
-        ),
-        operationName: 'Subscribe to movement data',
-        timeout: Duration(seconds: 15),
-        maxRetries: 3,
-      );
-
-      // ÉTAPE 2: Créer la souscription réelle pour les données continues
+      // Souscrire directement sans attendre la première donnée
+      // La montre n'envoie des données que lorsqu'il y a du mouvement
       _subscription = _ble.subscribeToCharacteristic(characteristic).listen(
             (data) {
           if (kDebugMode) {
             print('[MovementService] Received ${data.length} bytes');
           }
-          if (data.length == 22) {
+          // Accepter 20 bytes (sans reserved) ou 22 bytes (avec reserved)
+          if (data.length == 20 || data.length == 22) {
             try {
               final movement = _parseMovementData(data);
               _movementController.add(movement);
@@ -95,7 +78,7 @@ class MovementService {
             }
           } else {
             if (kDebugMode) {
-              print('[MovementService] Invalid data length: ${data.length}, expected 22 bytes');
+              print('[MovementService] Invalid data length: ${data.length}, expected 20 or 22 bytes');
             }
           }
         },
@@ -137,9 +120,9 @@ class MovementService {
     }
   }
 
-  /// Parse les 22 bytes de données de mouvement
+  /// Parse les 20 ou 22 bytes de données de mouvement
   ///
-  /// Format:
+  /// Format (20 bytes minimum):
   /// - [0-3]   : timestamp (uint32 LE, ms)
   /// - [4-7]   : magnitudeActiveTime (uint32 LE, ms)
   /// - [8-11]  : axisActiveTime (uint32 LE, ms)
@@ -148,7 +131,7 @@ class MovementService {
   /// - [14-15] : accelX (int16 LE, centièmes de g)
   /// - [16-17] : accelY (int16 LE, centièmes de g)
   /// - [18-19] : accelZ (int16 LE, centièmes de g)
-  /// - [20-21] : reserved
+  /// - [20-21] : reserved (optionnel)
   MovementData _parseMovementData(List<int> data) {
     int offset = 0;
 

@@ -61,8 +61,14 @@ class AppDatabase {
     // Ajouter les champs de préférences de graphiques si nécessaire
     await _addChartPreferencesColumns(db);
 
+    // Ajouter les champs de préférences de temps si nécessaire
+    await _addTimePreferencesColumns(db);
+
     // Ajouter les nouveaux champs pour la configuration des objectifs
     await _addGoalConfigColumns(db);
+
+    // Ajouter les champs pour l'échantillonnage de mouvement si nécessaire
+    await _addMovementSamplingColumns(db);
   }
 
   /// Ajoute le champ isFirstLaunch à la table settings si il n'existe pas
@@ -111,6 +117,31 @@ class AppDatabase {
     }
   }
 
+  /// Ajoute les champs de préférences de temps à la table settings si ils n'existent pas
+  Future<void> _addTimePreferencesColumns(Database db) async {
+    try {
+      final result = await db.rawQuery('PRAGMA table_info(settings)');
+      final columns = result.map((column) => column['name'] as String).toList();
+
+      final timeColumns = {
+        'use24HourFormat': 'INTEGER DEFAULT 1',
+        'timezoneOffsetHours': 'REAL DEFAULT 0.0',
+        'usePhoneTimezone': 'INTEGER DEFAULT 1',
+      };
+
+      for (final entry in timeColumns.entries) {
+        if (!columns.contains(entry.key)) {
+          await db.execute('''
+            ALTER TABLE settings ADD COLUMN ${entry.key} ${entry.value}
+          ''');
+          print('Column ${entry.key} added to settings table');
+        }
+      }
+    } catch (e) {
+      print('Failed to add time preferences columns: $e');
+    }
+  }
+
   /// Ajoute les nouveaux champs pour la configuration des objectifs
   Future<void> _addGoalConfigColumns(Database db) async {
     try {
@@ -135,6 +166,33 @@ class AppDatabase {
       }
     } catch (e) {
       print('Failed to add goal config columns: $e');
+    }
+  }
+
+  /// Ajoute les champs pour l'échantillonnage de mouvement à la table settings
+  Future<void> _addMovementSamplingColumns(Database db) async {
+    try {
+      final result = await db.rawQuery('PRAGMA table_info(settings)');
+      final columns = result.map((column) => column['name'] as String).toList();
+
+      final samplingColumns = {
+        'movementSamplingMode': 'INTEGER DEFAULT 1', // 1 = interval (mode normal)
+        'movementSamplingIntervalMs': 'INTEGER DEFAULT 1000', // 1 seconde
+        'movementSamplingChangeThreshold': 'REAL DEFAULT 0.5',
+        'movementSamplingMaxPerFlush': 'INTEGER DEFAULT 60',
+        'movementSamplingUseAggregation': 'INTEGER DEFAULT 0',
+      };
+
+      for (final entry in samplingColumns.entries) {
+        if (!columns.contains(entry.key)) {
+          await db.execute('''
+            ALTER TABLE settings ADD COLUMN ${entry.key} ${entry.value}
+          ''');
+          print('Column ${entry.key} added to settings table');
+        }
+      }
+    } catch (e) {
+      print('Failed to add movement sampling columns: $e');
     }
   }
 
@@ -283,13 +341,24 @@ class AppDatabase {
     ''');
 
     await db.execute('''
-      CREATE INDEX idx_movement_timestamp 
+      CREATE INDEX idx_movement_timestamp
       ON movement_data(timestamp DESC)
     ''');
 
     await db.execute('''
-      CREATE INDEX idx_movement_arm_timestamp 
+      CREATE INDEX idx_movement_arm_timestamp
       ON movement_data(armSide, timestamp DESC)
+    ''');
+
+    // Index sur createdAt pour les requêtes filtrées par date réelle
+    await db.execute('''
+      CREATE INDEX idx_movement_createdAt
+      ON movement_data(createdAt DESC)
+    ''');
+
+    await db.execute('''
+      CREATE INDEX idx_movement_arm_createdAt
+      ON movement_data(armSide, createdAt DESC)
     ''');
 
     await db.execute('''
@@ -338,7 +407,15 @@ class AppDatabase {
         goalType TEXT DEFAULT "Fixe",
         fixedRatio INTEGER DEFAULT 80,
         periodDays INTEGER,
-        dailyIncreasePercentage REAL
+        dailyIncreasePercentage REAL,
+        use24HourFormat INTEGER DEFAULT 1,
+        timezoneOffsetHours REAL DEFAULT 0.0,
+        usePhoneTimezone INTEGER DEFAULT 1,
+        movementSamplingMode INTEGER DEFAULT 1,
+        movementSamplingIntervalMs INTEGER DEFAULT 1000,
+        movementSamplingChangeThreshold REAL DEFAULT 0.5,
+        movementSamplingMaxPerFlush INTEGER DEFAULT 60,
+        movementSamplingUseAggregation INTEGER DEFAULT 0
       )
     ''');
 
@@ -701,6 +778,8 @@ class AppDatabase {
   }
 
   /// Récupère les données de mouvement
+  /// Note: Utilise createdAt (date d'enregistrement réelle) pour le filtrage
+  /// car timestamp contient la date relative de la montre (souvent 1970)
   Future<List<Map<String, dynamic>>> getMovementData(
     String armSide, {
     DateTime? startDate,
@@ -713,13 +792,14 @@ class AppDatabase {
     String where = 'armSide = ?';
     List<dynamic> whereArgs = [armSide];
 
+    // Utiliser createdAt au lieu de timestamp pour le filtrage par date
     if (startDate != null) {
-      where += ' AND timestamp >= ?';
+      where += ' AND createdAt >= ?';
       whereArgs.add(startDate.toIso8601String());
     }
 
     if (endDate != null) {
-      where += ' AND timestamp <= ?';
+      where += ' AND createdAt <= ?';
       whereArgs.add(endDate.toIso8601String());
     }
 
@@ -727,7 +807,7 @@ class AppDatabase {
       'movement_data',
       where: where,
       whereArgs: whereArgs,
-      orderBy: 'timestamp DESC',
+      orderBy: 'createdAt DESC',
       limit: limit,
       offset: offset,
     );
@@ -736,6 +816,7 @@ class AppDatabase {
   }
 
   /// Comparaison entre les deux bras (focus sur magnitudeActiveTime et axisActiveTime)
+  /// Note: Utilise createdAt pour le filtrage car timestamp contient la date relative de la montre
   Future<Map<String, dynamic>> compareArmsMovement({
     DateTime? startDate,
     DateTime? endDate,
@@ -745,13 +826,14 @@ class AppDatabase {
     String where = '1=1';
     List<dynamic> whereArgs = [];
 
+    // Utiliser createdAt au lieu de timestamp pour le filtrage par date
     if (startDate != null) {
-      where += ' AND timestamp >= ?';
+      where += ' AND createdAt >= ?';
       whereArgs.add(startDate.toIso8601String());
     }
 
     if (endDate != null) {
-      where += ' AND timestamp <= ?';
+      where += ' AND createdAt <= ?';
       whereArgs.add(endDate.toIso8601String());
     }
 
@@ -801,6 +883,7 @@ class AppDatabase {
   }
 
   /// Statistiques journalières de mouvement
+  /// Note: Utilise createdAt pour le filtrage car timestamp contient la date relative de la montre
   Future<Map<String, dynamic>> getDailyMovementStats(
     String armSide,
     DateTime date,
@@ -811,7 +894,7 @@ class AppDatabase {
     final endOfDay = startOfDay.add(const Duration(days: 1));
 
     final result = await db.rawQuery('''
-      SELECT 
+      SELECT
         COUNT(*) as recordCount,
         SUM(magnitudeActiveTime) as totalMagnitudeActiveTime,
         AVG(magnitudeActiveTime) as avgMagnitudeActiveTime,
@@ -823,9 +906,9 @@ class AppDatabase {
         MAX(magnitude) as maxMagnitude,
         AVG(activityLevel) as avgActivityLevel
       FROM movement_data
-      WHERE armSide = ? 
-        AND timestamp >= ?
-        AND timestamp < ?
+      WHERE armSide = ?
+        AND createdAt >= ?
+        AND createdAt < ?
     ''', [
       armSide,
       startOfDay.toIso8601String(),
@@ -868,13 +951,14 @@ class AppDatabase {
   }
 
   /// Supprime les anciennes données de mouvement
+  /// Note: Utilise createdAt pour le filtrage car timestamp contient la date relative de la montre
   Future<int> deleteOldMovementData(Duration retentionPeriod) async {
     final db = await database;
     final cutoffDate = DateTime.now().subtract(retentionPeriod);
 
     return db.delete(
       'movement_data',
-      where: 'timestamp < ?',
+      where: 'createdAt < ?',
       whereArgs: [cutoffDate.toIso8601String()],
     );
   }

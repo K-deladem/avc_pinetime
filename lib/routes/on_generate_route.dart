@@ -10,6 +10,7 @@ import 'package:flutter_bloc_app_template/ui/setting/page/language_settings_page
 import 'package:flutter_bloc_app_template/ui/setting/page/privacy_policy_page.dart';
 import 'package:flutter_bloc_app_template/ui/setting/page/profile_settings_page.dart';
 import 'package:flutter_bloc_app_template/ui/setting/page/theme_settings_page.dart';
+import 'package:flutter_bloc_app_template/ui/setting/page/time_preferences_page.dart';
 import 'package:flutter_bloc_app_template/ui/setting/page/watch_management_page.dart';
 
 import '../models/watch_device.dart';
@@ -28,6 +29,7 @@ class RouteGenerator {
     AppRoutes.bluetoothSettings: (context, _) => const BluetoothSettingsPage(),
     AppRoutes.chartPreferences: (context, _) => const ChartPreferencesPage(),
     AppRoutes.goalSettings: (context, _) => const GoalSettingsPage(),
+    AppRoutes.timePreferences: (context, _) => const TimePreferencesPage(),
     AppRoutes.watchLeft: (context, args) {
       final device = args as WatchDevice;
       return WatchManagementPage(watch: device);

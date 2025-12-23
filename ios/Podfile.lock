@@ -44,18 +44,14 @@ PODS:
     - Flutter
   - integration_test (0.0.1):
     - Flutter
-  - nordic_dfu (2.0.0):
-    - Flutter
-    - FlutterMacOS
-    - NordicDFU (~> 4.16.0)
-  - NordicDFU (4.16.0):
-    - ZIPFoundation (= 0.9.19)
   - package_info_plus (0.4.5):
     - Flutter
   - path_provider_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
   - permission_handler_apple (9.3.0):
+    - Flutter
+  - printing (1.0.0):
     - Flutter
   - Protobuf (3.29.4)
   - reactive_ble_mobile (0.0.1):
@@ -76,7 +72,6 @@ PODS:
     - FlutterMacOS
   - SwiftProtobuf (1.29.0)
   - SwiftyGif (5.4.5)
-  - ZIPFoundation (0.9.19)
 
 DEPENDENCIES:
   - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
@@ -86,10 +81,10 @@ DEPENDENCIES:
   - flutter_local_notifications (from `.symlinks/plugins/flutter_local_notifications/ios`)
   - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
   - integration_test (from `.symlinks/plugins/integration_test/ios`)
-  - nordic_dfu (from `.symlinks/plugins/nordic_dfu/darwin`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
+  - printing (from `.symlinks/plugins/printing/ios`)
   - reactive_ble_mobile (from `.symlinks/plugins/reactive_ble_mobile/darwin`)
   - share_plus (from `.symlinks/plugins/share_plus/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
@@ -99,12 +94,10 @@ SPEC REPOS:
   trunk:
     - DKImagePickerController
     - DKPhotoGallery
-    - NordicDFU
     - Protobuf
     - SDWebImage
     - SwiftProtobuf
     - SwiftyGif
-    - ZIPFoundation
 
 EXTERNAL SOURCES:
   device_info_plus:
@@ -121,14 +114,14 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/image_picker_ios/ios"
   integration_test:
     :path: ".symlinks/plugins/integration_test/ios"
-  nordic_dfu:
-    :path: ".symlinks/plugins/nordic_dfu/darwin"
   package_info_plus:
     :path: ".symlinks/plugins/package_info_plus/ios"
   path_provider_foundation:
     :path: ".symlinks/plugins/path_provider_foundation/darwin"
   permission_handler_apple:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
+  printing:
+    :path: ".symlinks/plugins/printing/ios"
   reactive_ble_mobile:
     :path: ".symlinks/plugins/reactive_ble_mobile/darwin"
   share_plus:
@@ -146,22 +139,20 @@ SPEC CHECKSUMS:
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   flutter_background_service_ios: 00d31bdff7b4bfe06d32375df358abe0329cf87e
   flutter_local_notifications: a5a732f069baa862e728d839dd2ebb904737effb
-  image_picker_ios: 7fe1ff8e34c1790d6fff70a32484959f563a928a
+  image_picker_ios: e0ece4aa2a75771a7de3fa735d26d90817041326
   integration_test: 4a889634ef21a45d28d50d622cf412dc6d9f586e
-  nordic_dfu: ddee550f9b6d491dc2d594392bab5598d1f492b3
-  NordicDFU: 116a4ec458945889f8e0e71759e03b23c39c3482
   package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
-  path_provider_foundation: 080d55be775b7414fd5a5ef3ac137b97b097e564
+  path_provider_foundation: bb55f6dbba17d0dccd6737fe6f7f34fbd0376880
   permission_handler_apple: 4ed2196e43d0651e8ff7ca3483a069d469701f2d
+  printing: 54ff03f28fe9ba3aa93358afb80a8595a071dd07
   Protobuf: 2e6de032ba12b9efb390ae550d1a243a5b19ddfc
   reactive_ble_mobile: ea97709e18fa6f0b0592909725d7ae7e1c595b64
   SDWebImage: 73c6079366fea25fa4bb9640d5fb58f0893facd8
   share_plus: 50da8cb520a8f0f65671c6c6a99b3617ed10a58a
-  shared_preferences_foundation: 9e1978ff2562383bd5676f64ec4e9aa8fa06a6f7
+  shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
   sqflite_darwin: 20b2a3a3b70e43edae938624ce550a3cbf66a3d0
   SwiftProtobuf: b7aa08087e2ab6d162862d143020091254095f69
   SwiftyGif: 706c60cf65fa2bc5ee0313beece843c8eb8194d4
-  ZIPFoundation: b8c29ea7ae353b309bc810586181fd073cb3312c
 
 PODFILE CHECKSUM: af5b6b84195005d2a8ef7e02ef17dbe984edc248
 

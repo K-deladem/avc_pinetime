@@ -11,6 +11,7 @@ import 'package:flutter_bloc_app_template/extension/arm_side_extensions.dart';
 import 'package:flutter_bloc_app_template/extension/dual_infinitime_state_extensions.dart';
 import 'package:flutter_bloc_app_template/models/app_settings.dart';
 import 'package:flutter_bloc_app_template/models/arm_side.dart';
+import 'package:flutter_bloc_app_template/models/movement_sampling_settings.dart';
 import 'package:flutter_bloc_app_template/models/connection_event.dart';
 import 'package:flutter_bloc_app_template/models/device_info_data.dart';
 import 'package:flutter_bloc_app_template/service/background_infinitime_service.dart';
@@ -21,6 +22,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:synchronized/synchronized.dart';
 
 import '../../service/firmware_source.dart';
+import '../../service/chart_refresh_notifier.dart';
 
 // ============================================================================
 // CLASS: DualInfiniTimeBloc
@@ -52,6 +54,7 @@ class DualInfiniTimeBloc
   late int _MAX_RECONNECT_DELAY_MS;
   late Duration _MIN_DEVICE_INFO_RECORD_INTERVAL;
   late Duration _MIN_MOVEMENT_RECORD_INTERVAL;
+  MovementSamplingSettings _movementSamplingSettings = const MovementSamplingSettings();
 
   // ========== BASE DE DONNÉES ==========
   final AppDatabase _db = AppDatabase.instance;
@@ -97,6 +100,21 @@ class DualInfiniTimeBloc
 
   /// Buffer pour movement_data (magnitudeActiveTime, axisActiveTime)
   final Map<ArmSide, List<MovementData>> _movementBuffer = {
+    ArmSide.left: [],
+    ArmSide.right: [],
+  };
+
+  /// Tracking pour le sampling de mouvement
+  final Map<ArmSide, DateTime?> _lastMovementSampleTime = {
+    ArmSide.left: null,
+    ArmSide.right: null,
+  };
+  final Map<ArmSide, double?> _lastMovementMagnitude = {
+    ArmSide.left: null,
+    ArmSide.right: null,
+  };
+  /// Buffer d'agrégation pour le mode aggregate
+  final Map<ArmSide, List<MovementData>> _movementAggregateBuffer = {
     ArmSide.left: [],
     ArmSide.right: [],
   };
@@ -210,8 +228,9 @@ class DualInfiniTimeBloc
     _MAX_RECONNECT_DELAY_MS = 30 * 1000; // Garder à 30s max pour sécurité
     _MIN_DEVICE_INFO_RECORD_INTERVAL = Duration(minutes: settings.dataRecordInterval);
     _MIN_MOVEMENT_RECORD_INTERVAL = Duration(seconds: settings.movementRecordInterval);
+    _movementSamplingSettings = settings.movementSampling;
 
-    _log('Configuration updated: scan=${_SCAN_TIMEOUT_SECONDS}s, connection=${_CONNECTION_TIMEOUT_SECONDS}s, retries=$_MAX_RETRY_ATTEMPTS', level: _LOG_INFO);
+    _log('Configuration updated: scan=${_SCAN_TIMEOUT_SECONDS}s, connection=${_CONNECTION_TIMEOUT_SECONDS}s, retries=$_MAX_RETRY_ATTEMPTS, sampling=${_movementSamplingSettings.presetName}', level: _LOG_INFO);
   }
 
   // ============================================================================
@@ -1176,12 +1195,14 @@ class DualInfiniTimeBloc
     final session = _sessions[e.side];
     if (session == null) return;
 
+    // Envoyer l'heure locale car la montre affiche l'heure telle quelle
+    final localTime = DateTime.now();
     await _safeOperation(
       e.side,
-      () => session.syncTimeUtc(DateTime.now().toUtc()),
+      () => session.syncTimeUtc(localTime),
       'SYNC_TIME',
     );
-    add(OnArmSynced(e.side, DateTime.now()));
+    add(OnArmSynced(e.side, localTime));
   }
 
   Future<void> _onReadBattery(
@@ -1592,7 +1613,7 @@ class DualInfiniTimeBloc
     }
   }
 
-  /// Ajoute une donnée au buffer movement
+  /// Ajoute une donnée au buffer movement avec filtrage selon les paramètres de sampling
   void _bufferMovement(
     ArmSide side,
     MovementData movement,
@@ -1602,6 +1623,11 @@ class DualInfiniTimeBloc
       _log('ERROR: Movement buffer not initialized for $side',
           level: _LOG_ERROR);
       return;
+    }
+
+    // Appliquer le filtrage selon le mode de sampling
+    if (!_shouldSampleMovement(side, movement)) {
+      return; // Échantillon filtré
     }
 
     // Protection OOM
@@ -1617,11 +1643,143 @@ class DualInfiniTimeBloc
 
     _log('Buffered movement for ${side.displayName}: mag=${movement.magnitudeActiveTime}ms, axis=${movement.axisActiveTime}ms (buffer size: ${buffer.length})');
 
-    // Flush automatique toutes les 10 entrées (réduit de 30 pour des résultats plus rapides)
-    if (buffer.length >= 10) {
-      _log('Movement buffer threshold reached (10 entries), flushing...');
+    // Flush automatique selon maxSamplesPerFlush configuré
+    final flushThreshold = _movementSamplingSettings.maxSamplesPerFlush ~/ 6; // ~10 par défaut
+    if (buffer.length >= flushThreshold) {
+      _log('Movement buffer threshold reached ($flushThreshold entries), flushing...');
       _flushMovementBuffer(side);
     }
+  }
+
+  /// Détermine si un échantillon de mouvement doit être gardé selon les paramètres de sampling
+  bool _shouldSampleMovement(ArmSide side, MovementData movement) {
+    final now = DateTime.now();
+    final lastSampleTime = _lastMovementSampleTime[side];
+    final lastMagnitude = _lastMovementMagnitude[side];
+    final currentMagnitude = movement.getAccelerationMagnitude();
+
+    switch (_movementSamplingSettings.mode) {
+      case MovementSamplingMode.all:
+        // Tout garder
+        _lastMovementSampleTime[side] = now;
+        _lastMovementMagnitude[side] = currentMagnitude;
+        return true;
+
+      case MovementSamplingMode.interval:
+        // Garder un échantillon par intervalle
+        if (lastSampleTime == null) {
+          _lastMovementSampleTime[side] = now;
+          _lastMovementMagnitude[side] = currentMagnitude;
+          return true;
+        }
+
+        final elapsed = now.difference(lastSampleTime).inMilliseconds;
+        if (elapsed >= _movementSamplingSettings.intervalMs) {
+          _lastMovementSampleTime[side] = now;
+          _lastMovementMagnitude[side] = currentMagnitude;
+          return true;
+        }
+        return false;
+
+      case MovementSamplingMode.threshold:
+        // Garder uniquement lors de changements significatifs
+        if (lastMagnitude == null) {
+          _lastMovementSampleTime[side] = now;
+          _lastMovementMagnitude[side] = currentMagnitude;
+          return true;
+        }
+
+        final change = (currentMagnitude - lastMagnitude).abs();
+        if (change >= _movementSamplingSettings.changeThreshold) {
+          _lastMovementSampleTime[side] = now;
+          _lastMovementMagnitude[side] = currentMagnitude;
+          return true;
+        }
+        return false;
+
+      case MovementSamplingMode.aggregate:
+        // Accumuler et calculer la moyenne sur l'intervalle
+        return _handleAggregateMode(side, movement, now);
+    }
+  }
+
+  /// Gère le mode d'agrégation - accumule les données et calcule une moyenne
+  bool _handleAggregateMode(ArmSide side, MovementData movement, DateTime now) {
+    final aggregateBuffer = _movementAggregateBuffer[side];
+    if (aggregateBuffer == null) return false;
+
+    aggregateBuffer.add(movement);
+
+    final lastSampleTime = _lastMovementSampleTime[side];
+    if (lastSampleTime == null) {
+      _lastMovementSampleTime[side] = now;
+      return false; // Attendre d'avoir plus de données
+    }
+
+    final elapsed = now.difference(lastSampleTime).inMilliseconds;
+    if (elapsed >= _movementSamplingSettings.intervalMs && aggregateBuffer.isNotEmpty) {
+      // Calculer la moyenne et remplacer le mouvement actuel par l'agrégat
+      // Note: On ne peut pas modifier movement, donc on ajoute directement au buffer principal
+      final avgMovement = _calculateAggregateMovement(aggregateBuffer);
+      aggregateBuffer.clear();
+      _lastMovementSampleTime[side] = now;
+
+      // Ajouter directement au buffer principal
+      final buffer = _movementBuffer[side];
+      if (buffer != null) {
+        buffer.add(avgMovement);
+        _log('Aggregated ${aggregateBuffer.length} samples for ${side.displayName}');
+      }
+      return false; // On a déjà ajouté manuellement
+    }
+
+    return false; // En cours d'accumulation
+  }
+
+  /// Calcule un MovementData agrégé à partir d'une liste
+  MovementData _calculateAggregateMovement(List<MovementData> samples) {
+    if (samples.isEmpty) {
+      return MovementData(
+        timestampMs: DateTime.now().millisecondsSinceEpoch,
+        magnitudeActiveTime: 0,
+        axisActiveTime: 0,
+        movementDetected: false,
+        anyMovement: false,
+        accelX: 0,
+        accelY: 0,
+        accelZ: 0,
+      );
+    }
+
+    final count = samples.length;
+    double sumX = 0, sumY = 0, sumZ = 0;
+    int maxMagnitudeTime = 0, maxAxisTime = 0;
+    bool anyDetected = false, anyMoved = false;
+
+    for (final s in samples) {
+      sumX += s.accelX;
+      sumY += s.accelY;
+      sumZ += s.accelZ;
+      if (s.magnitudeActiveTime > maxMagnitudeTime) {
+        maxMagnitudeTime = s.magnitudeActiveTime;
+      }
+      if (s.axisActiveTime > maxAxisTime) {
+        maxAxisTime = s.axisActiveTime;
+      }
+      anyDetected = anyDetected || s.movementDetected;
+      anyMoved = anyMoved || s.anyMovement;
+    }
+
+    return MovementData(
+      timestampMs: samples.last.timestampMs,
+      magnitudeActiveTime: maxMagnitudeTime,
+      axisActiveTime: maxAxisTime,
+      movementDetected: anyDetected,
+      anyMovement: anyMoved,
+      accelX: sumX / count,
+      accelY: sumY / count,
+      accelZ: sumZ / count,
+    );
   }
 
   /// Flush le buffer device_info d'un bras
@@ -1646,6 +1804,9 @@ class DualInfiniTimeBloc
         buffer.clear();
         _log(
             'Flushed ${dataToInsert.length} device info records for ${side.displayName}', level: _LOG_INFO);
+
+        // Notifier les graphiques qu'il y a de nouvelles données
+        ChartRefreshNotifier().notifyAllDataUpdated();
       } catch (e) {
         _log('Error flushing device info buffer: $e', level: _LOG_ERROR);
       }
@@ -1674,6 +1835,9 @@ class DualInfiniTimeBloc
         buffer.clear();
         _log(
             'Flushed ${dataToInsert.length} movement records for ${side.displayName}', level: _LOG_INFO);
+
+        // Notifier les graphiques qu'il y a de nouvelles données de mouvement
+        ChartRefreshNotifier().notifyMovementDataUpdated();
       } catch (e) {
         _log('Error flushing movement buffer: $e', level: _LOG_ERROR);
       }
@@ -1887,10 +2051,13 @@ class DualInfiniTimeBloc
       add(DualDiscoverGattRequested(side));
 
       // Sync time with retries
+      // Note: On envoie l'heure locale car la montre affiche l'heure telle quelle
+      // sans appliquer de conversion de fuseau horaire
       for (int attempt = 0; attempt < 3; attempt++) {
         try {
-          await session.syncTimeUtc(DateTime.now().toUtc());
-          add(OnArmSynced(side, DateTime.now()));
+          final localTime = DateTime.now();
+          await session.syncTimeUtc(localTime);
+          add(OnArmSynced(side, localTime));
           break;
         } catch (e) {
           if (attempt == 2) {
@@ -1965,11 +2132,14 @@ class DualInfiniTimeBloc
         return;
       }
 
-      final now = e.time ?? DateTime.now().toUtc();
-      await session.syncTimeUtc(now);
+      // Utiliser l'heure fournie ou l'heure locale par défaut
+      // Note: Malgré le nom "Utc", on envoie l'heure locale car la montre
+      // affiche l'heure telle quelle sans conversion de fuseau
+      final timeToSend = e.time ?? DateTime.now();
+      await session.syncTimeUtc(timeToSend);
 
-      add(OnArmSynced(e.side, now));
-      _log('Time synced for ${e.side.displayName}: $now');
+      add(OnArmSynced(e.side, timeToSend));
+      _log('Time synced for ${e.side.displayName}: $timeToSend');
     } catch (e) {
       _log('Error syncing time: $e', level: _LOG_ERROR);
     }

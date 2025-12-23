@@ -50,12 +50,34 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _previousLeftConnected = false;
   bool _previousRightConnected = false;
 
+  // Keys pour la capture des graphiques pour PDF
+  final List<GlobalKey> _chartKeys = [];
+  final List<String> _chartTitles = [];
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeApp();
     });
+  }
+
+  /// Enveloppe un graphique avec RepaintBoundary pour permettre la capture
+  Widget _wrapChartForPdf(Widget chart, String title) {
+    final key = GlobalKey();
+    _chartKeys.add(key);
+    _chartTitles.add(title);
+
+    return RepaintBoundary(
+      key: key,
+      child: chart,
+    );
+  }
+
+  /// Réinitialise les keys de graphiques (utile si la config change)
+  void _resetChartKeys() {
+    _chartKeys.clear();
+    _chartTitles.clear();
   }
 
   @override
@@ -333,6 +355,9 @@ class _HomeScreenState extends State<HomeScreen> {
           builder: (context, goalSnapshot) {
             final goalValue = goalSnapshot.data?.toDouble();
 
+            // Réinitialiser les keys avant de reconstruire
+            _resetChartKeys();
+
             return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
           child: InfoCard(
@@ -349,75 +374,92 @@ class _HomeScreenState extends State<HomeScreen> {
               carouselItems: [
                 // ========== GRAPHIQUE 1 & 2: ASYMÉTRIE MAGNITUDE & AXIS (GAUGE FUSIONNÉ) ==========
                 if (chartPrefs.showAsymmetryGauge)
-                  AsymmetryGaugeChart(
-                    title: 'Asymétrie',
-                    icon: Icons.assessment_outlined,
-                    magnitudeDataProvider: adapter.getMagnitudeAsymmetry,
-                    axisDataProvider: adapter.getAxisAsymmetry,
-                    unit: 'min',
-                    affectedSide: affectedSide,
-                    goalValue: goalValue, // Passe l'objectif au graphique
+                  _wrapChartForPdf(
+                    AsymmetryGaugeChart(
+                      title: 'Asymétrie',
+                      icon: Icons.assessment_outlined,
+                      magnitudeDataProvider: adapter.getMagnitudeAsymmetry,
+                      axisDataProvider: adapter.getAxisAsymmetry,
+                      unit: 'min',
+                      affectedSide: affectedSide,
+                      goalValue: goalValue, // Passe l'objectif au graphique
+                    ),
+                    'Asymétrie Magnitude & Axe',
                   ),
 
                 // ========== GRAPHIQUE 4: COMPARAISON BATTERIE ==========
                 if (chartPrefs.showBatteryComparison)
-                  reusable.ReusableComparisonChart(
-                    title: 'Niveau de Batterie',
-                    icon: Icons.battery_charging_full_outlined,
-                    dataProvider: adapter.getBatteryData,
-                    unit: '%',
-                    leftColor: Colors.blue,
-                    rightColor: Colors.green,
-                    defaultMode: reusable.ChartMode.line,
-                    showTrendLine: true,
-                    fixedMinY: 0,
-                    fixedMaxY: 100,
-                    affectedSide:
-                        affectedSide, // Membre atteint depuis settings
+                  _wrapChartForPdf(
+                    reusable.ReusableComparisonChart(
+                      title: 'Niveau de Batterie',
+                      icon: Icons.battery_charging_full_outlined,
+                      dataProvider: adapter.getBatteryData,
+                      unit: '%',
+                      leftColor: Colors.blue,
+                      rightColor: Colors.green,
+                      defaultMode: reusable.ChartMode.line,
+                      showTrendLine: true,
+                      fixedMinY: 0,
+                      fixedMaxY: 100,
+                      affectedSide:
+                          affectedSide, // Membre atteint depuis settings
+                    ),
+                    'Niveau de Batterie',
                   ),
 
                 // ========== GRAPHIQUE 5: ASYMÉTRIE DE MOUVEMENT (RATIO) ==========
                 if (chartPrefs.showAsymmetryRatioChart)
-                  AsymmetryRatioChart(
-                    title: 'Asymétrie de Mouvement',
-                    icon: Icons.balance_outlined,
-                    affectedSide: affectedSide,
-                    goalConfig: settings?.goalConfig,
+                  _wrapChartForPdf(
+                    AsymmetryRatioChart(
+                      title: 'Asymétrie de Mouvement',
+                      icon: Icons.balance_outlined,
+                      affectedSide: affectedSide,
+                      goalConfig: settings?.goalConfig,
+                    ),
+                    'Asymétrie de Mouvement (Ratio)',
                   ),
 
                 // ========== GRAPHIQUE 6: HEATMAP MAGNITUDE/AXIS ==========
                 if (chartPrefs.showAsymmetryHeatmap)
-                  SizedBox(
-                    height: 400,
-                    child: AsymmetryHeatMapCard(
-                      title: 'Objectif Équilibre',
-                      icon: Icons.calendar_month_outlined,
-                      targetRatio: goalValue ?? 50.0,
-                      goalConfig: settings?.goalConfig, // Passe la config pour objectif quotidien
-                      tolerance: 5.0,
-                      affectedSide:
-                          affectedSide, // Membre atteint depuis settings
+                  _wrapChartForPdf(
+                    SizedBox(
+                      height: 400,
+                      child: AsymmetryHeatMapCard(
+                        title: 'Objectif Équilibre',
+                        icon: Icons.calendar_month_outlined,
+                        targetRatio: goalValue ?? 50.0,
+                        goalConfig: settings?.goalConfig, // Passe la config pour objectif quotidien
+                        tolerance: 5.0,
+                        affectedSide:
+                            affectedSide, // Membre atteint depuis settings
+                      ),
                     ),
+                    'Objectif Équilibre (Heatmap)',
                   ),
 
                 // ========== GRAPHIQUES BONUS: COMPARAISON PAS ==========
                 if (chartPrefs.showStepsComparison)
-                  reusable.ReusableComparisonChart(
-                    title: 'Nombre de Pas',
-                    icon: Icons.directions_walk_outlined,
-                    dataProvider: adapter.getStepsData,
-                    unit: 'pas',
-                    leftColor: Colors.blueAccent,
-                    rightColor: Colors.greenAccent,
-                    defaultMode: reusable.ChartMode.bar,
-                    affectedSide:
-                        affectedSide, // Membre atteint depuis settings
+                  _wrapChartForPdf(
+                    reusable.ReusableComparisonChart(
+                      title: 'Nombre de Pas',
+                      icon: Icons.directions_walk_outlined,
+                      dataProvider: adapter.getStepsData,
+                      unit: 'pas',
+                      leftColor: Colors.blueAccent,
+                      rightColor: Colors.greenAccent,
+                      defaultMode: reusable.ChartMode.bar,
+                      affectedSide:
+                          affectedSide, // Membre atteint depuis settings
+                    ),
+                    'Nombre de Pas',
                   ),
               ],
               infoIcon: Icons.assessment_outlined,
               autoPlay: false,
               enableInfiniteScroll: false,
               viewportFraction: 1.0,
+              chartKeys: _chartKeys,
+              chartTitles: _chartTitles,
             ),
           ),
         );
@@ -832,7 +874,9 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Icon(Icons.science, color: Colors.deepPurple),
             SizedBox(width: 8),
-            Text('Simulateur de Données'),
+            Expanded(
+              child: Text('Simulateur de Données'),
+            ),
           ],
         ),
         content: SingleChildScrollView(

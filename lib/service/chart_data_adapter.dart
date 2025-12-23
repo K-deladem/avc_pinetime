@@ -413,7 +413,10 @@ class ChartDataAdapter {
 
     // Grouper les données gauche
     for (final data in leftData) {
-      final timestamp = DateTime.parse(data['timestamp'] as String);
+      // Utiliser createdAt (date réelle d'enregistrement) au lieu de timestamp (timestamp montre)
+      final createdAt = data['createdAt'] as String?;
+      if (createdAt == null) continue;
+      final timestamp = DateTime.parse(createdAt);
       final groupedDate = _groupDateByPeriod(timestamp, period);
       grouped.putIfAbsent(groupedDate, () => {'left': [], 'right': []});
 
@@ -426,7 +429,10 @@ class ChartDataAdapter {
 
     // Grouper les données droite
     for (final data in rightData) {
-      final timestamp = DateTime.parse(data['timestamp'] as String);
+      // Utiliser createdAt (date réelle d'enregistrement) au lieu de timestamp (timestamp montre)
+      final createdAt = data['createdAt'] as String?;
+      if (createdAt == null) continue;
+      final timestamp = DateTime.parse(createdAt);
       final groupedDate = _groupDateByPeriod(timestamp, period);
       grouped.putIfAbsent(groupedDate, () => {'left': [], 'right': []});
 
@@ -709,7 +715,10 @@ class ChartDataAdapter {
 
     // Grouper gauche
     for (final data in leftData) {
-      final timestamp = DateTime.parse(data['timestamp'] as String);
+      // Utiliser createdAt (date réelle d'enregistrement) au lieu de timestamp (timestamp montre)
+      final createdAt = data['createdAt'] as String?;
+      if (createdAt == null) continue;
+      final timestamp = DateTime.parse(createdAt);
       final groupedDate = _groupDateByPeriod(timestamp, period);
       grouped.putIfAbsent(groupedDate, () => {'left': [], 'right': []});
 
@@ -717,20 +726,25 @@ class ChartDataAdapter {
       final value = data[fieldName];
       if (value != null) {
         final doubleValue = (value is int) ? value.toDouble() : (value as double);
-        grouped[groupedDate]!['left']!.add(doubleValue / 60.0); // Convertir secondes en minutes
+        // Les valeurs sont en millisecondes, convertir en minutes (/ 60000)
+        grouped[groupedDate]!['left']!.add(doubleValue / 60000.0);
       }
     }
 
     // Grouper droite
     for (final data in rightData) {
-      final timestamp = DateTime.parse(data['timestamp'] as String);
+      // Utiliser createdAt (date réelle d'enregistrement) au lieu de timestamp (timestamp montre)
+      final createdAt = data['createdAt'] as String?;
+      if (createdAt == null) continue;
+      final timestamp = DateTime.parse(createdAt);
       final groupedDate = _groupDateByPeriod(timestamp, period);
       grouped.putIfAbsent(groupedDate, () => {'left': [], 'right': []});
 
       final value = data[fieldName];
       if (value != null) {
         final doubleValue = (value is int) ? value.toDouble() : (value as double);
-        grouped[groupedDate]!['right']!.add(doubleValue / 60.0);
+        // Les valeurs sont en millisecondes, convertir en minutes (/ 60000)
+        grouped[groupedDate]!['right']!.add(doubleValue / 60000.0);
       }
     }
 

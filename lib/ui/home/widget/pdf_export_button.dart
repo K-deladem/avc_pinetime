@@ -1,7 +1,5 @@
 import 'dart:typed_data';
 import 'dart:ui' as ui;
-
-import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -9,160 +7,62 @@ import 'package:flutter_bloc_app_template/bloc/settings/settings_bloc.dart';
 import 'package:flutter_bloc_app_template/bloc/settings/settings_states.dart';
 import 'package:flutter_bloc_app_template/service/pdf_export_service.dart';
 import 'package:intl/intl.dart';
-import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
-class CarouselWithChart extends StatefulWidget {
-  final List<Widget> carouselItems;
-  final IconData infoIcon;
-  final bool autoPlay;
-  final bool enableInfiniteScroll;
-  final double viewportFraction;
-  final List<GlobalKey>? chartKeys;
-  final List<String>? chartTitles;
+class PdfExportButton extends StatefulWidget {
+  final List<GlobalKey> chartKeys;
+  final List<String> chartTitles;
 
-  const CarouselWithChart({
+  const PdfExportButton({
     super.key,
-    required this.carouselItems,
-    this.infoIcon = Icons.remove_red_eye,
-    this.autoPlay = false,
-    this.enableInfiniteScroll = false,
-    this.viewportFraction = 1,
-    this.chartKeys,
-    this.chartTitles,
+    required this.chartKeys,
+    required this.chartTitles,
   });
 
   @override
-  _CarouselWithChartState createState() => _CarouselWithChartState();
+  State<PdfExportButton> createState() => _PdfExportButtonState();
 }
 
-class _CarouselWithChartState extends State<CarouselWithChart> {
-  int activeIndex = 0;
+class _PdfExportButtonState extends State<PdfExportButton> {
   bool _isExporting = false;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hasPdfExport = widget.chartKeys != null &&
-                         widget.chartKeys!.isNotEmpty &&
-                         widget.chartTitles != null;
 
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        CarouselSlider(
-          items: [
-            ...widget.carouselItems,
-          ],
-          options: CarouselOptions(
-            height: 400,
-            enlargeCenterPage: true,
-            enlargeFactor: 0.12,
-            enableInfiniteScroll: widget.enableInfiniteScroll,
-            animateToClosest: false,
-            scrollDirection: Axis.horizontal,
-            autoPlay: widget.autoPlay,
-            viewportFraction: widget.viewportFraction,
-            pageSnapping: true,
-            scrollPhysics: const BouncingScrollPhysics(),
-            onPageChanged: (index, reason) {
-              setState(() {
-                activeIndex = index;
-              });
-            },
-          ),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AnimatedSmoothIndicator(
-              activeIndex: activeIndex,
-              count: widget.carouselItems.length + 1,
-              effect: ExpandingDotsEffect(
-                dotHeight: 8,
-                dotWidth: 8,
-                activeDotColor: theme.colorScheme.primary.withValues(alpha: 0.6),
-                dotColor: Colors.grey,
-              ),
-            ),
-            if (hasPdfExport) ...[
-              const SizedBox(width: 16),
-              _buildPdfButton(theme),
-            ],
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPdfButton(ThemeData theme) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: _isExporting ? null : _exportToPdf,
-        borderRadius: BorderRadius.circular(6),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.primary.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(
-              color: theme.colorScheme.primary.withValues(alpha: 0.2),
-              width: 0.5,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (_isExporting)
-                SizedBox(
-                  width: 12,
-                  height: 12,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 1.5,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      theme.colorScheme.primary,
-                    ),
-                  ),
-                )
-              else
-                Icon(
-                  Icons.picture_as_pdf_outlined,
-                  size: 14,
-                  color: theme.colorScheme.primary,
-                ),
-              const SizedBox(width: 4),
-              Text(
-                _isExporting ? '...' : 'PDF',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500,
-                  color: theme.colorScheme.primary,
+    return FloatingActionButton.extended(
+      onPressed: _isExporting ? null : _exportToPdf,
+      icon: _isExporting
+          ? SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  theme.colorScheme.onPrimary,
                 ),
               ),
-            ],
-          ),
-        ),
-      ),
+            )
+          : const Icon(Icons.picture_as_pdf),
+      label: Text(_isExporting ? 'Export...' : 'Exporter PDF'),
+      backgroundColor: theme.colorScheme.primary,
+      foregroundColor: theme.colorScheme.onPrimary,
     );
   }
 
   Future<void> _exportToPdf() async {
-    if (widget.chartKeys == null || widget.chartTitles == null) return;
-
     setState(() {
       _isExporting = true;
     });
 
     try {
+      // Récupérer les informations de l'utilisateur
       final settingsBloc = context.read<SettingsBloc>();
       String userName = 'Utilisateur';
-
       if (settingsBloc.state is SettingsLoaded) {
-        final settings = (settingsBloc.state as SettingsLoaded).settings;
-        userName = settings.userName.isNotEmpty ? settings.userName : 'Utilisateur';
+        userName = (settingsBloc.state as SettingsLoaded).settings.userName;
       }
 
+      // Afficher dialogue de progression
       if (!mounted) return;
       showDialog(
         context: context,
@@ -183,11 +83,12 @@ class _CarouselWithChartState extends State<CarouselWithChart> {
         ),
       );
 
+      // Capturer tous les graphiques
       final screenshots = <String, Uint8List>{};
 
-      for (int i = 0; i < widget.chartKeys!.length; i++) {
-        final key = widget.chartKeys![i];
-        final title = widget.chartTitles![i];
+      for (int i = 0; i < widget.chartKeys.length; i++) {
+        final key = widget.chartKeys[i];
+        final title = widget.chartTitles[i];
 
         try {
           final imageData = await _captureChart(key);
@@ -195,9 +96,10 @@ class _CarouselWithChartState extends State<CarouselWithChart> {
             screenshots[title] = imageData;
           }
         } catch (e) {
-          debugPrint('Erreur capture graphique $title: $e');
+          print('Erreur capture graphique $title: $e');
         }
 
+        // Petite pause pour laisser le rendering se faire
         await Future.delayed(const Duration(milliseconds: 100));
       }
 
@@ -205,6 +107,7 @@ class _CarouselWithChartState extends State<CarouselWithChart> {
         throw Exception('Aucun graphique n\'a pu être capturé');
       }
 
+      // Générer le PDF
       final dateRange = _getDateRange();
       final pdfFile = await PdfExportService.generateChartsPdf(
         chartScreenshots: screenshots,
@@ -212,9 +115,11 @@ class _CarouselWithChartState extends State<CarouselWithChart> {
         dateRange: dateRange,
       );
 
+      // Fermer dialogue de progression
       if (!mounted) return;
       Navigator.of(context).pop();
 
+      // Afficher dialogue de choix
       if (!mounted) return;
       final action = await showDialog<String>(
         context: context,
@@ -248,6 +153,7 @@ class _CarouselWithChartState extends State<CarouselWithChart> {
         await PdfExportService.sharePdf(pdfFile);
       }
 
+      // Afficher succès
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -257,10 +163,12 @@ class _CarouselWithChartState extends State<CarouselWithChart> {
         );
       }
     } catch (e) {
+      // Fermer dialogue de progression si ouvert
       if (Navigator.canPop(context)) {
         Navigator.of(context).pop();
       }
 
+      // Afficher erreur
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -282,17 +190,18 @@ class _CarouselWithChartState extends State<CarouselWithChart> {
     try {
       final boundary = key.currentContext?.findRenderObject() as RenderRepaintBoundary?;
       if (boundary == null) {
-        debugPrint('Boundary null pour key: $key');
+        print('Boundary null pour key: $key');
         return null;
       }
 
+      // Attendre que le rendering soit complet
       await Future.delayed(const Duration(milliseconds: 50));
 
       final image = await boundary.toImage(pixelRatio: 2.0);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       return byteData?.buffer.asUint8List();
     } catch (e) {
-      debugPrint('Erreur capture: $e');
+      print('Erreur capture: $e');
       return null;
     }
   }

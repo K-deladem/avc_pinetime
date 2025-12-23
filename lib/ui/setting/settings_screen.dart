@@ -21,8 +21,11 @@ import 'package:flutter_bloc_app_template/extension/vibration_arm.dart';
 import 'package:flutter_bloc_app_template/extension/vibration_mode.dart';
 import 'package:flutter_bloc_app_template/models/app_settings.dart';
 import 'package:flutter_bloc_app_template/models/arm_side.dart';
+import 'package:flutter_bloc_app_template/models/chart_preferences.dart';
 import 'package:flutter_bloc_app_template/models/goal_config.dart';
+import 'package:flutter_bloc_app_template/models/time_preferences.dart';
 import 'package:flutter_bloc_app_template/models/watch_device.dart';
+import 'package:flutter_bloc_app_template/ui/setting/page/movement_sampling_page.dart';
 import 'package:flutter_bloc_app_template/routes/app_routes.dart';
 import 'package:flutter_bloc_app_template/ui/setting/page/watchface_Install_Page.dart';
 import 'package:image_picker/image_picker.dart';
@@ -74,6 +77,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   int bluetoothMaxRetries = 5;
   int dataRecordInterval = 2;
   int movementRecordInterval = 30;
+
+  // Paramètres avancés
+  int checkRatioFrequencyMin = 30;
+  GoalConfig goalConfig = const GoalConfig.fixed(ratio: 80);
+  ChartPreferences chartPreferences = const ChartPreferences();
+  TimePreferences timePreferences = const TimePreferences();
 
   // Timestamp pour forcer la mise à jour de l'image
   int _imageTimestamp = DateTime.now().millisecondsSinceEpoch;
@@ -292,6 +301,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
     }
 
+    // Vérifier si une mise à jour est nécessaire (version < 1.20.0)
+    final needsUpdate = _needsFirmwareUpdate(leftWatch, rightWatch);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -299,10 +311,52 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _buildSyncTile(),
         if (leftWatch != null) _buildLeftWatchTile(leftWatch),
         if (rightWatch != null) _buildRightWatchTile(rightWatch),
-        _buildPushUpdateTile(),
-        _buildUpdateWatchesTile(),
+        if (needsUpdate) _buildUpdateWatchesTile(),
       ],
     );
+  }
+
+  /// Vérifie si au moins une montre nécessite une mise à jour firmware
+  bool _needsFirmwareUpdate(WatchDevice? leftWatch, WatchDevice? rightWatch) {
+    const targetVersion = '1.20.0';
+
+    if (leftWatch != null && _isVersionBelow(leftWatch.firmwareVersion, targetVersion)) {
+      return true;
+    }
+    if (rightWatch != null && _isVersionBelow(rightWatch.firmwareVersion, targetVersion)) {
+      return true;
+    }
+    return false;
+  }
+
+  /// Compare deux versions sémantiques (X.Y.Z)
+  /// Retourne true si version < targetVersion
+  bool _isVersionBelow(String? version, String targetVersion) {
+    if (version == null || version.isEmpty) {
+      // Si pas de version connue, on considère qu'une mise à jour est nécessaire
+      return true;
+    }
+
+    try {
+      final vParts = version.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+      final tParts = targetVersion.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+
+      // Compléter avec des zéros si nécessaire
+      while (vParts.length < 3) vParts.add(0);
+      while (tParts.length < 3) tParts.add(0);
+
+      // Comparaison composant par composant
+      for (int i = 0; i < 3; i++) {
+        if (vParts[i] < tParts[i]) return true;
+        if (vParts[i] > tParts[i]) return false;
+      }
+
+      // Versions égales
+      return false;
+    } catch (e) {
+      // En cas d'erreur de parsing, on considère qu'une mise à jour est nécessaire
+      return true;
+    }
   }
 
   Widget _buildSupportSection() {
@@ -322,6 +376,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionTitle('Données locales'),
+        _buildMovementSamplingTile(),
         _buildShareDataTile(),
         _buildImportDataTile(),
         _buildExportDataTile(),
@@ -797,20 +852,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildPushUpdateTile() {
-    return _buildNavTile(
-      Icons.system_update_alt_outlined,
-      'Pousser la mise à jour',
-      'Envoyer config aux montres',
-      () => _showSuccessSnackBar('Mise à jour envoyée'),
-    );
-  }
-
   Widget _buildUpdateWatchesTile() {
     return _buildNavTile(
       Icons.system_update,
       'Mettre à jour les montres',
-      'Installer firmware',
+      'Installer le firmware sur les deux montres',
       () => showModalBottomSheet(
         context: context,
         isScrollControlled: true,
@@ -828,9 +874,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildSyncTile() {
     return _buildNavTile(
       Icons.sync_outlined,
-      'Synchronisation',
-      'Forcer la synchronisation avec les montres',
-      () => _showSuccessSnackBar('Synchronisation lancée.'),
+      'Synchronisation de l\'heure',
+      'Fuseau horaire, format d\'heure et synchronisation',
+      () => Navigator.pushNamed(context, AppRoutes.timePreferences),
     );
   }
 
@@ -858,6 +904,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
       'Contacter le support',
       'support@monapp.com',
       () => Navigator.pushNamed(context, AppRoutes.contact),
+    );
+  }
+
+  Widget _buildMovementSamplingTile() {
+    final settingsState = context.watch<SettingsBloc>().state;
+    String samplingDescription = 'Normal';
+    if (settingsState is SettingsLoaded) {
+      samplingDescription = settingsState.settings.movementSampling.presetName;
+    }
+
+    return _buildNavTile(
+      Icons.speed,
+      'Échantillonnage mouvement',
+      samplingDescription,
+      () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const MovementSamplingPage()),
+      ),
     );
   }
 
@@ -940,8 +1004,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           bluetoothMaxRetries: bluetoothMaxRetries,
           dataRecordInterval: dataRecordInterval,
           movementRecordInterval: movementRecordInterval,
-          checkRatioFrequencyMin: checkFrequencyMin,
-          goalConfig: const GoalConfig.fixed(ratio: 80),
+          checkRatioFrequencyMin: checkRatioFrequencyMin,
+          goalConfig: goalConfig,
+          chartPreferences: chartPreferences,
+          timePreferences: timePreferences,
         )));
   }
 
@@ -986,6 +1052,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     bluetoothMaxRetries = settings.bluetoothMaxRetries;
     dataRecordInterval = settings.dataRecordInterval;
     movementRecordInterval = settings.movementRecordInterval;
+
+    // Paramètres avancés
+    leftWatchName = settings.leftWatchName;
+    rightWatchName = settings.rightWatchName;
+    checkRatioFrequencyMin = settings.checkRatioFrequencyMin;
+    goalConfig = settings.goalConfig;
+    chartPreferences = settings.chartPreferences;
+    timePreferences = settings.timePreferences;
   }
 
   // ============================================================================
@@ -1478,7 +1552,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       'profileImagePath': settings.profileImagePath,
       'collectionFrequency': settings.collectionFrequency,
       'dailyObjective': settings.dailyObjective,
-      'affectedSide': settings.affectedSide,
+      'affectedSide': settings.affectedSide.label,
       'vibrationMode': settings.vibrationMode.name,
       'vibrationTargetArm': settings.vibrationTargetArm.name,
       'checkFrequencyMin': settings.checkFrequencyMin,
@@ -1491,6 +1565,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
       'rightWatchName': settings.rightWatchName,
       'language': settings.language.name,
       'themeMode': settings.themeMode.name,
+      'bluetoothScanTimeout': settings.bluetoothScanTimeout,
+      'bluetoothConnectionTimeout': settings.bluetoothConnectionTimeout,
+      'bluetoothMaxRetries': settings.bluetoothMaxRetries,
+      'dataRecordInterval': settings.dataRecordInterval,
+      'movementRecordInterval': settings.movementRecordInterval,
+      'checkRatioFrequencyMin': settings.checkRatioFrequencyMin,
+      'goalConfig': settings.goalConfig.toJson(),
+      'chartPreferences': settings.chartPreferences.toJson(),
+      'timePreferences': settings.timePreferences.toJson(),
     };
   }
 
@@ -1575,7 +1658,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       profileImagePath: data['profileImagePath'],
       collectionFrequency: data['collectionFrequency'] ?? 30,
       dailyObjective: data['dailyObjective'] ?? 80,
-      affectedSide: data['affectedSide'] ?? '0',
+      affectedSide: data['affectedSide'] is String
+          ? ArmSideExtension.fromLabel(data['affectedSide'])
+          : ArmSide.left,
       vibrationMode: _parseEnum(
         data['vibrationMode'],
         VibrationMode.values,
@@ -1615,8 +1700,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       movementRecordInterval: data['movementRecordInterval'] ?? 30,
       checkRatioFrequencyMin: data['checkRatioFrequencyMin'] ?? 30,
       goalConfig: data['goalConfig'] != null
-          ? GoalConfig.fromJson(data['goalConfig'])
+          ? GoalConfig.fromJson(Map<String, dynamic>.from(data['goalConfig']))
           : const GoalConfig.fixed(ratio: 80),
+      chartPreferences: data['chartPreferences'] != null
+          ? ChartPreferences.fromJson(Map<String, dynamic>.from(data['chartPreferences']))
+          : const ChartPreferences(),
+      timePreferences: data['timePreferences'] != null
+          ? TimePreferences.fromJson(Map<String, dynamic>.from(data['timePreferences']))
+          : const TimePreferences(),
     );
   }
 

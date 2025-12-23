@@ -23,6 +23,9 @@ dependencies:
   json_annotation: ^4.9.0
   shared_preferences: ^2.5.1
   share_plus: ^11.0.0
+  pdf: ^3.11.1      # Génération de PDF
+  printing: ^5.13.4 # Preview et partage de PDF
+  screenshot: ^3.0.0 # Capture d'écran des widgets
   archive: ^4.0.7  # Pour décompresser les ZIP
   http: ^1.1.0      # Pour télécharger
   # Background Service

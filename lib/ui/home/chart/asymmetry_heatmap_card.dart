@@ -1,9 +1,12 @@
 // ui/home/chart/asymmetry_heatmap_card.dart
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc_app_template/app/app_database.dart';
 import 'package:flutter_bloc_app_template/models/arm_side.dart';
 import 'package:flutter_bloc_app_template/models/goal_config.dart';
+import 'package:flutter_bloc_app_template/service/chart_refresh_notifier.dart';
 import 'package:flutter_bloc_app_template/service/goal_calculator_service.dart';
 import 'package:intl/intl.dart';
 
@@ -63,6 +66,9 @@ class _AsymmetryHeatMapCardState extends State<AsymmetryHeatMapCard> {
   Map<DateTime, double> _dailyGoals = {};
   bool _isLoading = false;
 
+  // Abonnement aux notifications de rafraîchissement
+  StreamSubscription<ChartRefreshEvent>? _refreshSubscription;
+
   @override
   void initState() {
     super.initState();
@@ -70,6 +76,23 @@ class _AsymmetryHeatMapCardState extends State<AsymmetryHeatMapCard> {
     selectedMonth = now.month;
     selectedYear = now.year;
     _loadMonthData();
+
+    // S'abonner aux notifications de rafraîchissement
+    _refreshSubscription = ChartRefreshNotifier().stream.listen((event) {
+      // Rafraîchir si c'est un événement de mouvement ou "all"
+      if (event.type == ChartRefreshType.movement ||
+          event.type == ChartRefreshType.all) {
+        if (mounted) {
+          _loadMonthData();
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _refreshSubscription?.cancel();
+    super.dispose();
   }
 
   /// Charge les données d'asymétrie pour le mois sélectionné

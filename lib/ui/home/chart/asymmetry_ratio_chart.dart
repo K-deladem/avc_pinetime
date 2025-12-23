@@ -1,10 +1,13 @@
 // ui/home/chart/asymmetry_ratio_chart.dart
 
+import 'dart:async';
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc_app_template/models/arm_side.dart';
 import 'package:flutter_bloc_app_template/models/goal_config.dart';
 import 'package:flutter_bloc_app_template/service/chart_data_adapter.dart';
+import 'package:flutter_bloc_app_template/service/chart_refresh_notifier.dart';
 import 'package:flutter_bloc_app_template/service/goal_calculator_service.dart';
 import 'package:intl/intl.dart';
 
@@ -33,11 +36,38 @@ class AsymmetryRatioChart extends StatefulWidget {
 
 class _AsymmetryRatioChartState extends State<AsymmetryRatioChart> {
   String _selectedPeriod = 'Semaine';
-  String _selectedType = 'Magnitude'; // Magnitude ou Axe
+  String _selectedType = 'Axe'; // Axe par défaut car axisActiveTime contient les données valides
   DateTime? _selectedDate;
 
   final _adapter = ChartDataAdapter();
   final _goalCalculator = GoalCalculatorService();
+
+  // Clé pour forcer le rafraîchissement du FutureBuilder
+  int _refreshKey = 0;
+  StreamSubscription<ChartRefreshEvent>? _refreshSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    // S'abonner aux notifications de rafraîchissement
+    _refreshSubscription = ChartRefreshNotifier().stream.listen((event) {
+      // Rafraîchir si c'est un événement de mouvement ou "all"
+      if (event.type == ChartRefreshType.movement ||
+          event.type == ChartRefreshType.all) {
+        if (mounted) {
+          setState(() {
+            _refreshKey++;
+          });
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _refreshSubscription?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +88,7 @@ class _AsymmetryRatioChartState extends State<AsymmetryRatioChart> {
           const SizedBox(height: 24),
           _buildChart(),
           const SizedBox(height: 8),
-          _buildLegend(),
+          Flexible(child: _buildLegend()),
         ],
       ),
     );
@@ -190,7 +220,7 @@ class _AsymmetryRatioChartState extends State<AsymmetryRatioChart> {
 
   Widget _buildChart() {
     return FutureBuilder<_ChartData>(
-      key: ValueKey('$_selectedPeriod-$_selectedType-${_selectedDate?.toIso8601String()}'),
+      key: ValueKey('$_selectedPeriod-$_selectedType-${_selectedDate?.toIso8601String()}-$_refreshKey'),
       future: _loadChartData(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {

@@ -1,8 +1,11 @@
 // ui/home/chart/asymmetry_gauge_chart.dart
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc_app_template/models/arm_side.dart';
 import 'package:flutter_bloc_app_template/service/chart_data_adapter.dart';
+import 'package:flutter_bloc_app_template/service/chart_refresh_notifier.dart';
 import 'dart:math' as math;
 
 /// Widget de gauge chart (speedometer) pour afficher l'asymétrie gauche-droite
@@ -59,7 +62,11 @@ enum AsymmetryType { magnitude, axis }
 class _AsymmetryGaugeChartState extends State<AsymmetryGaugeChart> {
   String _selectedPeriod = 'Semaine';
   DateTime? _selectedDate;
-  AsymmetryType _selectedType = AsymmetryType.magnitude;
+  AsymmetryType _selectedType = AsymmetryType.axis; // Axe par défaut car axisActiveTime contient les données valides
+
+  // Clé pour forcer le rafraîchissement du FutureBuilder
+  int _refreshKey = 0;
+  StreamSubscription<ChartRefreshEvent>? _refreshSubscription;
 
   @override
   void initState() {
@@ -67,6 +74,25 @@ class _AsymmetryGaugeChartState extends State<AsymmetryGaugeChart> {
     if (!widget.availablePeriods.contains(_selectedPeriod)) {
       _selectedPeriod = widget.availablePeriods.first;
     }
+
+    // S'abonner aux notifications de rafraîchissement
+    _refreshSubscription = ChartRefreshNotifier().stream.listen((event) {
+      // Rafraîchir si c'est un événement de mouvement ou "all"
+      if (event.type == ChartRefreshType.movement ||
+          event.type == ChartRefreshType.all) {
+        if (mounted) {
+          setState(() {
+            _refreshKey++;
+          });
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _refreshSubscription?.cancel();
+    super.dispose();
   }
 
   @override
@@ -87,7 +113,7 @@ class _AsymmetryGaugeChartState extends State<AsymmetryGaugeChart> {
           _buildHeader(context),
           const SizedBox(height: 30),
           FutureBuilder<List<AsymmetryDataPoint>>(
-            key: ValueKey('$_selectedPeriod-${_selectedDate?.toIso8601String()}-$_selectedType'),
+            key: ValueKey('$_selectedPeriod-${_selectedDate?.toIso8601String()}-$_selectedType-$_refreshKey'),
             future: _selectedType == AsymmetryType.magnitude
                 ? widget.magnitudeDataProvider(_selectedPeriod, _selectedDate, affectedSide: widget.affectedSide)
                 : widget.axisDataProvider(_selectedPeriod, _selectedDate, affectedSide: widget.affectedSide),
@@ -476,9 +502,6 @@ class _GaugePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height); // centre en bas
     final radius = size.width / 2 * 0.9; // rayon légèrement inférieur à la moitié de la largeur
-
-    // Debug: log de la configuration
-    debugPrint('AsymmetryGauge: affectedSide=$affectedSide, value=$value');
 
     _drawBackgroundArc(canvas, center, radius);
     _drawMarkers(canvas, center, radius);

@@ -162,7 +162,7 @@ class InfiniTimeSession {
   Duration _motionMinInterval = const Duration(milliseconds: 120);
 
   // MovementService
-  late MovementService _movementService;
+  MovementService? _movementService;
 
   InfiniTimeSession(this._ble, this._deviceId)
     : _dfuManager = DfuServiceManager(_ble);
@@ -509,7 +509,7 @@ class InfiniTimeSession {
 
     // Initialiser MovementService
     _movementService = MovementService(_ble, _deviceId);
-    _movementService.onMovementChanged((data) {
+    _movementService!.onMovementChanged((data) {
       _movementController.add(data);
       _onMovementChanged?.call(data);
     });
@@ -534,11 +534,16 @@ class InfiniTimeSession {
       }
     }
 
-    try {
-      await _movementService.subscribe();
-      debugPrint('[BLE] MovementService abonné');
-    } catch (e) {
-      debugPrint('[BLE] Erreur MovementService: $e');
+    // Souscrire au MovementService seulement si la caractéristique est disponible
+    if (_charToService.containsKey(InfiniTimeUuids.movementData)) {
+      try {
+        await _movementService?.subscribe();
+        debugPrint('[BLE] MovementService abonné');
+      } catch (e) {
+        debugPrint('[BLE] Erreur MovementService: $e');
+      }
+    } else {
+      debugPrint('[BLE] MovementService non disponible (caractéristique absente)');
     }
   }
 
@@ -1387,7 +1392,8 @@ class InfiniTimeSession {
     _subscriptions.clear();
 
     try {
-      await _movementService.dispose();
+      await _movementService?.dispose();
+      _movementService = null;
     } catch (e) {
       debugPrint('[BLE] Erreur MovementService: $e');
     }

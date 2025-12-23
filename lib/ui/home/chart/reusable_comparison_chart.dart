@@ -1,8 +1,11 @@
 // ui/home/chart/reusable_comparison_chart.dart
 
+import 'dart:async';
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc_app_template/models/arm_side.dart';
+import 'package:flutter_bloc_app_template/service/chart_refresh_notifier.dart';
 import 'package:intl/intl.dart';
 
 /// Widget de comparaison RÉUTILISABLE pour tous les types de graphiques
@@ -86,6 +89,10 @@ class _ReusableComparisonChartState extends State<ReusableComparisonChart> {
   DateTime? _selectedDate;
   late ChartMode _currentMode;
 
+  // Clé pour forcer le rafraîchissement du FutureBuilder
+  int _refreshKey = 0;
+  StreamSubscription<ChartRefreshEvent>? _refreshSubscription;
+
   @override
   void initState() {
     super.initState();
@@ -93,6 +100,21 @@ class _ReusableComparisonChartState extends State<ReusableComparisonChart> {
     if (!widget.availablePeriods.contains(_selectedPeriod)) {
       _selectedPeriod = widget.availablePeriods.first;
     }
+
+    // S'abonner aux notifications de rafraîchissement
+    _refreshSubscription = ChartRefreshNotifier().stream.listen((event) {
+      if (mounted) {
+        setState(() {
+          _refreshKey++;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _refreshSubscription?.cancel();
+    super.dispose();
   }
 
   @override
@@ -114,7 +136,7 @@ class _ReusableComparisonChartState extends State<ReusableComparisonChart> {
             _buildHeader(context),
             const SizedBox(height: 24),
             FutureBuilder<List<ChartDataPoint>>(
-              key: ValueKey('$_selectedPeriod-$_currentMode-${_selectedDate?.toIso8601String()}'),
+              key: ValueKey('$_selectedPeriod-$_currentMode-${_selectedDate?.toIso8601String()}-$_refreshKey'),
               future: widget.dataProvider(_selectedPeriod, _selectedDate),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {

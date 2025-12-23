@@ -221,9 +221,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Widget _buildAffectedSideStep(ThemeData theme) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: [
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
         Icon(
           Icons.accessible,
           size: 80,
@@ -281,7 +282,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
           ],
         ),
-      ],
+        ],
+      ),
     );
   }
 
