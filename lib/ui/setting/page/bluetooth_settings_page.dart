@@ -202,7 +202,9 @@ class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
     required String unit,
     required ValueChanged<double> onChanged,
   }) {
-    return Card(
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest),
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -268,7 +270,9 @@ class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionTitle(context, "Profils prédéfinis"),
-        Card(
+        Container(
+          decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest),
           margin: const EdgeInsets.symmetric(horizontal: 8),
           child: Column(
             children: [
