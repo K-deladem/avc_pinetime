@@ -64,8 +64,9 @@ class _AsymmetryGaugeChartState extends State<AsymmetryGaugeChart> {
   DateTime? _selectedDate;
   AsymmetryType _selectedType = AsymmetryType.axis; // Axe par défaut car axisActiveTime contient les données valides
 
-  // Clé pour forcer le rafraîchissement du FutureBuilder
-  int _refreshKey = 0;
+  // Cache pour les données du graphique - évite les rebuilds inutiles
+  Future<List<AsymmetryDataPoint>>? _cachedFuture;
+  String? _lastCacheKey;
   StreamSubscription<ChartRefreshEvent>? _refreshSubscription;
 
   @override
@@ -81,12 +82,34 @@ class _AsymmetryGaugeChartState extends State<AsymmetryGaugeChart> {
       if (event.type == ChartRefreshType.movement ||
           event.type == ChartRefreshType.all) {
         if (mounted) {
-          setState(() {
-            _refreshKey++;
-          });
+          _invalidateCache();
         }
       }
     });
+  }
+
+  void _invalidateCache() {
+    setState(() {
+      _cachedFuture = null;
+      _lastCacheKey = null;
+    });
+  }
+
+  /// Obtenir ou créer le Future avec mise en cache intelligente
+  Future<List<AsymmetryDataPoint>> _getDataFuture() {
+    final currentKey = '$_selectedPeriod-${_selectedDate?.toIso8601String()}-$_selectedType';
+
+    // Réutiliser le cache si la clé n'a pas changé
+    if (_cachedFuture != null && _lastCacheKey == currentKey) {
+      return _cachedFuture!;
+    }
+
+    // Créer un nouveau Future et le mettre en cache
+    _lastCacheKey = currentKey;
+    _cachedFuture = _selectedType == AsymmetryType.magnitude
+        ? widget.magnitudeDataProvider(_selectedPeriod, _selectedDate, affectedSide: widget.affectedSide)
+        : widget.axisDataProvider(_selectedPeriod, _selectedDate, affectedSide: widget.affectedSide);
+    return _cachedFuture!;
   }
 
   @override
@@ -113,10 +136,7 @@ class _AsymmetryGaugeChartState extends State<AsymmetryGaugeChart> {
           _buildHeader(context),
           const SizedBox(height: 30),
           FutureBuilder<List<AsymmetryDataPoint>>(
-            key: ValueKey('$_selectedPeriod-${_selectedDate?.toIso8601String()}-$_selectedType-$_refreshKey'),
-            future: _selectedType == AsymmetryType.magnitude
-                ? widget.magnitudeDataProvider(_selectedPeriod, _selectedDate, affectedSide: widget.affectedSide)
-                : widget.axisDataProvider(_selectedPeriod, _selectedDate, affectedSide: widget.affectedSide),
+            future: _getDataFuture(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const SizedBox(
@@ -240,9 +260,12 @@ class _AsymmetryGaugeChartState extends State<AsymmetryGaugeChart> {
     final isSelected = _selectedType == type;
     return GestureDetector(
       onTap: () {
-        setState(() {
-          _selectedType = type;
-        });
+        if (_selectedType != type) {
+          setState(() {
+            _selectedType = type;
+            _cachedFuture = null; // Invalider le cache
+          });
+        }
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -304,9 +327,10 @@ class _AsymmetryGaugeChartState extends State<AsymmetryGaugeChart> {
             color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
           ),
           onChanged: (String? newValue) {
-            if (newValue != null) {
+            if (newValue != null && newValue != _selectedPeriod) {
               setState(() {
                 _selectedPeriod = newValue;
+                _cachedFuture = null; // Invalider le cache
               });
             }
           },
@@ -333,12 +357,12 @@ class _AsymmetryGaugeChartState extends State<AsymmetryGaugeChart> {
         children: [
           _StatItem(
             label: 'Gauche',
-            value: '${point.leftValue.toStringAsFixed(1)} ${widget.unit}',
+            value: _formatDuration(point.leftValue),
             color: Colors.blueAccent,
           ),
           _StatItem(
             label: 'Droite',
-            value: '${point.rightValue.toStringAsFixed(1)} ${widget.unit}',
+            value: _formatDuration(point.rightValue),
             color: Colors.green,
           ),
           _StatItem(
@@ -355,6 +379,30 @@ class _AsymmetryGaugeChartState extends State<AsymmetryGaugeChart> {
     if (data.isEmpty) return 50.0;
     final sum = data.fold<double>(0.0, (sum, point) => sum + point.asymmetryRatio);
     return sum / data.length;
+  }
+
+  /// Formate une durée en minutes vers heures/minutes/secondes lisibles
+  String _formatDuration(double minutes) {
+    if (minutes <= 0) return '0s';
+
+    final totalSeconds = (minutes * 60).round();
+    final hours = totalSeconds ~/ 3600;
+    final remainingMinutes = (totalSeconds % 3600) ~/ 60;
+    final seconds = totalSeconds % 60;
+
+    if (hours > 0) {
+      if (remainingMinutes > 0) {
+        return '${hours}h ${remainingMinutes}m';
+      }
+      return '${hours}h';
+    } else if (remainingMinutes > 0) {
+      if (seconds > 0) {
+        return '${remainingMinutes}m ${seconds}s';
+      }
+      return '${remainingMinutes}m';
+    } else {
+      return '${seconds}s';
+    }
   }
 }
 
@@ -472,10 +520,10 @@ class _GaugeWidget extends StatelessWidget {
       return Colors.green;
     }
     // Zone jaune côté bras NON-atteint (bon)
-    else if (affectedSide == 'left' && ratio > 55) {
+    else if (affectedSide == ArmSide.left && ratio > 55) {
       // Membre gauche atteint : jaune à droite (bras NON-atteint = bon)
       return Colors.orange;
-    } else if (affectedSide == 'right' && ratio < 45) {
+    } else if (affectedSide == ArmSide.right && ratio < 45) {
       // Membre droit atteint : jaune à gauche (bras NON-atteint = bon)
       return Colors.orange;
     }

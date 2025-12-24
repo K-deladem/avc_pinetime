@@ -138,6 +138,16 @@ class _MovementSamplingPageState extends State<MovementSamplingPage> {
           ),
         ),
         const SizedBox(height: 12),
+        // Nouveau mode par défaut: par unité de temps
+        _buildRecordsPerTimeUnitSection(theme),
+        const Divider(height: 24),
+        Text(
+          'Modes classiques',
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
         _buildPresetTile(
           theme,
           'Économie Max',
@@ -177,6 +187,239 @@ class _MovementSamplingPageState extends State<MovementSamplingPage> {
     );
   }
 
+  Widget _buildRecordsPerTimeUnitSection(ThemeData theme) {
+    final isSelected = _settings.mode == MovementSamplingMode.recordsPerTimeUnit;
+
+    return Container(
+      //elevation: isSelected ? 3 : 0,
+      decoration: BoxDecoration(
+        color:  isSelected
+            ? theme.colorScheme.primaryContainer
+            : theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+      ),
+
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.schedule,
+                  color: isSelected
+                      ? theme.colorScheme.onPrimaryContainer
+                      : theme.colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Par unité de temps',
+                        style: TextStyle(
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                          fontSize: 16,
+                          color: isSelected
+                              ? theme.colorScheme.onPrimaryContainer
+                              : theme.colorScheme.onSurface,
+                        ),
+                      ),
+                      Text(
+                        'Définir le nombre d\'enregistrements par heure/minute/seconde',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isSelected
+                              ? theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7)
+                              : theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (isSelected)
+                  Icon(Icons.check_circle, color: theme.colorScheme.primary),
+              ],
+            ),
+            if (isSelected) ...[
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Nombre d\'enregistrements',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: theme.colorScheme.onPrimaryContainer,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            IconButton(
+                              onPressed: _settings.recordsCount > 1
+                                  ? () => _updateSettings(_settings.copyWith(
+                                        recordsCount: _settings.recordsCount - 1,
+                                      ))
+                                  : null,
+                              icon: const Icon(Icons.remove_circle_outline),
+                              iconSize: 28,
+                              color: theme.colorScheme.primary,
+                            ),
+                            Container(
+                              width: 50,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.surface,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                '${_settings.recordsCount}',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.colorScheme.onSurface,
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: _settings.recordsCount < 100
+                                  ? () => _updateSettings(_settings.copyWith(
+                                        recordsCount: _settings.recordsCount + 1,
+                                      ))
+                                  : null,
+                              icon: const Icon(Icons.add_circle_outline),
+                              iconSize: 28,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Par',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: theme.colorScheme.onPrimaryContainer,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surface,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<SamplingTimeUnit>(
+                              value: _settings.timeUnit,
+                              isExpanded: true,
+                              icon: Icon(
+                                Icons.keyboard_arrow_down,
+                                color: theme.colorScheme.primary,
+                              ),
+                              items: SamplingTimeUnit.values.map((unit) {
+                                return DropdownMenuItem(
+                                  value: unit,
+                                  child: Text(
+                                    _getTimeUnitName(unit),
+                                    style: TextStyle(
+                                      color: theme.colorScheme.onSurface,
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (unit) {
+                                if (unit != null) {
+                                  _updateSettings(_settings.copyWith(timeUnit: unit));
+                                }
+                              },
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      size: 16,
+                      color: theme.colorScheme.onPrimaryContainer,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _settings.description,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: theme.colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ] else ...[
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: () {
+                    _updateSettings(_settings.copyWith(
+                      mode: MovementSamplingMode.recordsPerTimeUnit,
+                      recordsCount: 4,
+                      timeUnit: SamplingTimeUnit.hour,
+                    ));
+                  },
+                  child: const Text('Sélectionner ce mode'),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _getTimeUnitName(SamplingTimeUnit unit) {
+    switch (unit) {
+      case SamplingTimeUnit.second:
+        return 'Seconde';
+      case SamplingTimeUnit.minute:
+        return 'Minute';
+      case SamplingTimeUnit.hour:
+        return 'Heure';
+    }
+  }
+
   Widget _buildPresetTile(
     ThemeData theme,
     String title,
@@ -187,8 +430,8 @@ class _MovementSamplingPageState extends State<MovementSamplingPage> {
     final isSelected = _settings.mode == preset.mode &&
         _settings.intervalMs == preset.intervalMs;
 
-    return Card(
-      elevation: isSelected ? 2 : 0,
+    return Container(
+    //  elevation: isSelected ? 2 : 0,
       color: isSelected
           ? theme.colorScheme.primaryContainer
           : theme.colorScheme.surfaceContainerHighest,
@@ -348,7 +591,7 @@ class _MovementSamplingPageState extends State<MovementSamplingPage> {
   }
 
   Widget _buildInfoCard(ThemeData theme) {
-    return Card(
+    return Container(
       color: theme.colorScheme.tertiaryContainer,
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -394,6 +637,8 @@ class _MovementSamplingPageState extends State<MovementSamplingPage> {
         return 'Seuil';
       case MovementSamplingMode.aggregate:
         return 'Moyenne';
+      case MovementSamplingMode.recordsPerTimeUnit:
+        return 'Par unité';
     }
   }
 
@@ -407,6 +652,8 @@ class _MovementSamplingPageState extends State<MovementSamplingPage> {
         return 'Enregistre uniquement lors de changements significatifs';
       case MovementSamplingMode.aggregate:
         return 'Calcule une moyenne sur l\'intervalle';
+      case MovementSamplingMode.recordsPerTimeUnit:
+        return 'Nombre d\'enregistrements par heure/minute/seconde';
     }
   }
 
@@ -423,14 +670,41 @@ class _MovementSamplingPageState extends State<MovementSamplingPage> {
       case MovementSamplingMode.threshold:
         samplesPerMinute = 60; // Estimation variable
         break;
+      case MovementSamplingMode.recordsPerTimeUnit:
+        // Calculer selon l'unité de temps
+        switch (_settings.timeUnit) {
+          case SamplingTimeUnit.second:
+            samplesPerMinute = _settings.recordsCount * 60;
+            break;
+          case SamplingTimeUnit.minute:
+            samplesPerMinute = _settings.recordsCount;
+            break;
+          case SamplingTimeUnit.hour:
+            // Convertir en par minute (fraction)
+            samplesPerMinute = (_settings.recordsCount / 60).ceil();
+            if (samplesPerMinute < 1) samplesPerMinute = 1;
+            break;
+        }
+        break;
     }
 
-    final perHour = samplesPerMinute * 60;
+    final perHour = _settings.mode == MovementSamplingMode.recordsPerTimeUnit &&
+            _settings.timeUnit == SamplingTimeUnit.hour
+        ? _settings.recordsCount
+        : samplesPerMinute * 60;
     final perDay = perHour * 8; // 8h d'utilisation estimée
     final bytesPerSample = 50; // Estimation
     final mbPerDay = (perDay * bytesPerSample * 2) / 1024 / 1024; // x2 pour les 2 montres
 
-    return 'Environ $samplesPerMinute échantillons/min par montre\n'
+    String samplesText;
+    if (_settings.mode == MovementSamplingMode.recordsPerTimeUnit &&
+        _settings.timeUnit == SamplingTimeUnit.hour) {
+      samplesText = '${_settings.recordsCount} échantillons/heure par montre';
+    } else {
+      samplesText = 'Environ $samplesPerMinute échantillons/min par montre';
+    }
+
+    return '$samplesText\n'
         '~${perHour.toString()} échantillons/heure\n'
         '~${mbPerDay.toStringAsFixed(1)} Mo/jour (8h d\'utilisation, 2 montres)';
   }

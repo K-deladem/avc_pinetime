@@ -4,6 +4,7 @@ import 'dart:async';
 
 /// Service singleton pour notifier les graphiques qu'ils doivent se rafraîchir
 /// lorsque de nouvelles données sont enregistrées en base de données.
+/// OPTIMISÉ: Throttling côté émetteur pour éviter les rafraîchissements trop fréquents
 class ChartRefreshNotifier {
   static final ChartRefreshNotifier _instance = ChartRefreshNotifier._internal();
   factory ChartRefreshNotifier() => _instance;
@@ -12,14 +13,26 @@ class ChartRefreshNotifier {
   final StreamController<ChartRefreshEvent> _controller =
       StreamController<ChartRefreshEvent>.broadcast();
 
+  // Throttling: éviter d'émettre trop d'événements
+  DateTime? _lastMovementNotification;
+  DateTime? _lastAllNotification;
+  static const Duration _minNotificationInterval = Duration(seconds: 10);
+
   /// Stream pour écouter les événements de rafraîchissement
   Stream<ChartRefreshEvent> get stream => _controller.stream;
 
   /// Notifie que les données de mouvement ont été mises à jour
+  /// OPTIMISÉ: Throttling pour éviter les notifications trop fréquentes
   void notifyMovementDataUpdated() {
+    final now = DateTime.now();
+    if (_lastMovementNotification != null &&
+        now.difference(_lastMovementNotification!) < _minNotificationInterval) {
+      return; // Ignorer si notification trop récente
+    }
+    _lastMovementNotification = now;
     _controller.add(ChartRefreshEvent(
       type: ChartRefreshType.movement,
-      timestamp: DateTime.now(),
+      timestamp: now,
     ));
   }
 
@@ -40,10 +53,17 @@ class ChartRefreshNotifier {
   }
 
   /// Notifie que toutes les données doivent être rafraîchies
+  /// OPTIMISÉ: Throttling pour éviter les notifications trop fréquentes
   void notifyAllDataUpdated() {
+    final now = DateTime.now();
+    if (_lastAllNotification != null &&
+        now.difference(_lastAllNotification!) < _minNotificationInterval) {
+      return; // Ignorer si notification trop récente
+    }
+    _lastAllNotification = now;
     _controller.add(ChartRefreshEvent(
       type: ChartRefreshType.all,
-      timestamp: DateTime.now(),
+      timestamp: now,
     ));
   }
 

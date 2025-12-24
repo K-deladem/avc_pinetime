@@ -6,6 +6,7 @@ import 'package:flutter_bloc_app_template/app/theme_helper.dart';
 import 'package:flutter_bloc_app_template/service/background_infinitime_service.dart';
 import 'package:flutter_bloc_app_template/service/firmware_source.dart';
 import 'package:flutter_bloc_app_template/service/goal_check_service.dart';
+import 'package:flutter_bloc_app_template/utils/app_logger.dart';
 import 'package:flutter_bloc_app_template/bloc/infinitime/dual_infinitime_bloc.dart';
 import 'package:flutter_bloc_app_template/bloc/infinitime/dual_infinitime_event.dart';
 import 'package:flutter_bloc_app_template/bloc/init/init_bloc.dart';
@@ -65,15 +66,11 @@ class MyApp extends StatelessWidget {
                   SettingsBloc(SettingsRepositoryImpl())..add(LoadSettings())),
           BlocProvider<DualInfiniTimeBloc>(
             create: (ctx) {
-              if (kDebugMode) {
-                print(' Création du DualInfiniTimeBloc...');
-              }
+              AppLogger.d('Création du DualInfiniTimeBloc...');
               final bloc = DualInfiniTimeBloc(ctx.read<FlutterReactiveBle>());
               // Charger les bindings après un court délai pour ne pas bloquer le rendu
               Future.delayed(const Duration(milliseconds: 100), () {
-                if (kDebugMode) {
-                  print('Chargement des bindings...');
-                }
+                AppLogger.d('Chargement des bindings...');
                 bloc.add(DualLoadBindingsRequested());
               });
               return bloc;
@@ -98,26 +95,20 @@ class MyApp extends StatelessWidget {
 
                 // Gestion des erreurs: charger les paramètres par défaut
                 if (state is SettingsError) {
-                  if (kDebugMode) {
-                    print('Erreur chargement settings: ${state.message}');
-                    print('Tentative n°${_retryCount + 1}/$_maxRetries');
-                  }
+                  AppLogger.w('Erreur chargement settings: ${state.message}');
+                  AppLogger.w('Tentative n°${_retryCount + 1}/$_maxRetries');
 
                   // Limiter le nombre de tentatives pour éviter la boucle infinie
                   if (_retryCount < _maxRetries) {
                     _retryCount++;
                     // Recharger avec les paramètres par défaut
                     WidgetsBinding.instance.addPostFrameCallback((_) {
-                      if (kDebugMode) {
-                        print('Tentative de rechargement des settings...');
-                      }
+                      AppLogger.d('Tentative de rechargement des settings...');
                       context.read<SettingsBloc>().add(LoadSettings());
                     });
                   } else {
                     // Après 3 tentatives, forcer l'utilisation des paramètres par défaut
-                    if (kDebugMode) {
-                      print('Nombre max de tentatives atteint, utilisation des paramètres par défaut');
-                    }
+                    AppLogger.w('Nombre max de tentatives atteint, utilisation des paramètres par défaut');
                     final defaultSettings = AppDatabase.defaultSettings;
                     WidgetsBinding.instance.addPostFrameCallback((_) {
                       context.read<SettingsBloc>().add(UpdateSettings(defaultSettings));
@@ -206,14 +197,12 @@ class MyApp extends StatelessWidget {
       await BackgroundInfiniTimeService.initialize();
       await BackgroundInfiniTimeService.start();
     } catch (e) {
-      if (kDebugMode) {
-        print('Erreur démarrage services background: $e');
-      }
+      AppLogger.e('Erreur démarrage services background', error: e);
     }
   }
 
   Future<void> _requestPermissions() async {
-    print('Demande des permissions...');
+    AppLogger.i('Demande des permissions...');
 
     // Permissions de base
     final permissions = [
@@ -230,17 +219,17 @@ class MyApp extends StatelessWidget {
 
     final statuses = await permissions.request();
 
-    // Afficher le résultat
+    // Logger le résultat
     for (final permission in permissions) {
       final status = statuses[permission];
-      print('Permission $permission: $status');
+      AppLogger.d('Permission $permission: $status');
     }
 
     // Optimisation batterie (optionnel pour Xiaomi)
     try {
       await Permission.ignoreBatteryOptimizations.request();
     } catch (e) {
-      print('Optimisation batterie non disponible: $e');
+      AppLogger.d('Optimisation batterie non disponible: $e');
     }
   }
 }

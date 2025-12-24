@@ -187,6 +187,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Stack(
       children: [
         //   PURE BLOC: AnimatedSwitcher + Key unique pour forcer rebuild
+        // OPTIMISÉ: Pas de File.existsSync() bloquant - utilise errorBuilder
         AnimatedSwitcher(
           duration: const Duration(milliseconds: 300),
           child: CircleAvatar(
@@ -194,10 +195,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 'avatar_${profileImage?.path ?? 'no_image'}_$_imageTimestamp'),
             radius: 50,
             backgroundColor: Colors.grey.shade300,
-            backgroundImage:
-                (profileImage != null && profileImage!.existsSync())
-                    ? FileImage(profileImage!)
-                    : null,
+            backgroundImage: profileImage != null ? FileImage(profileImage!) : null,
+            onBackgroundImageError: profileImage != null
+                ? (exception, stackTrace) {
+                    // Image invalide, sera traité par le child icon
+                  }
+                : null,
             child: profileImage == null
                 ? const Icon(Icons.person, size: 48, color: Colors.white)
                 : null,
@@ -1024,8 +1027,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
 
     userName = settings.userName;
+    // OPTIMISÉ: Pas de File.existsSync() bloquant
+    // On crée le File et laisse FileImage/Image.file gérer les erreurs
     profileImage = (settings.profileImagePath != null &&
-            File(settings.profileImagePath!).existsSync())
+            settings.profileImagePath!.isNotEmpty)
         ? File(settings.profileImagePath!)
         : null;
 

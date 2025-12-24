@@ -25,13 +25,13 @@ class MovementData {
   /// Tout mouvement détecté
   final bool anyMovement;
 
-  /// Accélération X en g
+  /// Accélération X en g (transformée: int16 / 100.0)
   final double accelX;
 
-  /// Accélération Y en g
+  /// Accélération Y en g (transformée: int16 / 100.0)
   final double accelY;
 
-  /// Accélération Z en g
+  /// Accélération Z en g (transformée: int16 / 100.0)
   final double accelZ;
 
   /// ========== SEUILS D'ACCÉLÉRATION ==========
@@ -78,8 +78,6 @@ class MovementData {
       axisActiveTime: buffer.getUint32(8, Endian.little),
       movementDetected: buffer.getUint8(12) != 0,
       anyMovement: buffer.getUint8(13) != 0,
-
-      //Conversion: int16 → double (en g)
       accelX: buffer.getInt16(14, Endian.little) / 100.0,
       accelY: buffer.getInt16(16, Endian.little) / 100.0,
       accelZ: buffer.getInt16(18, Endian.little) / 100.0,

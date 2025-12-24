@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_bloc_app_template/extension/notification_strategy.dart';
+import 'package:flutter_bloc_app_template/extension/vibration_arm.dart';
 import 'package:flutter_bloc_app_template/models/app_settings.dart';
 import 'package:flutter_bloc_app_template/service/goal_calculator_service.dart';
 import 'package:flutter_bloc_app_template/service/notification_service.dart';
@@ -20,29 +21,52 @@ class GoalCheckService {
 
   bool _isRunning = false;
 
+  // Garder une référence aux settings actuels pour les mises à jour
+  AppSettings? _currentSettings;
+
   /// Démarre le service de vérification périodique
   Future<void> start(AppSettings settings) async {
+    // Sauvegarder les settings actuels
+    _currentSettings = settings;
+
     if (_isRunning) {
-      AppLogger.w('GoalCheckService déjà démarré');
+      AppLogger.i('GoalCheckService déjà démarré, mise à jour de la configuration');
+      // Redémarrer le timer avec la nouvelle fréquence si elle a changé
+      _restartTimer(settings);
       return;
     }
 
     _isRunning = true;
-    final frequencyMinutes = settings.checkRatioFrequencyMin;
+    _startTimer(settings);
 
+    // Effectuer une première vérification immédiatement
+    await _performGoalCheck(settings);
+  }
+
+  /// Démarre le timer avec les settings fournis
+  void _startTimer(AppSettings settings) {
+    final frequencyMinutes = settings.checkRatioFrequencyMin;
     AppLogger.i('Démarrage GoalCheckService: vérification toutes les $frequencyMinutes minutes');
 
     // Annuler le timer précédent si existant
     _checkTimer?.cancel();
 
     // Créer un nouveau timer périodique
+    // IMPORTANT: Le callback utilise _currentSettings pour toujours avoir les derniers settings
     _checkTimer = Timer.periodic(
       Duration(minutes: frequencyMinutes),
-      (_) => _performGoalCheck(settings),
+      (_) {
+        if (_currentSettings != null) {
+          _performGoalCheck(_currentSettings!);
+        }
+      },
     );
+  }
 
-    // Effectuer une première vérification immédiatement
-    await _performGoalCheck(settings);
+  /// Redémarre le timer si la fréquence a changé
+  void _restartTimer(AppSettings settings) {
+    _checkTimer?.cancel();
+    _startTimer(settings);
   }
 
   /// Arrête le service de vérification
@@ -53,12 +77,17 @@ class GoalCheckService {
     _checkTimer?.cancel();
     _checkTimer = null;
     _isRunning = false;
+    _currentSettings = null;
   }
 
-  /// Met à jour la configuration sans redémarrer
+  /// Met à jour la configuration
   Future<void> updateConfiguration(AppSettings settings) async {
+    _currentSettings = settings;
+    AppLogger.i('Configuration GoalCheckService mise à jour: notifications=${settings.notificationsEnabled}, stratégie=${settings.notificationStrategy.label}, bras=${settings.vibrationTargetArm.label}');
+
     if (_isRunning) {
-      await start(settings); // Redémarre avec la nouvelle config
+      // Vérifier si la fréquence a changé pour redémarrer le timer
+      _restartTimer(settings);
     }
   }
 

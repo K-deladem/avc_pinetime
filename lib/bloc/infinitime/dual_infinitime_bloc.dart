@@ -37,11 +37,11 @@ class DualInfiniTimeBloc
   static const int _STABLE_CONNECTION_DELAY_MS = 3000;
   static const int _SCAN_CACHE_CLEANUP_MINUTES = 5;
 
-  // Délais entre opérations (optimisés)
-  static const Duration _DELAY_BEFORE_RECONNECT = Duration(milliseconds: 500);
-  static const Duration _DELAY_BETWEEN_STREAMS = Duration(milliseconds: 20);
-  static const Duration _DELAY_BETWEEN_OPERATIONS = Duration(milliseconds: 200);
-  static const Duration _DELAY_AFTER_CONNECTION = Duration(milliseconds: 300);
+  // Délais entre opérations (optimisés pour fluidité)
+  static const Duration _DELAY_BEFORE_RECONNECT = Duration(milliseconds: 300);
+  static const Duration _DELAY_BETWEEN_STREAMS = Duration(milliseconds: 5);  // Réduit de 20ms à 5ms
+  static const Duration _DELAY_BETWEEN_OPERATIONS = Duration(milliseconds: 150);  // Réduit de 200ms à 150ms
+  static const Duration _DELAY_AFTER_CONNECTION = Duration(milliseconds: 200);  // Réduit de 300ms à 200ms
 
   // ========== LIMITES DES BUFFERS ==========
   static const int _MAX_DEVICE_INFO_BUFFER_SIZE = 50;
@@ -117,6 +117,18 @@ class DualInfiniTimeBloc
   final Map<ArmSide, List<MovementData>> _movementAggregateBuffer = {
     ArmSide.left: [],
     ArmSide.right: [],
+  };
+
+  /// Tracking des dernières valeurs cumulatives pour calcul des deltas
+  /// IMPORTANT: magnitudeActiveTime et axisActiveTime sont cumulatifs depuis le boot de la montre
+  /// On doit calculer la différence (delta) entre deux lectures successives
+  final Map<ArmSide, int?> _lastMagnitudeActiveTime = {
+    ArmSide.left: null,
+    ArmSide.right: null,
+  };
+  final Map<ArmSide, int?> _lastAxisActiveTime = {
+    ArmSide.left: null,
+    ArmSide.right: null,
   };
 
   Timer? _bufferFlushTimer;
@@ -1614,6 +1626,7 @@ class DualInfiniTimeBloc
   }
 
   /// Ajoute une donnée au buffer movement avec filtrage selon les paramètres de sampling
+  /// Calcule également les deltas pour magnitudeActiveTime et axisActiveTime
   void _bufferMovement(
     ArmSide side,
     MovementData movement,
@@ -1638,6 +1651,34 @@ class DualInfiniTimeBloc
       );
       _flushMovementBuffer(side);
     }
+
+    // Calculer les deltas pour magnitudeActiveTime et axisActiveTime
+    // Ces valeurs sont cumulatives depuis le boot de la montre
+    final lastMag = _lastMagnitudeActiveTime[side];
+    final lastAxis = _lastAxisActiveTime[side];
+
+    int magnitudeDelta = 0;
+    int axisDelta = 0;
+
+    if (lastMag != null && lastAxis != null) {
+      // Calculer la différence (delta) depuis la dernière lecture
+      // Si la valeur actuelle est inférieure (montre redémarrée), on prend la valeur actuelle comme delta
+      magnitudeDelta = movement.magnitudeActiveTime >= lastMag
+          ? movement.magnitudeActiveTime - lastMag
+          : movement.magnitudeActiveTime;
+      axisDelta = movement.axisActiveTime >= lastAxis
+          ? movement.axisActiveTime - lastAxis
+          : movement.axisActiveTime;
+
+      _log('Delta calculated for ${side.displayName}: magDelta=${magnitudeDelta}ms, axisDelta=${axisDelta}ms');
+    } else {
+      // Première lecture, pas de delta calculable (on considère 0)
+      _log('First movement reading for ${side.displayName}, no delta yet');
+    }
+
+    // Mettre à jour les dernières valeurs cumulatives
+    _lastMagnitudeActiveTime[side] = movement.magnitudeActiveTime;
+    _lastAxisActiveTime[side] = movement.axisActiveTime;
 
     buffer.add(movement);
 
@@ -1700,6 +1741,23 @@ class DualInfiniTimeBloc
       case MovementSamplingMode.aggregate:
         // Accumuler et calculer la moyenne sur l'intervalle
         return _handleAggregateMode(side, movement, now);
+
+      case MovementSamplingMode.recordsPerTimeUnit:
+        // Utiliser l'intervalle calculé à partir du nombre d'enregistrements par unité de temps
+        if (lastSampleTime == null) {
+          _lastMovementSampleTime[side] = now;
+          _lastMovementMagnitude[side] = currentMagnitude;
+          return true;
+        }
+
+        final elapsed = now.difference(lastSampleTime).inMilliseconds;
+        final calculatedInterval = _movementSamplingSettings.calculatedIntervalMs;
+        if (elapsed >= calculatedInterval) {
+          _lastMovementSampleTime[side] = now;
+          _lastMovementMagnitude[side] = currentMagnitude;
+          return true;
+        }
+        return false;
     }
   }
 
@@ -2498,6 +2556,9 @@ class DualInfiniTimeBloc
       // Réinitialiser les dernières valeurs
       _lastRecordedValue[side]?.clear();
       _lastRecordTime[side]?.clear();
+      // Réinitialiser le tracking des valeurs cumulatives pour les deltas
+      _lastMagnitudeActiveTime[side] = null;
+      _lastAxisActiveTime[side] = null;
       _log('Last recorded values cleared for ${side.displayName}');
 
       await _sessions[side]?.dispose();

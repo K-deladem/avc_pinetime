@@ -24,23 +24,51 @@ class _HistoryScreenState extends State<HistoryScreen> {
   ArmSide? _selectedArm; // null = tous les bras
   DateTime? _customStartDate;
   DateTime? _customEndDate;
-  late Future<Map<String, List<dynamic>>> _dataFuture;
+
+  // Cache intelligent pour éviter les rechargements inutiles
+  Future<Map<String, List<dynamic>>>? _cachedFuture;
+  String? _lastCacheKey;
 
   @override
   void initState() {
     super.initState();
-    _loadData();
+    // Le chargement initial se fait via _getDataFuture() dans le FutureBuilder
+  }
+
+  /// Invalide le cache et force un rechargement
+  void _invalidateCache() {
+    setState(() {
+      _cachedFuture = null;
+      _lastCacheKey = null;
+    });
+  }
+
+  /// Génère une clé unique basée sur les paramètres de filtre actuels
+  String _generateCacheKey() {
+    return '$_selectedPeriod-${_selectedArm?.name ?? "all"}-'
+        '${_customStartDate?.toIso8601String() ?? "null"}-'
+        '${_customEndDate?.toIso8601String() ?? "null"}';
+  }
+
+  /// Retourne le Future en cache ou en crée un nouveau si nécessaire
+  Future<Map<String, List<dynamic>>> _getDataFuture() {
+    final currentKey = _generateCacheKey();
+    if (_cachedFuture != null && _lastCacheKey == currentKey) {
+      return _cachedFuture!;
+    }
+    _lastCacheKey = currentKey;
+    _cachedFuture = _fetchAllData();
+    return _cachedFuture!;
   }
 
   void _loadData() {
-    setState(() {
-      _dataFuture = _fetchAllData();
-    });
+    _invalidateCache();
   }
 
   Future<Map<String, List<dynamic>>> _fetchAllData() async {
     final db = AppDatabase.instance;
     final (startDate, endDate) = _getPeriodDates(_selectedPeriod);
+    final bloc = context.read<DualInfiniTimeBloc>();
 
     List<DeviceInfoData> batteryData = [];
     List<DeviceInfoData> stepsData = [];
@@ -48,97 +76,41 @@ class _HistoryScreenState extends State<HistoryScreen> {
     List<Map<String, dynamic>> movementData = [];
 
     if (_selectedArm == null) {
-      // Charger les données de tous les bras
-      final leftBattery = await db.getDeviceInfo(
-        'left',
-        'battery',
-        startDate: startDate,
-        endDate: endDate,
-        limit: 1000,
-      );
-      final rightBattery = await db.getDeviceInfo(
-        'right',
-        'battery',
-        startDate: startDate,
-        endDate: endDate,
-        limit: 1000,
-      );
-      batteryData = [...leftBattery, ...rightBattery];
+      // Charger les données de tous les bras EN PARALLÈLE pour éviter ANR
+      final results = await Future.wait([
+        // Battery data
+        db.getDeviceInfo('left', 'battery', startDate: startDate, endDate: endDate, limit: 1000),
+        db.getDeviceInfo('right', 'battery', startDate: startDate, endDate: endDate, limit: 1000),
+        // Steps data
+        db.getDeviceInfo('left', 'steps', startDate: startDate, endDate: endDate, limit: 1000),
+        db.getDeviceInfo('right', 'steps', startDate: startDate, endDate: endDate, limit: 1000),
+        // Connection history
+        bloc.getConnectionHistory(ArmSide.left, period: _getPeriodDuration(_selectedPeriod)),
+        bloc.getConnectionHistory(ArmSide.right, period: _getPeriodDuration(_selectedPeriod)),
+        // Movement data
+        db.getMovementData('left', startDate: startDate, endDate: endDate, limit: 1000),
+        db.getMovementData('right', startDate: startDate, endDate: endDate, limit: 1000),
+      ]);
 
-      final leftSteps = await db.getDeviceInfo(
-        'left',
-        'steps',
-        startDate: startDate,
-        endDate: endDate,
-        limit: 1000,
-      );
-      final rightSteps = await db.getDeviceInfo(
-        'right',
-        'steps',
-        startDate: startDate,
-        endDate: endDate,
-        limit: 1000,
-      );
-      stepsData = [...leftSteps, ...rightSteps];
-
-      final bloc = context.read<DualInfiniTimeBloc>();
-      final leftConn = await bloc.getConnectionHistory(
-        ArmSide.left,
-        period: _getPeriodDuration(_selectedPeriod),
-      );
-      final rightConn = await bloc.getConnectionHistory(
-        ArmSide.right,
-        period: _getPeriodDuration(_selectedPeriod),
-      );
-      connectionData = [...leftConn, ...rightConn];
-
-      // Charger les données de mouvement
-      final leftMovement = await db.getMovementData(
-        'left',
-        startDate: startDate,
-        endDate: endDate,
-        limit: 1000,
-      );
-      final rightMovement = await db.getMovementData(
-        'right',
-        startDate: startDate,
-        endDate: endDate,
-        limit: 1000,
-      );
-      movementData = [...leftMovement, ...rightMovement];
+      batteryData = [...results[0] as List<DeviceInfoData>, ...results[1] as List<DeviceInfoData>];
+      stepsData = [...results[2] as List<DeviceInfoData>, ...results[3] as List<DeviceInfoData>];
+      connectionData = [...results[4] as List<ConnectionEvent>, ...results[5] as List<ConnectionEvent>];
+      movementData = [...results[6] as List<Map<String, dynamic>>, ...results[7] as List<Map<String, dynamic>>];
     } else {
-      // Charger les données d'un bras spécifique
+      // Charger les données d'un bras spécifique EN PARALLÈLE
       final armSideName = _selectedArm!.technicalName;
 
-      batteryData = await db.getDeviceInfo(
-        armSideName,
-        'battery',
-        startDate: startDate,
-        endDate: endDate,
-        limit: 1000,
-      );
+      final results = await Future.wait([
+        db.getDeviceInfo(armSideName, 'battery', startDate: startDate, endDate: endDate, limit: 1000),
+        db.getDeviceInfo(armSideName, 'steps', startDate: startDate, endDate: endDate, limit: 1000),
+        bloc.getConnectionHistory(_selectedArm!, period: _getPeriodDuration(_selectedPeriod)),
+        db.getMovementData(armSideName, startDate: startDate, endDate: endDate, limit: 1000),
+      ]);
 
-      stepsData = await db.getDeviceInfo(
-        armSideName,
-        'steps',
-        startDate: startDate,
-        endDate: endDate,
-        limit: 1000,
-      );
-
-      final bloc = context.read<DualInfiniTimeBloc>();
-      connectionData = await bloc.getConnectionHistory(
-        _selectedArm!,
-        period: _getPeriodDuration(_selectedPeriod),
-      );
-
-      // Charger les données de mouvement
-      movementData = await db.getMovementData(
-        armSideName,
-        startDate: startDate,
-        endDate: endDate,
-        limit: 1000,
-      );
+      batteryData = results[0] as List<DeviceInfoData>;
+      stepsData = results[1] as List<DeviceInfoData>;
+      connectionData = results[2] as List<ConnectionEvent>;
+      movementData = results[3] as List<Map<String, dynamic>>;
     }
 
     return {
@@ -234,7 +206,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           // Contenu principal
           Expanded(
             child: FutureBuilder<Map<String, List<dynamic>>>(
-              future: _dataFuture,
+              future: _getDataFuture(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());

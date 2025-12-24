@@ -48,27 +48,20 @@ class AppDatabase {
 
   /// Callback lors de l'ouverture de la DB
   Future<void> _onOpenDB(Database db) async {
+    // PRAGMA doivent être exécutés en premier et séquentiellement
     await db.execute('PRAGMA synchronous = NORMAL');
     await db.execute('PRAGMA cache_size = -4000');
     await db.execute('PRAGMA foreign_keys = ON');
 
-    // Migrer les anciennes données avec "gauche"/"droite" vers "left"/"right"
-    await _migrateArmSideValues(db);
-
-    // Ajouter le champ isFirstLaunch si nécessaire
-    await _addIsFirstLaunchColumn(db);
-
-    // Ajouter les champs de préférences de graphiques si nécessaire
-    await _addChartPreferencesColumns(db);
-
-    // Ajouter les champs de préférences de temps si nécessaire
-    await _addTimePreferencesColumns(db);
-
-    // Ajouter les nouveaux champs pour la configuration des objectifs
-    await _addGoalConfigColumns(db);
-
-    // Ajouter les champs pour l'échantillonnage de mouvement si nécessaire
-    await _addMovementSamplingColumns(db);
+    // Exécuter toutes les migrations en parallèle
+    await Future.wait([
+      _migrateArmSideValues(db),
+      _addIsFirstLaunchColumn(db),
+      _addChartPreferencesColumns(db),
+      _addTimePreferencesColumns(db),
+      _addGoalConfigColumns(db),
+      _addMovementSamplingColumns(db),
+    ]);
   }
 
   /// Ajoute le champ isFirstLaunch à la table settings si il n'existe pas
@@ -311,7 +304,7 @@ class AppDatabase {
       ON device_info_data(armSide, infoType, timestamp DESC)
     ''');
 
-    // Table movement_data - COMPLÈTE (gardée au cas où)
+    // Table movement_data - Données essentielles uniquement
     await db.execute('''
     CREATE TABLE movement_data (
       id TEXT PRIMARY KEY,
@@ -321,18 +314,8 @@ class AppDatabase {
       accelZ REAL NOT NULL,
       magnitude REAL NOT NULL,
       activityLevel INTEGER NOT NULL,
-      activityCategory TEXT NOT NULL,
-      movementType TEXT,
-      stability REAL,
-      energy REAL,
-      axisVariance REAL,
-      axisDominance REAL,
-      dominantAxis TEXT,
-      intensityDescription TEXT,
       magnitudeActiveTime INTEGER,
       axisActiveTime INTEGER,
-      movementDetected INTEGER,
-      anyMovement INTEGER,
       timestamp TEXT NOT NULL,
       timestampMs INTEGER,
       rssi INTEGER,
@@ -341,34 +324,13 @@ class AppDatabase {
     ''');
 
     await db.execute('''
-      CREATE INDEX idx_movement_timestamp
-      ON movement_data(timestamp DESC)
-    ''');
-
-    await db.execute('''
-      CREATE INDEX idx_movement_arm_timestamp
-      ON movement_data(armSide, timestamp DESC)
-    ''');
-
-    // Index sur createdAt pour les requêtes filtrées par date réelle
-    await db.execute('''
-      CREATE INDEX idx_movement_createdAt
-      ON movement_data(createdAt DESC)
-    ''');
-
-    await db.execute('''
       CREATE INDEX idx_movement_arm_createdAt
       ON movement_data(armSide, createdAt DESC)
     ''');
 
     await db.execute('''
-      CREATE INDEX idx_movement_type 
-      ON movement_data(movementType, armSide)
-    ''');
-
-    await db.execute('''
-      CREATE INDEX idx_movement_activity 
-      ON movement_data(activityLevel, armSide)
+      CREATE INDEX idx_movement_arm_timestamp
+      ON movement_data(armSide, timestampMs DESC)
     ''');
 
     // Table settings
@@ -411,11 +373,13 @@ class AppDatabase {
         use24HourFormat INTEGER DEFAULT 1,
         timezoneOffsetHours REAL DEFAULT 0.0,
         usePhoneTimezone INTEGER DEFAULT 1,
-        movementSamplingMode INTEGER DEFAULT 1,
+        movementSamplingMode INTEGER DEFAULT 4,
         movementSamplingIntervalMs INTEGER DEFAULT 1000,
         movementSamplingChangeThreshold REAL DEFAULT 0.5,
         movementSamplingMaxPerFlush INTEGER DEFAULT 60,
-        movementSamplingUseAggregation INTEGER DEFAULT 0
+        movementSamplingUseAggregation INTEGER DEFAULT 0,
+        movementSamplingRecordsCount INTEGER DEFAULT 4,
+        movementSamplingTimeUnit INTEGER DEFAULT 2
       )
     ''');
 
@@ -446,7 +410,7 @@ class AppDatabase {
     ''');
 
     await db.execute('''
-      CREATE INDEX idx_connection_type 
+      CREATE INDEX idx_connection_type
       ON connection_events(type, armSide)
     ''');
   }
@@ -685,13 +649,14 @@ class AppDatabase {
   // MOVEMENT DATA - COMPLÈTE (gardée pour préserver les données existantes)
   // ============================================================================
 
-  /// Insert une donnée de mouvement complète
+  /// Insert une donnée de mouvement
   Future<void> insertMovementData(
     String armSide,
     MovementData movement, {
     int? rssi,
   }) async {
     final db = await database;
+    final now = DateTime.now().toIso8601String();
     await db.insert(
       'movement_data',
       {
@@ -702,28 +667,18 @@ class AppDatabase {
         'accelZ': movement.accelZ,
         'magnitude': movement.getAccelerationMagnitude(),
         'activityLevel': movement.getActivityLevel(),
-        'activityCategory': movement.getActivityCategory(),
-        'movementType': movement.detectMovementType().name,
-        'stability': movement.getStability(),
-        'energy': movement.getMovementEnergy(),
-        'axisVariance': movement.getAxisVariance(),
-        'axisDominance': movement.getAxisDominance(),
-        'dominantAxis': movement.getDominantAxis(),
-        'intensityDescription': movement.getIntensityDescription(),
         'magnitudeActiveTime': movement.magnitudeActiveTime,
         'axisActiveTime': movement.axisActiveTime,
-        'movementDetected': movement.movementDetected ? 1 : 0,
-        'anyMovement': movement.anyMovement ? 1 : 0,
-        'timestamp': DateTime.now().toIso8601String(),
+        'timestamp': now,
         'timestampMs': movement.timestampMs,
         'rssi': rssi,
-        'createdAt': DateTime.now().toIso8601String(),
+        'createdAt': now,
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
 
-  /// Insert un batch de données de mouvement complètes
+  /// Insert un batch de données de mouvement
   Future<void> insertBatchMovementData(
     String armSide,
     List<MovementData> movements, {
@@ -738,10 +693,6 @@ class AppDatabase {
       final createdAt = DateTime.now().toIso8601String();
 
       for (final movement in movements) {
-        final actualTimestamp = DateTime.fromMillisecondsSinceEpoch(
-          movement.timestampMs,
-        ).toIso8601String();
-
         batch.insert(
           'movement_data',
           {
@@ -752,19 +703,9 @@ class AppDatabase {
             'accelZ': movement.accelZ,
             'magnitude': movement.getAccelerationMagnitude(),
             'activityLevel': movement.getActivityLevel(),
-            'activityCategory': movement.getActivityCategory(),
-            'movementType': movement.detectMovementType().name,
-            'stability': movement.getStability(),
-            'energy': movement.getMovementEnergy(),
-            'axisVariance': movement.getAxisVariance(),
-            'axisDominance': movement.getAxisDominance(),
-            'dominantAxis': movement.getDominantAxis(),
-            'intensityDescription': movement.getIntensityDescription(),
             'magnitudeActiveTime': movement.magnitudeActiveTime,
             'axisActiveTime': movement.axisActiveTime,
-            'movementDetected': movement.movementDetected ? 1 : 0,
-            'anyMovement': movement.anyMovement ? 1 : 0,
-            'timestamp': actualTimestamp,
+            'timestamp': createdAt,
             'timestampMs': movement.timestampMs,
             'rssi': rssi,
             'createdAt': createdAt,
@@ -816,7 +757,6 @@ class AppDatabase {
   }
 
   /// Comparaison entre les deux bras (focus sur magnitudeActiveTime et axisActiveTime)
-  /// Note: Utilise createdAt pour le filtrage car timestamp contient la date relative de la montre
   Future<Map<String, dynamic>> compareArmsMovement({
     DateTime? startDate,
     DateTime? endDate,
@@ -826,7 +766,6 @@ class AppDatabase {
     String where = '1=1';
     List<dynamic> whereArgs = [];
 
-    // Utiliser createdAt au lieu de timestamp pour le filtrage par date
     if (startDate != null) {
       where += ' AND createdAt >= ?';
       whereArgs.add(startDate.toIso8601String());
@@ -838,13 +777,11 @@ class AppDatabase {
     }
 
     final result = await db.rawQuery('''
-      SELECT 
+      SELECT
         armSide,
         COUNT(*) as recordCount,
-        SUM(magnitudeActiveTime) as totalMagnitudeActiveTime,
-        AVG(magnitudeActiveTime) as avgMagnitudeActiveTime,
-        SUM(axisActiveTime) as totalAxisActiveTime,
-        AVG(axisActiveTime) as avgAxisActiveTime
+        MAX(magnitudeActiveTime) as totalMagnitudeActiveTime,
+        MAX(axisActiveTime) as totalAxisActiveTime
       FROM movement_data
       WHERE $where
       GROUP BY armSide
@@ -854,16 +791,12 @@ class AppDatabase {
       'left': {
         'recordCount': 0,
         'totalMagnitudeActiveTime': 0,
-        'avgMagnitudeActiveTime': 0.0,
         'totalAxisActiveTime': 0,
-        'avgAxisActiveTime': 0.0,
       },
       'right': {
         'recordCount': 0,
         'totalMagnitudeActiveTime': 0,
-        'avgMagnitudeActiveTime': 0.0,
         'totalAxisActiveTime': 0,
-        'avgAxisActiveTime': 0.0,
       },
     };
 
@@ -872,10 +805,7 @@ class AppDatabase {
       comparison[armSide] = {
         'recordCount': _parseInt(row['recordCount']),
         'totalMagnitudeActiveTime': _parseInt(row['totalMagnitudeActiveTime']),
-        'avgMagnitudeActiveTime':
-            _parseDouble(row['avgMagnitudeActiveTime']) ?? 0.0,
         'totalAxisActiveTime': _parseInt(row['totalAxisActiveTime']),
-        'avgAxisActiveTime': _parseDouble(row['avgAxisActiveTime']) ?? 0.0,
       };
     }
 
@@ -883,7 +813,6 @@ class AppDatabase {
   }
 
   /// Statistiques journalières de mouvement
-  /// Note: Utilise createdAt pour le filtrage car timestamp contient la date relative de la montre
   Future<Map<String, dynamic>> getDailyMovementStats(
     String armSide,
     DateTime date,
@@ -896,12 +825,8 @@ class AppDatabase {
     final result = await db.rawQuery('''
       SELECT
         COUNT(*) as recordCount,
-        SUM(magnitudeActiveTime) as totalMagnitudeActiveTime,
-        AVG(magnitudeActiveTime) as avgMagnitudeActiveTime,
-        MAX(magnitudeActiveTime) as maxMagnitudeActiveTime,
-        SUM(axisActiveTime) as totalAxisActiveTime,
-        AVG(axisActiveTime) as avgAxisActiveTime,
-        MAX(axisActiveTime) as maxAxisActiveTime,
+        MAX(magnitudeActiveTime) as totalMagnitudeActiveTime,
+        MAX(axisActiveTime) as totalAxisActiveTime,
         AVG(magnitude) as avgMagnitude,
         MAX(magnitude) as maxMagnitude,
         AVG(activityLevel) as avgActivityLevel
@@ -921,11 +846,7 @@ class AppDatabase {
         'armSide': armSide,
         'recordCount': 0,
         'totalMagnitudeActiveTime': 0,
-        'avgMagnitudeActiveTime': 0.0,
-        'maxMagnitudeActiveTime': 0,
         'totalAxisActiveTime': 0,
-        'avgAxisActiveTime': 0.0,
-        'maxAxisActiveTime': 0,
         'avgMagnitude': 0.0,
         'maxMagnitude': 0.0,
         'avgActivityLevel': 0,
@@ -938,16 +859,59 @@ class AppDatabase {
       'armSide': armSide,
       'recordCount': _parseInt(row['recordCount']),
       'totalMagnitudeActiveTime': _parseInt(row['totalMagnitudeActiveTime']),
-      'avgMagnitudeActiveTime':
-          _parseDouble(row['avgMagnitudeActiveTime']) ?? 0.0,
-      'maxMagnitudeActiveTime': _parseInt(row['maxMagnitudeActiveTime']),
       'totalAxisActiveTime': _parseInt(row['totalAxisActiveTime']),
-      'avgAxisActiveTime': _parseDouble(row['avgAxisActiveTime']) ?? 0.0,
-      'maxAxisActiveTime': _parseInt(row['maxAxisActiveTime']),
       'avgMagnitude': _parseDouble(row['avgMagnitude']) ?? 0.0,
       'maxMagnitude': _parseDouble(row['maxMagnitude']) ?? 0.0,
       'avgActivityLevel': _parseInt(row['avgActivityLevel']),
     };
+  }
+
+  /// Statistiques de mouvement agrégées par jour sur une période
+  /// Retourne une Map<String, Map<String, dynamic>> où la clé est "YYYY-MM-DD"
+  Future<Map<String, Map<String, Map<String, dynamic>>>> getMovementStatsForPeriod(
+    DateTime startDate,
+    DateTime endDate,
+  ) async {
+    final db = await database;
+
+    final result = await db.rawQuery('''
+      SELECT
+        date(createdAt) as day,
+        armSide,
+        COUNT(*) as recordCount,
+        MAX(magnitudeActiveTime) as totalMagnitudeActiveTime,
+        MAX(axisActiveTime) as totalAxisActiveTime,
+        AVG(magnitude) as avgMagnitude,
+        MAX(magnitude) as maxMagnitude,
+        AVG(activityLevel) as avgActivityLevel
+      FROM movement_data
+      WHERE createdAt >= ? AND createdAt < ?
+      GROUP BY date(createdAt), armSide
+      ORDER BY day DESC
+    ''', [
+      startDate.toIso8601String(),
+      endDate.toIso8601String(),
+    ]);
+
+    final Map<String, Map<String, Map<String, dynamic>>> periodStats = {};
+
+    for (final row in result) {
+      final day = row['day'] as String;
+      final armSide = row['armSide'] as String;
+
+      periodStats.putIfAbsent(day, () => {'left': {}, 'right': {}});
+
+      periodStats[day]![armSide] = {
+        'recordCount': _parseInt(row['recordCount']),
+        'totalMagnitudeActiveTime': _parseInt(row['totalMagnitudeActiveTime']),
+        'totalAxisActiveTime': _parseInt(row['totalAxisActiveTime']),
+        'avgMagnitude': _parseDouble(row['avgMagnitude']) ?? 0.0,
+        'maxMagnitude': _parseDouble(row['maxMagnitude']) ?? 0.0,
+        'avgActivityLevel': _parseInt(row['avgActivityLevel']),
+      };
+    }
+
+    return periodStats;
   }
 
   /// Supprime les anciennes données de mouvement

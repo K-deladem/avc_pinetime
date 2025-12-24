@@ -31,9 +31,9 @@ class ProfileHeader extends StatelessWidget {
           profileImagePath = state.settings.profileImagePath;
         }
 
-        final hasImage = profileImagePath != null &&
-                         profileImagePath.isNotEmpty &&
-                         File(profileImagePath).existsSync();
+        // OPTIMISÉ: Pas de File.existsSync() bloquant
+        // On laisse Image.file avec errorBuilder gérer les fichiers manquants
+        final hasImagePath = profileImagePath != null && profileImagePath.isNotEmpty;
 
     return SliverAppBar(
       backgroundColor: Theme.of(context).colorScheme.background,
@@ -126,7 +126,7 @@ class ProfileHeader extends StatelessWidget {
                       .primary
                       .withValues(alpha: 0.6),
                   child: ClipOval(
-                    child: hasImage
+                    child: hasImagePath
                         ? Image.file(
                             File(profileImagePath!),
                             fit: BoxFit.cover,

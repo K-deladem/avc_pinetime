@@ -2,6 +2,7 @@
 
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc_app_template/app/app_database.dart';
 import 'package:flutter_bloc_app_template/models/arm_side.dart';
@@ -53,6 +54,17 @@ class AsymmetryHeatMapCard extends StatefulWidget {
 
 enum HeatMapType { magnitude, axis }
 
+/// Classe pour regrouper les données du heatmap
+class _HeatMapData {
+  final Map<DateTime, double> asymmetryData;
+  final Map<DateTime, double> dailyGoals;
+
+  _HeatMapData({
+    required this.asymmetryData,
+    required this.dailyGoals,
+  });
+}
+
 class _AsymmetryHeatMapCardState extends State<AsymmetryHeatMapCard> {
   late int selectedMonth;
   late int selectedYear;
@@ -60,11 +72,9 @@ class _AsymmetryHeatMapCardState extends State<AsymmetryHeatMapCard> {
   final AppDatabase _db = AppDatabase.instance;
   final GoalCalculatorService _goalCalculator = GoalCalculatorService();
 
-  // Cache pour les données du mois
-  Map<DateTime, double> _monthlyAsymmetryData = {};
-  // Cache pour les objectifs quotidiens
-  Map<DateTime, double> _dailyGoals = {};
-  bool _isLoading = false;
+  // Cache intelligent pour éviter les rechargements inutiles
+  Future<_HeatMapData>? _cachedFuture;
+  String? _lastCacheKey;
 
   // Abonnement aux notifications de rafraîchissement
   StreamSubscription<ChartRefreshEvent>? _refreshSubscription;
@@ -75,7 +85,6 @@ class _AsymmetryHeatMapCardState extends State<AsymmetryHeatMapCard> {
     final now = DateTime.now();
     selectedMonth = now.month;
     selectedYear = now.year;
-    _loadMonthData();
 
     // S'abonner aux notifications de rafraîchissement
     _refreshSubscription = ChartRefreshNotifier().stream.listen((event) {
@@ -83,10 +92,34 @@ class _AsymmetryHeatMapCardState extends State<AsymmetryHeatMapCard> {
       if (event.type == ChartRefreshType.movement ||
           event.type == ChartRefreshType.all) {
         if (mounted) {
-          _loadMonthData();
+          _invalidateCache();
         }
       }
     });
+  }
+
+  /// Invalide le cache et force un rechargement
+  void _invalidateCache() {
+    setState(() {
+      _cachedFuture = null;
+      _lastCacheKey = null;
+    });
+  }
+
+  /// Génère une clé unique basée sur les paramètres actuels
+  String _generateCacheKey() {
+    return '$selectedYear-$selectedMonth-$_selectedType-${widget.affectedSide}';
+  }
+
+  /// Retourne le Future en cache ou en crée un nouveau si nécessaire
+  Future<_HeatMapData> _getDataFuture() {
+    final currentKey = _generateCacheKey();
+    if (_cachedFuture != null && _lastCacheKey == currentKey) {
+      return _cachedFuture!;
+    }
+    _lastCacheKey = currentKey;
+    _cachedFuture = _loadMonthData();
+    return _cachedFuture!;
   }
 
   @override
@@ -96,125 +129,67 @@ class _AsymmetryHeatMapCardState extends State<AsymmetryHeatMapCard> {
   }
 
   /// Charge les données d'asymétrie pour le mois sélectionné
-  Future<void> _loadMonthData() async {
-    if (!mounted) return;
+  /// Utilise compute() pour exécuter les calculs lourds dans un isolate
+  Future<_HeatMapData> _loadMonthData() async {
+    final lastDay = DateTime(selectedYear, selectedMonth + 1, 0);
 
-    setState(() {
-      _isLoading = true;
-    });
+    // Charger toutes les données du mois en une seule requête (plus efficace)
+    final startDate = DateTime(selectedYear, selectedMonth, 1);
+    final endDate = DateTime(selectedYear, selectedMonth + 1, 1);
 
-    try {
-      final lastDay = DateTime(selectedYear, selectedMonth + 1, 0);
+    // Charger les données gauche et droite en parallèle
+    final results = await Future.wait([
+      _db.getMovementData('left', startDate: startDate, endDate: endDate, limit: 50000),
+      _db.getMovementData('right', startDate: startDate, endDate: endDate, limit: 50000),
+    ]);
 
-      final asymmetryData = <DateTime, double>{};
-      final detailedData = <DateTime, Map<String, double>>{};
+    final leftData = results[0];
+    final rightData = results[1];
 
-      // Charger les données pour chaque jour du mois
+    // Exécuter les calculs lourds dans un isolate pour éviter ANR
+    final fieldName = _selectedType == HeatMapType.magnitude
+        ? 'magnitudeActiveTime'
+        : 'axisActiveTime';
+
+    final asymmetryData = await compute(
+      computeMonthlyAsymmetry,
+      HeatMapComputeParams(
+        leftData: leftData,
+        rightData: rightData,
+        fieldName: fieldName,
+        isLeftAffected: widget.affectedSide == ArmSide.left,
+        year: selectedYear,
+        month: selectedMonth,
+        lastDayOfMonth: lastDay.day,
+      ),
+    );
+
+    // Calculer les objectifs quotidiens si une goalConfig est fournie
+    // Utiliser Future.wait() pour paralléliser les calculs
+    final dailyGoals = <DateTime, double>{};
+    if (widget.goalConfig != null) {
+      final futures = <Future<MapEntry<DateTime, double>>>[];
       for (int day = 1; day <= lastDay.day; day++) {
         final date = DateTime(selectedYear, selectedMonth, day);
-        final endDate = date.add(const Duration(days: 1));
-
-        // Récupérer les données movement pour les deux bras
-        final leftData = await _db.getMovementData(
-          'left',
-          startDate: date,
-          endDate: endDate,
-          limit: 10000,
-        );
-
-        final rightData = await _db.getMovementData(
-          'right',
-          startDate: date,
-          endDate: endDate,
-          limit: 10000,
-        );
-
-        if (leftData.isNotEmpty || rightData.isNotEmpty) {
-          // Calculer les valeurs moyennes selon le type de métrique
-          double leftValue = 0.0;
-          double rightValue = 0.0;
-
-          final String fieldName = _selectedType == HeatMapType.magnitude
-              ? 'magnitudeActiveTime'
-              : 'axisActiveTime';
-
-          // Calculer les valeurs pour gauche (moyenne en minutes)
-          if (leftData.isNotEmpty) {
-            final values = leftData
-                .where((d) => d[fieldName] != null)
-                .map((d) {
-                  final val = d[fieldName];
-                  final doubleVal = (val is int) ? val.toDouble() : (val as double);
-                  return doubleVal / 60.0; // Convertir secondes en minutes
-                })
-                .toList();
-
-            if (values.isNotEmpty) {
-              leftValue = values.reduce((a, b) => a + b) / values.length;
-            }
-          }
-
-          // Calculer les valeurs pour droite (moyenne en minutes)
-          if (rightData.isNotEmpty) {
-            final values = rightData
-                .where((d) => d[fieldName] != null)
-                .map((d) {
-                  final val = d[fieldName];
-                  final doubleVal = (val is int) ? val.toDouble() : (val as double);
-                  return doubleVal / 60.0; // Convertir secondes en minutes
-                })
-                .toList();
-
-            if (values.isNotEmpty) {
-              rightValue = values.reduce((a, b) => a + b) / values.length;
-            }
-          }
-
-          // Calculer le ratio d'asymétrie (membre atteint / total)
-          final total = leftValue + rightValue;
-          if (total > 0) {
-            final affectedValue = widget.affectedSide == 'left' ? leftValue : rightValue;
-            final ratio = (affectedValue / total) * 100;
-            final dateKey = DateTime(selectedYear, selectedMonth, day);
-            asymmetryData[dateKey] = ratio;
-            detailedData[dateKey] = {
-              'left': leftValue,
-              'right': rightValue,
-              'ratio': ratio,
-            };
-          }
-        }
-      }
-
-      // Calculer les objectifs quotidiens si une goalConfig est fournie
-      final dailyGoals = <DateTime, double>{};
-      if (widget.goalConfig != null) {
-        for (int day = 1; day <= lastDay.day; day++) {
-          final date = DateTime(selectedYear, selectedMonth, day);
-          final goalForDate = await _goalCalculator.calculateGoalForDate(
+        futures.add(
+          _goalCalculator.calculateGoalForDate(
             widget.goalConfig!,
             widget.affectedSide,
             date,
-          );
-          dailyGoals[date] = goalForDate;
-        }
+          ).then((goal) => MapEntry(date, goal)),
+        );
       }
-
-      if (mounted) {
-        setState(() {
-          _monthlyAsymmetryData = asymmetryData;
-          _dailyGoals = dailyGoals;
-          _isLoading = false;
-        });
+      // Exécuter tous les calculs en parallèle
+      final goalResults = await Future.wait(futures);
+      for (final entry in goalResults) {
+        dailyGoals[entry.key] = entry.value;
       }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-      debugPrint('Erreur lors du chargement des données: $e');
     }
+
+    return _HeatMapData(
+      asymmetryData: asymmetryData,
+      dailyGoals: dailyGoals,
+    );
   }
 
   @override
@@ -240,95 +215,112 @@ class _AsymmetryHeatMapCardState extends State<AsymmetryHeatMapCard> {
               const SizedBox(height: 20),
               _buildWeekdayLabels(context),
               const SizedBox(height: 4),
-              if (_isLoading)
-                const Expanded(
-                  child: Center(child: CircularProgressIndicator()),
-                )
-              else
-                Expanded(
-                  child: Column(
-                    children: List.generate(6, (rowIndex) {
-                      return Expanded(
-                        child: Row(
-                          children: List.generate(7, (colIndex) {
-                            int cellIndex = rowIndex * 7 + colIndex;
-                            if (cellIndex < firstWeekday ||
-                                (cellIndex - firstWeekday + 1) > daysInMonth) {
-                              return const Expanded(child: SizedBox.shrink());
-                            }
-                            int day = cellIndex - firstWeekday + 1;
-                            DateTime date = DateTime(selectedYear, selectedMonth, day);
+              Expanded(
+                child: FutureBuilder<_HeatMapData>(
+                  future: _getDataFuture(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
 
-                            final asymmetryRatio = _monthlyAsymmetryData[date];
-                            final goalForDay = _dailyGoals[date];
+                    if (snapshot.hasError) {
+                      return Center(
+                        child: Text(
+                          'Erreur: ${snapshot.error}',
+                          style: TextStyle(color: Colors.red.shade400, fontSize: 12),
+                        ),
+                      );
+                    }
 
-                            return Expanded(
-                              child: AspectRatio(
-                                aspectRatio: 1,
-                                child: GestureDetector(
-                                  onTap: () => _showDayDetails(context, date, asymmetryRatio),
-                                  child: Container(
-                                    margin: const EdgeInsets.all(2),
-                                    decoration: BoxDecoration(
-                                      color: _getColorForAsymmetry(asymmetryRatio, date: date),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(2),
-                                      child: FittedBox(
-                                        fit: BoxFit.scaleDown,
-                                        child: Column(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            // Numéro du jour
-                                            Text(
-                                              "$day",
-                                              style: TextStyle(
-                                                fontSize: 10,
-                                                color: asymmetryRatio != null
-                                                    ? Colors.white
-                                                    : Colors.black45,
-                                                fontWeight: FontWeight.bold,
-                                                height: 1.0,
-                                              ),
-                                            ),
-                                            // Ratio réel
-                                            if (asymmetryRatio != null)
+                    final data = snapshot.data;
+                    final asymmetryData = data?.asymmetryData ?? {};
+                    final dailyGoals = data?.dailyGoals ?? {};
+
+                    return Column(
+                      children: List.generate(6, (rowIndex) {
+                        return Expanded(
+                          child: Row(
+                            children: List.generate(7, (colIndex) {
+                              int cellIndex = rowIndex * 7 + colIndex;
+                              if (cellIndex < firstWeekday ||
+                                  (cellIndex - firstWeekday + 1) > daysInMonth) {
+                                return const Expanded(child: SizedBox.shrink());
+                              }
+                              int day = cellIndex - firstWeekday + 1;
+                              DateTime date = DateTime(selectedYear, selectedMonth, day);
+
+                              final asymmetryRatio = asymmetryData[date];
+                              final goalForDay = dailyGoals[date];
+
+                              return Expanded(
+                                child: AspectRatio(
+                                  aspectRatio: 1,
+                                  child: GestureDetector(
+                                    onTap: () => _showDayDetails(context, date, asymmetryRatio, dailyGoals),
+                                    child: Container(
+                                      margin: const EdgeInsets.all(2),
+                                      decoration: BoxDecoration(
+                                        color: _getColorForAsymmetry(asymmetryRatio, date: date, dailyGoals: dailyGoals),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(2),
+                                        child: FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          child: Column(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              // Numéro du jour
                                               Text(
-                                                "${asymmetryRatio.toStringAsFixed(0)}%",
-                                                style: const TextStyle(
-                                                  fontSize: 8,
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.w500,
-                                                  height: 1.0,
-                                                ),
-                                              ),
-                                            // Objectif
-                                            if (goalForDay != null)
-                                              Text(
-                                                "↑${goalForDay.toStringAsFixed(0)}%",
+                                                "$day",
                                                 style: TextStyle(
-                                                  fontSize: 7,
-                                                  color: Colors.white.withOpacity(0.8),
-                                                  fontWeight: FontWeight.normal,
+                                                  fontSize: 10,
+                                                  color: asymmetryRatio != null
+                                                      ? Colors.white
+                                                      : Colors.black45,
+                                                  fontWeight: FontWeight.bold,
                                                   height: 1.0,
                                                 ),
                                               ),
-                                          ],
+                                              // Ratio réel
+                                              if (asymmetryRatio != null)
+                                                Text(
+                                                  "${asymmetryRatio.toStringAsFixed(0)}%",
+                                                  style: const TextStyle(
+                                                    fontSize: 8,
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.w500,
+                                                    height: 1.0,
+                                                  ),
+                                                ),
+                                              // Objectif
+                                              if (goalForDay != null)
+                                                Text(
+                                                  "↑${goalForDay.toStringAsFixed(0)}%",
+                                                  style: TextStyle(
+                                                    fontSize: 7,
+                                                    color: Colors.white.withValues(alpha: 0.8),
+                                                    fontWeight: FontWeight.normal,
+                                                    height: 1.0,
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            );
-                          }),
-                        ),
-                      );
-                    }),
-                  ),
+                              );
+                            }),
+                          ),
+                        );
+                      }),
+                    );
+                  },
                 ),
+              ),
               const SizedBox(height: 12),
               _buildLegend(),
             ],
@@ -427,10 +419,12 @@ class _AsymmetryHeatMapCardState extends State<AsymmetryHeatMapCard> {
     final isSelected = _selectedType == type;
     return GestureDetector(
       onTap: () {
-        setState(() {
-          _selectedType = type;
-        });
-        _loadMonthData();
+        if (_selectedType != type) {
+          setState(() {
+            _selectedType = type;
+            _cachedFuture = null; // Invalider le cache
+          });
+        }
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
@@ -496,10 +490,12 @@ class _AsymmetryHeatMapCardState extends State<AsymmetryHeatMapCard> {
         _styledDropdown(
           selectedMonth,
           (v) {
-            setState(() {
-              selectedMonth = v!;
-            });
-            _loadMonthData();
+            if (v != null && v != selectedMonth) {
+              setState(() {
+                selectedMonth = v;
+                _cachedFuture = null; // Invalider le cache
+              });
+            }
           },
           List.generate(12, (i) => i + 1).map((m) {
             return DropdownMenuItem(
@@ -518,10 +514,12 @@ class _AsymmetryHeatMapCardState extends State<AsymmetryHeatMapCard> {
         _styledDropdown(
           selectedYear,
           (v) {
-            setState(() {
-              selectedYear = v!;
-            });
-            _loadMonthData();
+            if (v != null && v != selectedYear) {
+              setState(() {
+                selectedYear = v;
+                _cachedFuture = null; // Invalider le cache
+              });
+            }
           },
           List.generate(5, (i) => DateTime.now().year - 2 + i).map((y) {
             return DropdownMenuItem(
@@ -597,7 +595,7 @@ class _AsymmetryHeatMapCardState extends State<AsymmetryHeatMapCard> {
   }
 
   /// Affiche les détails d'une journée dans un dialog
-  Future<void> _showDayDetails(BuildContext context, DateTime date, double? ratio) async {
+  Future<void> _showDayDetails(BuildContext context, DateTime date, double? ratio, Map<DateTime, double> dailyGoals) async {
     // Charger les données détaillées du jour
     final endDate = date.add(const Duration(days: 1));
 
@@ -615,47 +613,20 @@ class _AsymmetryHeatMapCardState extends State<AsymmetryHeatMapCard> {
       limit: 10000,
     );
 
+    // Calculer les deltas à partir des valeurs cumulatives
     final String fieldName = _selectedType == HeatMapType.magnitude
         ? 'magnitudeActiveTime'
         : 'axisActiveTime';
 
-    // Calculer les valeurs pour gauche (moyenne en minutes)
-    double leftValue = 0.0;
-    if (leftData.isNotEmpty) {
-      final values = leftData
-          .where((d) => d[fieldName] != null)
-          .map((d) {
-            final val = d[fieldName];
-            final doubleVal = (val is int) ? val.toDouble() : (val as double);
-            return doubleVal / 60.0; // Convertir secondes en minutes
-          })
-          .toList();
+    // Calculer le temps actif pour gauche en minutes
+    double leftValue = _calculateTotalActiveTime(leftData, fieldName);
 
-      if (values.isNotEmpty) {
-        leftValue = values.reduce((a, b) => a + b) / values.length;
-      }
-    }
-
-    // Calculer les valeurs pour droite (moyenne en minutes)
-    double rightValue = 0.0;
-    if (rightData.isNotEmpty) {
-      final values = rightData
-          .where((d) => d[fieldName] != null)
-          .map((d) {
-            final val = d[fieldName];
-            final doubleVal = (val is int) ? val.toDouble() : (val as double);
-            return doubleVal / 60.0; // Convertir secondes en minutes
-          })
-          .toList();
-
-      if (values.isNotEmpty) {
-        rightValue = values.reduce((a, b) => a + b) / values.length;
-      }
-    }
+    // Calculer le temps actif pour droite en minutes
+    double rightValue = _calculateTotalActiveTime(rightData, fieldName);
 
     final total = leftValue + rightValue;
     final hasData = total > 0;
-    final affectedValue = widget.affectedSide == 'left' ? leftValue : rightValue;
+    final affectedValue = widget.affectedSide == ArmSide.left ? leftValue : rightValue;
     final calculatedRatio = hasData ? (affectedValue / total) * 100 : null;
 
     if (!context.mounted) return;
@@ -730,7 +701,7 @@ class _AsymmetryHeatMapCardState extends State<AsymmetryHeatMapCard> {
                 ),
               ),
               // Afficher l'objectif du jour
-              if (_dailyGoals.containsKey(date)) ...[
+              if (dailyGoals.containsKey(date)) ...[
                 const Divider(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -746,7 +717,7 @@ class _AsymmetryHeatMapCardState extends State<AsymmetryHeatMapCard> {
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        '${_dailyGoals[date]?.toStringAsFixed(1)}%',
+                        '${dailyGoals[date]?.toStringAsFixed(1)}%',
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
@@ -762,28 +733,28 @@ class _AsymmetryHeatMapCardState extends State<AsymmetryHeatMapCard> {
                   Row(
                     children: [
                       Icon(
-                        calculatedRatio >= (_dailyGoals[date]! - 5) &&
-                        calculatedRatio <= (_dailyGoals[date]! + 5)
+                        calculatedRatio >= (dailyGoals[date]! - 5) &&
+                        calculatedRatio <= (dailyGoals[date]! + 5)
                             ? Icons.check_circle
                             : Icons.info_outline,
                         size: 16,
-                        color: calculatedRatio >= (_dailyGoals[date]! - 5) &&
-                               calculatedRatio <= (_dailyGoals[date]! + 5)
+                        color: calculatedRatio >= (dailyGoals[date]! - 5) &&
+                               calculatedRatio <= (dailyGoals[date]! + 5)
                             ? Colors.green
                             : Colors.orange,
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          calculatedRatio >= (_dailyGoals[date]! - 5) &&
-                          calculatedRatio <= (_dailyGoals[date]! + 5)
+                          calculatedRatio >= (dailyGoals[date]! - 5) &&
+                          calculatedRatio <= (dailyGoals[date]! + 5)
                               ? 'Objectif atteint'
-                              : 'Objectif non atteint (écart: ${(calculatedRatio - _dailyGoals[date]!).abs().toStringAsFixed(1)}%)',
+                              : 'Objectif non atteint (écart: ${(calculatedRatio - dailyGoals[date]!).abs().toStringAsFixed(1)}%)',
                           style: TextStyle(
                             fontSize: 11,
                             fontStyle: FontStyle.italic,
-                            color: calculatedRatio >= (_dailyGoals[date]! - 5) &&
-                                   calculatedRatio <= (_dailyGoals[date]! + 5)
+                            color: calculatedRatio >= (dailyGoals[date]! - 5) &&
+                                   calculatedRatio <= (dailyGoals[date]! + 5)
                                 ? Colors.green
                                 : Colors.orange,
                           ),
@@ -805,7 +776,7 @@ class _AsymmetryHeatMapCardState extends State<AsymmetryHeatMapCard> {
     );
   }
 
-  Widget _buildDetailRow(String label, double value, Color color) {
+  Widget _buildDetailRow(String label, double valueInMinutes, Color color) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -827,11 +798,35 @@ class _AsymmetryHeatMapCardState extends State<AsymmetryHeatMapCard> {
           ],
         ),
         Text(
-          '${value.toStringAsFixed(1)} min',
+          _formatDuration(valueInMinutes),
           style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
         ),
       ],
     );
+  }
+
+  /// Formate une durée en minutes vers heures/minutes/secondes lisibles
+  String _formatDuration(double minutes) {
+    if (minutes <= 0) return '0s';
+
+    final totalSeconds = (minutes * 60).round();
+    final hours = totalSeconds ~/ 3600;
+    final remainingMinutes = (totalSeconds % 3600) ~/ 60;
+    final seconds = totalSeconds % 60;
+
+    if (hours > 0) {
+      if (remainingMinutes > 0) {
+        return '${hours}h ${remainingMinutes}m';
+      }
+      return '${hours}h';
+    } else if (remainingMinutes > 0) {
+      if (seconds > 0) {
+        return '${remainingMinutes}m ${seconds}s';
+      }
+      return '${remainingMinutes}m';
+    } else {
+      return '${seconds}s';
+    }
   }
 
   String _getAsymmetryLabel(double ratio) {
@@ -849,16 +844,16 @@ class _AsymmetryHeatMapCardState extends State<AsymmetryHeatMapCard> {
   /// - Déséquilibré (> 2x tolérance): rouge
   ///
   /// Utilise l'objectif quotidien si disponible (pour les objectifs dynamiques)
-  Color _getColorForAsymmetry(double? ratio, {DateTime? date}) {
+  Color _getColorForAsymmetry(double? ratio, {DateTime? date, Map<DateTime, double>? dailyGoals}) {
     if (ratio == null) {
       return Colors.grey.shade300;
     }
 
     // Déterminer l'objectif à utiliser
     double targetRatio;
-    if (date != null && _dailyGoals.containsKey(date)) {
+    if (date != null && dailyGoals != null && dailyGoals.containsKey(date)) {
       // Utiliser l'objectif quotidien spécifique
-      targetRatio = _dailyGoals[date]!;
+      targetRatio = dailyGoals[date]!;
     } else {
       // Utiliser l'objectif par défaut
       targetRatio = widget.targetRatio;
@@ -890,4 +885,151 @@ class _AsymmetryHeatMapCardState extends State<AsymmetryHeatMapCard> {
       )!;
     }
   }
+
+  /// Calcule le temps actif total en minutes à partir des valeurs cumulatives
+  /// Les valeurs sont cumulatives depuis le boot de la montre
+  /// On utilise (MAX - MIN) pour calculer le temps actif pendant la période
+  double _calculateTotalActiveTime(List<Map<String, dynamic>> data, String fieldName) {
+    if (data.isEmpty) return 0.0;
+
+    int? minValue;
+    int? maxValue;
+
+    for (final entry in data) {
+      final value = entry[fieldName];
+      if (value == null) continue;
+
+      final intValue = (value is int) ? value : (value as double).toInt();
+
+      if (minValue == null || intValue < minValue) {
+        minValue = intValue;
+      }
+      if (maxValue == null || intValue > maxValue) {
+        maxValue = intValue;
+      }
+    }
+
+    if (minValue == null || maxValue == null) return 0.0;
+
+    // Le temps actif = différence entre la valeur max et min
+    final activeTime = maxValue - minValue;
+
+    // Si négatif ou trop grand (> 24h), c'est une anomalie
+    if (activeTime < 0 || activeTime > 86400000) return 0.0;
+
+    return activeTime / 60000.0; // Convertir ms en minutes
+  }
+}
+
+// ============================================================================
+// FONCTIONS TOP-LEVEL POUR COMPUTE() - Exécutées dans un isolate séparé
+// IMPORTANT: Ces classes/fonctions doivent être publiques (sans _) pour compute()
+// ============================================================================
+
+/// Paramètres pour le calcul d'asymétrie mensuelle dans un isolate
+class HeatMapComputeParams {
+  final List<Map<String, dynamic>> leftData;
+  final List<Map<String, dynamic>> rightData;
+  final String fieldName;
+  final bool isLeftAffected;
+  final int year;
+  final int month;
+  final int lastDayOfMonth;
+
+  HeatMapComputeParams({
+    required this.leftData,
+    required this.rightData,
+    required this.fieldName,
+    required this.isLeftAffected,
+    required this.year,
+    required this.month,
+    required this.lastDayOfMonth,
+  });
+}
+
+/// Fonction top-level pour calculer l'asymétrie mensuelle dans un isolate
+/// Utilisée par compute() pour éviter le blocage du thread principal
+///
+/// Calcule les deltas à partir des valeurs cumulatives par jour
+Map<DateTime, double> computeMonthlyAsymmetry(HeatMapComputeParams params) {
+  final asymmetryData = <DateTime, double>{};
+
+  // Grouper les données par jour
+  final leftByDay = <int, List<Map<String, dynamic>>>{};
+  final rightByDay = <int, List<Map<String, dynamic>>>{};
+
+  // Grouper données gauche par jour
+  for (final data in params.leftData) {
+    final createdAt = data['createdAt'] as String?;
+    if (createdAt == null) continue;
+    final timestamp = DateTime.parse(createdAt);
+    final day = timestamp.day;
+    leftByDay.putIfAbsent(day, () => []);
+    leftByDay[day]!.add(data);
+  }
+
+  // Grouper données droite par jour
+  for (final data in params.rightData) {
+    final createdAt = data['createdAt'] as String?;
+    if (createdAt == null) continue;
+    final timestamp = DateTime.parse(createdAt);
+    final day = timestamp.day;
+    rightByDay.putIfAbsent(day, () => []);
+    rightByDay[day]!.add(data);
+  }
+
+  // Calculer l'asymétrie pour chaque jour
+  for (int day = 1; day <= params.lastDayOfMonth; day++) {
+    final leftData = leftByDay[day] ?? [];
+    final rightData = rightByDay[day] ?? [];
+
+    if (leftData.isEmpty && rightData.isEmpty) continue;
+
+    // Calculer la somme des deltas pour le jour (en minutes)
+    final leftTotal = _calculateDeltaSum(leftData, params.fieldName) / 60000.0;
+    final rightTotal = _calculateDeltaSum(rightData, params.fieldName) / 60000.0;
+
+    // Calculer le ratio d'asymétrie (membre atteint / total)
+    final total = leftTotal + rightTotal;
+    if (total > 0) {
+      final affectedValue = params.isLeftAffected ? leftTotal : rightTotal;
+      final ratio = (affectedValue / total) * 100;
+      final dateKey = DateTime(params.year, params.month, day);
+      asymmetryData[dateKey] = ratio;
+    }
+  }
+
+  return asymmetryData;
+}
+
+/// Calcule le temps actif (MAX - MIN) pour une liste de données
+/// Les valeurs sont cumulatives depuis le boot de la montre
+double _calculateDeltaSum(List<Map<String, dynamic>> data, String fieldName) {
+  if (data.isEmpty) return 0.0;
+
+  int? minValue;
+  int? maxValue;
+
+  for (final entry in data) {
+    final value = entry[fieldName];
+    if (value == null) continue;
+
+    final intValue = (value is int) ? value : (value as double).toInt();
+
+    if (minValue == null || intValue < minValue) {
+      minValue = intValue;
+    }
+    if (maxValue == null || intValue > maxValue) {
+      maxValue = intValue;
+    }
+  }
+
+  if (minValue == null || maxValue == null) return 0.0;
+
+  final activeTime = maxValue - minValue;
+
+  // Si négatif ou trop grand (> 24h), c'est une anomalie
+  if (activeTime < 0 || activeTime > 86400000) return 0.0;
+
+  return activeTime.toDouble();
 }

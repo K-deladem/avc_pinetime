@@ -21,7 +21,7 @@ import 'package:flutter_bloc_app_template/models/arm_side.dart';
 import 'package:flutter_bloc_app_template/models/chart_preferences.dart';
 import 'package:flutter_bloc_app_template/models/watch_device.dart';
 import 'package:flutter_bloc_app_template/service/chart_data_adapter.dart';
-import 'package:flutter_bloc_app_template/service/data_simulator.dart';
+import 'package:flutter_bloc_app_template/service/chart_refresh_notifier.dart';
 import 'package:flutter_bloc_app_template/service/goal_calculator_service.dart';
 import 'package:flutter_bloc_app_template/ui/home/chart/asymmetry_gauge_chart.dart';
 import 'package:flutter_bloc_app_template/ui/home/page/new/bluetooth_scan_page_improved.dart';
@@ -195,8 +195,6 @@ class _HomeScreenState extends State<HomeScreen> {
           return Scaffold(
             backgroundColor: Theme.of(context).colorScheme.surface,
             body: body,
-            //  BOUTON SIMULATEUR - À RETIRER EN PRODUCTION
-            floatingActionButton: _buildSimulatorButton(context),
           );
         },
       ),
@@ -378,8 +376,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     AsymmetryGaugeChart(
                       title: 'Asymétrie',
                       icon: Icons.assessment_outlined,
-                      magnitudeDataProvider: adapter.getMagnitudeAsymmetry,
-                      axisDataProvider: adapter.getAxisAsymmetry,
+                      magnitudeDataProvider: adapter.getMagnitudeAsymmetryForGauge,
+                      axisDataProvider: adapter.getAxisAsymmetryForGauge,
                       unit: 'min',
                       affectedSide: affectedSide,
                       goalValue: goalValue, // Passe l'objectif au graphique
@@ -701,11 +699,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (newArm.deviceId == null) {
         _showSuccessMessage("Montre ${position.name} oubliée avec succès");
-
-        // Forcer un rebuild
-        if (mounted) {
-          setState(() {});
-        }
+        // Le BlocBuilder se met à jour automatiquement via le state change
       } else {
         _showErrorMessage(
             "Erreur lors de l'oubli de la montre ${position.name}");
@@ -852,256 +846,4 @@ class _HomeScreenState extends State<HomeScreen> {
     return "Il y a ${diff.inDays} j";
   }
 
-  // =================== SIMULATEUR DE DONNÉES (À RETIRER EN PRODUCTION) ===================
-
-  Widget? _buildSimulatorButton(BuildContext context) {
-    // Retournez null pour désactiver le bouton en production
-    // return null;
-
-    return FloatingActionButton.extended(
-      onPressed: () => _showSimulatorDialog(context),
-      icon: const Icon(Icons.science),
-      label: const Text('Simulateur'),
-      backgroundColor: Colors.deepPurple,
-    );
-  }
-
-  void _showSimulatorDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.science, color: Colors.deepPurple),
-            SizedBox(width: 8),
-            Expanded(
-              child: Text('Simulateur de Données'),
-            ),
-          ],
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Text(
-                'Mode Test Uniquement\n\n'
-                'Génère de fausses données pour tester les graphiques.',
-                style: TextStyle(fontSize: 12),
-              ),
-              const SizedBox(height: 20),
-
-              // Bouton: Générer 7 jours
-              ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.pop(context);
-                  _generateTestData(days: 7);
-                },
-                icon: const Icon(Icons.calendar_view_week),
-                label: const Text('Générer 7 jours'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-
-              const SizedBox(height: 8),
-
-              // Bouton: Générer 30 jours
-              ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.pop(context);
-                  _generateTestData(days: 30);
-                },
-                icon: const Icon(Icons.calendar_month),
-                label: const Text('Générer 30 jours'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-
-              const SizedBox(height: 8),
-
-              // Bouton: Asymétrie gauche dominante
-              ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.pop(context);
-                  _generateAsymmetricData(leftDominance: 0.7);
-                },
-                icon: const Icon(Icons.trending_up),
-                label: const Text('Gauche Dominant (70%)'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-
-              const SizedBox(height: 8),
-
-              // Bouton: Asymétrie droite dominante
-              ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.pop(context);
-                  _generateAsymmetricData(leftDominance: 0.3);
-                },
-                icon: const Icon(Icons.trending_down),
-                label: const Text('Droite Dominant (70%)'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.purple,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-
-              const SizedBox(height: 8),
-
-              // Bouton: Données équilibrées
-              ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.pop(context);
-                  _generateAsymmetricData(leftDominance: 0.5);
-                },
-                icon: const Icon(Icons.balance),
-                label: const Text('Équilibré (50/50)'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.teal,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-
-              const SizedBox(height: 16),
-              const Divider(),
-              const SizedBox(height: 8),
-
-              // Bouton: Afficher stats
-              OutlinedButton.icon(
-                onPressed: () async {
-                  final simulator = DataSimulator();
-                  await simulator.showDataStats();
-                  if (mounted) {
-                    _showSuccessMessage('Stats affichées dans la console');
-                  }
-                },
-                icon: const Icon(Icons.bar_chart),
-                label: const Text('Afficher Stats'),
-              ),
-
-              const SizedBox(height: 8),
-
-              // Bouton: Supprimer tout
-              OutlinedButton.icon(
-                onPressed: () {
-                  Navigator.pop(context);
-                  _clearAllData();
-                },
-                icon: const Icon(Icons.delete_forever),
-                label: const Text('Supprimer Tout'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.red,
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(S.of(context).close),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _generateTestData({required int days}) async {
-    _showSuccessMessage('Génération de $days jours de données...');
-
-    final simulator = DataSimulator();
-    final startDate = DateTime.now().subtract(Duration(days: days));
-
-    try {
-      await simulator.generateTestData(
-        startDate: startDate,
-        endDate: DateTime.now(),
-        dataPointsPerDay: 24,
-      );
-
-      if (!mounted) return;
-
-      setState(() {}); // Rafraîchir l'UI
-      _showSuccessMessage(' $days jours de données générées!');
-    } catch (e) {
-      if (!mounted) return;
-      _showErrorMessage('Erreur: $e');
-    }
-  }
-
-  Future<void> _generateAsymmetricData({required double leftDominance}) async {
-    final percentage = (leftDominance * 100).toStringAsFixed(0);
-    _showSuccessMessage('Génération avec asymétrie ($percentage% gauche)...');
-
-    final simulator = DataSimulator();
-
-    try {
-      await simulator.generateAsymmetryPattern(
-        startDate: DateTime.now().subtract(const Duration(days: 7)),
-        endDate: DateTime.now(),
-        leftDominance: leftDominance,
-      );
-
-      if (!mounted) return;
-
-      setState(() {}); // Rafraîchir l'UI
-      _showSuccessMessage(' Données asymétriques générées!');
-    } catch (e) {
-      if (!mounted) return;
-      _showErrorMessage('Erreur: $e');
-    }
-  }
-
-  Future<void> _clearAllData() async {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirmer la suppression'),
-        content: const Text(
-          'Êtes-vous sûr de vouloir supprimer TOUTES les données ?\n\n'
-          'Cette action est irréversible.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(S.of(context).cancel),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(context);
-
-              if (!mounted) return;
-
-              _showSuccessMessage('Suppression en cours...');
-
-              try {
-                final simulator = DataSimulator();
-                await simulator.clearAllData();
-
-                if (!mounted) return;
-
-                setState(() {}); // Rafraîchir l'UI
-                _showSuccessMessage(' Toutes les données supprimées');
-              } catch (e) {
-                if (!mounted) return;
-                _showErrorMessage('Erreur: $e');
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Supprimer'),
-          ),
-        ],
-      ),
-    );
-  }
 }

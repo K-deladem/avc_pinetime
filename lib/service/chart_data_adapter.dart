@@ -49,6 +49,7 @@ class ChartDataAdapter {
   // ========== ADAPTATEURS PAR TYPE ==========
 
   /// Adaptateur pour les PAS (steps)
+  /// OPTIMISÉ: Requêtes DB en parallèle avec Future.wait()
   Future<List<ChartDataPoint>> getStepsData(
     String period,
     DateTime? selectedDate,
@@ -56,27 +57,21 @@ class ChartDataAdapter {
     final start = _getStartDate(period, selectedDate);
     final end = _getEndDate(period, selectedDate);
 
-    final leftData = await _db.getDeviceInfo(
-      'left',
-      'steps',
-      startDate: start,
-      endDate: end,
-      limit: 1000,
-    );
+    // Charger les données des deux bras EN PARALLÈLE pour éviter ANR
+    final results = await Future.wait([
+      _db.getDeviceInfo('left', 'steps', startDate: start, endDate: end, limit: 1000),
+      _db.getDeviceInfo('right', 'steps', startDate: start, endDate: end, limit: 1000),
+    ]);
 
-    final rightData = await _db.getDeviceInfo(
-      'right',
-      'steps',
-      startDate: start,
-      endDate: end,
-      limit: 1000,
-    );
+    final leftData = results[0];
+    final rightData = results[1];
 
     // Agréger par période
     return _aggregateStepsData(leftData, rightData, period);
   }
 
   /// Adaptateur pour la BATTERIE
+  /// OPTIMISÉ: Requêtes DB en parallèle avec Future.wait()
   Future<List<ChartDataPoint>> getBatteryData(
     String period,
     DateTime? selectedDate,
@@ -84,26 +79,20 @@ class ChartDataAdapter {
     final start = _getStartDate(period, selectedDate);
     final end = _getEndDate(period, selectedDate);
 
-    final leftData = await _db.getDeviceInfo(
-      'left',
-      'battery',
-      startDate: start,
-      endDate: end,
-      limit: 1000,
-    );
+    // Charger les données des deux bras EN PARALLÈLE pour éviter ANR
+    final results = await Future.wait([
+      _db.getDeviceInfo('left', 'battery', startDate: start, endDate: end, limit: 1000),
+      _db.getDeviceInfo('right', 'battery', startDate: start, endDate: end, limit: 1000),
+    ]);
 
-    final rightData = await _db.getDeviceInfo(
-      'right',
-      'battery',
-      startDate: start,
-      endDate: end,
-      limit: 1000,
-    );
+    final leftData = results[0];
+    final rightData = results[1];
 
     return _aggregateBatteryData(leftData, rightData, period);
   }
 
   /// Adaptateur pour MOTION MAGNITUDE
+  /// OPTIMISÉ: Requêtes DB en parallèle avec Future.wait()
   Future<List<ChartDataPoint>> getMotionMagnitudeData(
     String period,
     DateTime? selectedDate,
@@ -111,24 +100,20 @@ class ChartDataAdapter {
     final start = _getStartDate(period, selectedDate);
     final end = _getEndDate(period, selectedDate);
 
-    final leftData = await _db.getMovementData(
-      'left',
-      startDate: start,
-      endDate: end,
-      limit: 1000,
-    );
+    // Charger les données des deux bras EN PARALLÈLE pour éviter ANR
+    final results = await Future.wait([
+      _db.getMovementData('left', startDate: start, endDate: end, limit: 1000),
+      _db.getMovementData('right', startDate: start, endDate: end, limit: 1000),
+    ]);
 
-    final rightData = await _db.getMovementData(
-      'right',
-      startDate: start,
-      endDate: end,
-      limit: 1000,
-    );
+    final leftData = results[0];
+    final rightData = results[1];
 
     return _aggregateMovementData(leftData, rightData, period, 'magnitude');
   }
 
   /// Adaptateur pour ACTIVITY LEVEL
+  /// OPTIMISÉ: Requêtes DB en parallèle avec Future.wait()
   Future<List<ChartDataPoint>> getActivityLevelData(
     String period,
     DateTime? selectedDate,
@@ -136,24 +121,20 @@ class ChartDataAdapter {
     final start = _getStartDate(period, selectedDate);
     final end = _getEndDate(period, selectedDate);
 
-    final leftData = await _db.getMovementData(
-      'left',
-      startDate: start,
-      endDate: end,
-      limit: 1000,
-    );
+    // Charger les données des deux bras EN PARALLÈLE pour éviter ANR
+    final results = await Future.wait([
+      _db.getMovementData('left', startDate: start, endDate: end, limit: 1000),
+      _db.getMovementData('right', startDate: start, endDate: end, limit: 1000),
+    ]);
 
-    final rightData = await _db.getMovementData(
-      'right',
-      startDate: start,
-      endDate: end,
-      limit: 1000,
-    );
+    final leftData = results[0];
+    final rightData = results[1];
 
     return _aggregateMovementData(leftData, rightData, period, 'activityLevel');
   }
 
   /// Adaptateur pour MAGNITUDE ACTIVE TIME
+  /// OPTIMISÉ: Requêtes DB en parallèle avec Future.wait()
   Future<List<ChartDataPoint>> getMagnitudeActiveTimeData(
     String period,
     DateTime? selectedDate,
@@ -161,24 +142,20 @@ class ChartDataAdapter {
     final start = _getStartDate(period, selectedDate);
     final end = _getEndDate(period, selectedDate);
 
-    final leftData = await _db.getMovementData(
-      'left',
-      startDate: start,
-      endDate: end,
-      limit: 1000,
-    );
+    // Charger les données des deux bras EN PARALLÈLE pour éviter ANR
+    final results = await Future.wait([
+      _db.getMovementData('left', startDate: start, endDate: end, limit: 1000),
+      _db.getMovementData('right', startDate: start, endDate: end, limit: 1000),
+    ]);
 
-    final rightData = await _db.getMovementData(
-      'right',
-      startDate: start,
-      endDate: end,
-      limit: 1000,
-    );
+    final leftData = results[0];
+    final rightData = results[1];
 
     return _aggregateMovementData(leftData, rightData, period, 'magnitudeActiveTime');
   }
 
   /// Adaptateur pour AXIS ACTIVE TIME
+  /// OPTIMISÉ: Requêtes DB en parallèle avec Future.wait()
   Future<List<ChartDataPoint>> getAxisActiveTimeData(
     String period,
     DateTime? selectedDate,
@@ -186,19 +163,14 @@ class ChartDataAdapter {
     final start = _getStartDate(period, selectedDate);
     final end = _getEndDate(period, selectedDate);
 
-    final leftData = await _db.getMovementData(
-      'left',
-      startDate: start,
-      endDate: end,
-      limit: 1000,
-    );
+    // Charger les données des deux bras EN PARALLÈLE pour éviter ANR
+    final results = await Future.wait([
+      _db.getMovementData('left', startDate: start, endDate: end, limit: 1000),
+      _db.getMovementData('right', startDate: start, endDate: end, limit: 1000),
+    ]);
 
-    final rightData = await _db.getMovementData(
-      'right',
-      startDate: start,
-      endDate: end,
-      limit: 1000,
-    );
+    final leftData = results[0];
+    final rightData = results[1];
 
     return _aggregateMovementData(leftData, rightData, period, 'axisActiveTime');
   }
@@ -403,17 +375,66 @@ class ChartDataAdapter {
   }
 
   /// Agrégation pour les données de mouvement
+  ///
+  /// Pour les champs cumulatifs (magnitudeActiveTime, axisActiveTime),
+  /// calcule les deltas entre mesures consécutives.
+  /// Pour les autres champs, utilise la moyenne.
   List<ChartDataPoint> _aggregateMovementData(
     List<Map<String, dynamic>> leftData,
     List<Map<String, dynamic>> rightData,
     String period,
     String fieldName,
   ) {
+    // Champs cumulatifs qui nécessitent un calcul de delta
+    final cumulativeFields = ['magnitudeActiveTime', 'axisActiveTime'];
+    final isCumulative = cumulativeFields.contains(fieldName);
+
+    if (isCumulative) {
+      // Calculer les deltas pour les valeurs cumulatives
+      final leftDeltas = _calculateDeltas(leftData, fieldName);
+      final rightDeltas = _calculateDeltas(rightData, fieldName);
+
+      final Map<DateTime, Map<String, List<double>>> grouped = {};
+
+      // Grouper les deltas gauche
+      for (final entry in leftDeltas.entries) {
+        final groupedDate = _groupDateByPeriod(entry.key, period);
+        grouped.putIfAbsent(groupedDate, () => {'left': [], 'right': []});
+        grouped[groupedDate]!['left']!.add(entry.value);
+      }
+
+      // Grouper les deltas droite
+      for (final entry in rightDeltas.entries) {
+        final groupedDate = _groupDateByPeriod(entry.key, period);
+        grouped.putIfAbsent(groupedDate, () => {'left': [], 'right': []});
+        grouped[groupedDate]!['right']!.add(entry.value);
+      }
+
+      // Créer les points avec la SOMME des deltas
+      final points = <ChartDataPoint>[];
+      final sortedKeys = grouped.keys.toList()..sort();
+
+      for (final date in sortedKeys) {
+        final values = grouped[date]!;
+        points.add(ChartDataPoint(
+          timestamp: date,
+          leftValue: values['left']!.isEmpty
+              ? 0.0
+              : values['left']!.reduce((a, b) => a + b),
+          rightValue: values['right']!.isEmpty
+              ? 0.0
+              : values['right']!.reduce((a, b) => a + b),
+        ));
+      }
+
+      return points;
+    }
+
+    // Pour les champs non-cumulatifs, utiliser la moyenne
     final Map<DateTime, Map<String, List<double>>> grouped = {};
 
     // Grouper les données gauche
     for (final data in leftData) {
-      // Utiliser createdAt (date réelle d'enregistrement) au lieu de timestamp (timestamp montre)
       final createdAt = data['createdAt'] as String?;
       if (createdAt == null) continue;
       final timestamp = DateTime.parse(createdAt);
@@ -429,7 +450,6 @@ class ChartDataAdapter {
 
     // Grouper les données droite
     for (final data in rightData) {
-      // Utiliser createdAt (date réelle d'enregistrement) au lieu de timestamp (timestamp montre)
       final createdAt = data['createdAt'] as String?;
       if (createdAt == null) continue;
       final timestamp = DateTime.parse(createdAt);
@@ -443,7 +463,7 @@ class ChartDataAdapter {
       }
     }
 
-    // Créer les points de données
+    // Créer les points de données avec la moyenne
     final points = <ChartDataPoint>[];
     final sortedKeys = grouped.keys.toList()..sort();
 
@@ -484,6 +504,7 @@ class ChartDataAdapter {
 
   /// Adaptateur pour ASYMÉTRIE DES PAS
   /// Calcul du ratio membre atteint/total en pourcentage
+  /// OPTIMISÉ: Requêtes DB en parallèle avec Future.wait()
   Future<List<AsymmetryDataPoint>> getStepsAsymmetry(
     String period,
     DateTime? selectedDate, {
@@ -492,21 +513,14 @@ class ChartDataAdapter {
     final start = _getStartDate(period, selectedDate);
     final end = _getEndDate(period, selectedDate);
 
-    final leftData = await _db.getDeviceInfo(
-      'left',
-      'steps',
-      startDate: start,
-      endDate: end,
-      limit: 1000,
-    );
+    // Charger les données des deux bras EN PARALLÈLE pour éviter ANR
+    final results = await Future.wait([
+      _db.getDeviceInfo('left', 'steps', startDate: start, endDate: end, limit: 1000),
+      _db.getDeviceInfo('right', 'steps', startDate: start, endDate: end, limit: 1000),
+    ]);
 
-    final rightData = await _db.getDeviceInfo(
-      'right',
-      'steps',
-      startDate: start,
-      endDate: end,
-      limit: 1000,
-    );
+    final leftData = results[0];
+    final rightData = results[1];
 
     return _aggregateAsymmetryData(
       leftData,
@@ -517,8 +531,9 @@ class ChartDataAdapter {
     );
   }
 
-  /// Adaptateur pour ASYMÉTRIE MAGNITUDE ACTIVE TIME
-  /// Calcul du ratio membre atteint/total pour le temps actif basé sur magnitude
+  /// Adaptateur pour ASYMÉTRIE MAGNITUDE ACTIVE TIME (pour graphique area)
+  /// Retourne plusieurs points par période pour tracer la courbe
+  /// OPTIMISÉ: Requêtes DB en parallèle avec Future.wait()
   Future<List<AsymmetryDataPoint>> getMagnitudeAsymmetry(
     String period,
     DateTime? selectedDate, {
@@ -527,20 +542,16 @@ class ChartDataAdapter {
     final start = _getStartDate(period, selectedDate);
     final end = _getEndDate(period, selectedDate);
 
-    final leftData = await _db.getMovementData(
-      'left',
-      startDate: start,
-      endDate: end,
-      limit: 1000,
-    );
+    // Charger les données des deux bras EN PARALLÈLE pour éviter ANR
+    final results = await Future.wait([
+      _db.getMovementData('left', startDate: start, endDate: end, limit: 10000),
+      _db.getMovementData('right', startDate: start, endDate: end, limit: 10000),
+    ]);
 
-    final rightData = await _db.getMovementData(
-      'right',
-      startDate: start,
-      endDate: end,
-      limit: 1000,
-    );
+    final leftData = results[0];
+    final rightData = results[1];
 
+    // Retourne plusieurs points par période pour le graphique area
     final asymmetryData = _aggregateAsymmetryDataFromMovement(
       leftData,
       rightData,
@@ -553,8 +564,9 @@ class ChartDataAdapter {
     return _normalizeAsymmetryDataPoints(asymmetryData, period, selectedDate);
   }
 
-  /// Adaptateur pour ASYMÉTRIE AXIS ACTIVE TIME
-  /// Calcul du ratio membre atteint/total pour le temps actif basé sur axes
+  /// Adaptateur pour ASYMÉTRIE AXIS ACTIVE TIME (pour graphique area)
+  /// Retourne plusieurs points par période pour tracer la courbe
+  /// OPTIMISÉ: Requêtes DB en parallèle avec Future.wait()
   Future<List<AsymmetryDataPoint>> getAxisAsymmetry(
     String period,
     DateTime? selectedDate, {
@@ -563,20 +575,16 @@ class ChartDataAdapter {
     final start = _getStartDate(period, selectedDate);
     final end = _getEndDate(period, selectedDate);
 
-    final leftData = await _db.getMovementData(
-      'left',
-      startDate: start,
-      endDate: end,
-      limit: 1000,
-    );
+    // Charger les données des deux bras EN PARALLÈLE pour éviter ANR
+    final results = await Future.wait([
+      _db.getMovementData('left', startDate: start, endDate: end, limit: 10000),
+      _db.getMovementData('right', startDate: start, endDate: end, limit: 10000),
+    ]);
 
-    final rightData = await _db.getMovementData(
-      'right',
-      startDate: start,
-      endDate: end,
-      limit: 1000,
-    );
+    final leftData = results[0];
+    final rightData = results[1];
 
+    // Retourne plusieurs points par période pour le graphique area
     final asymmetryData = _aggregateAsymmetryDataFromMovement(
       leftData,
       rightData,
@@ -587,6 +595,62 @@ class ChartDataAdapter {
 
     // Normaliser pour avoir des abscisses fixes
     return _normalizeAsymmetryDataPoints(asymmetryData, period, selectedDate);
+  }
+
+  /// Adaptateur pour ASYMÉTRIE MAGNITUDE ACTIVE TIME (pour JAUGE uniquement)
+  /// Retourne un seul point avec les totaux pour toute la période
+  Future<List<AsymmetryDataPoint>> getMagnitudeAsymmetryForGauge(
+    String period,
+    DateTime? selectedDate, {
+        ArmSide affectedSide = ArmSide.left,
+  }) async {
+    final start = _getStartDate(period, selectedDate);
+    final end = _getEndDate(period, selectedDate);
+
+    // Charger les données des deux bras EN PARALLÈLE pour éviter ANR
+    final results = await Future.wait([
+      _db.getMovementData('left', startDate: start, endDate: end, limit: 10000),
+      _db.getMovementData('right', startDate: start, endDate: end, limit: 10000),
+    ]);
+
+    final leftData = results[0];
+    final rightData = results[1];
+
+    // Retourne un seul point avec les totaux pour la jauge
+    return [_aggregateAsymmetryForGauge(
+      leftData,
+      rightData,
+      'magnitudeActiveTime',
+      affectedSide,
+    )];
+  }
+
+  /// Adaptateur pour ASYMÉTRIE AXIS ACTIVE TIME (pour JAUGE uniquement)
+  /// Retourne un seul point avec les totaux pour toute la période
+  Future<List<AsymmetryDataPoint>> getAxisAsymmetryForGauge(
+    String period,
+    DateTime? selectedDate, {
+        ArmSide affectedSide = ArmSide.left,
+  }) async {
+    final start = _getStartDate(period, selectedDate);
+    final end = _getEndDate(period, selectedDate);
+
+    // Charger les données des deux bras EN PARALLÈLE pour éviter ANR
+    final results = await Future.wait([
+      _db.getMovementData('left', startDate: start, endDate: end, limit: 10000),
+      _db.getMovementData('right', startDate: start, endDate: end, limit: 10000),
+    ]);
+
+    final leftData = results[0];
+    final rightData = results[1];
+
+    // Retourne un seul point avec les totaux pour la jauge
+    return [_aggregateAsymmetryForGauge(
+      leftData,
+      rightData,
+      'axisActiveTime',
+      affectedSide,
+    )];
   }
 
   /// Adaptateur pour visualiser les VALEURS GAUCHE/DROITE du mouvement
@@ -700,88 +764,217 @@ class ChartDataAdapter {
     }
   }
 
-  /// Méthode d'agrégation pour les données de movement_data
-  ///
-  /// Cette méthode traite les données brutes de movement_data
-  /// Calcul: (membre atteint / total) × 100
+  /// Méthode d'agrégation pour les données de movement_data (POUR GRAPHIQUE AREA)
+  /// Retourne plusieurs points par période (heure/jour/mois) pour tracer la courbe
+  /// Calcule les deltas à partir des valeurs cumulatives par période
+  /// Calcul ratio: (membre atteint / total) × 100
   List<AsymmetryDataPoint> _aggregateAsymmetryDataFromMovement(
     List<Map<String, dynamic>> leftData,
     List<Map<String, dynamic>> rightData,
     String period,
     String fieldName, // 'magnitudeActiveTime' ou 'axisActiveTime'
-      ArmSide affectedSide, // 'left' ou 'right'
+    ArmSide affectedSide, // 'left' ou 'right'
   ) {
-    final Map<DateTime, Map<String, List<double>>> grouped = {};
+    // Calculer les deltas par période (heure/jour/mois)
+    final leftDeltas = _calculateDeltasByPeriod(leftData, fieldName, period);
+    final rightDeltas = _calculateDeltasByPeriod(rightData, fieldName, period);
 
-    // Grouper gauche
-    for (final data in leftData) {
-      // Utiliser createdAt (date réelle d'enregistrement) au lieu de timestamp (timestamp montre)
-      final createdAt = data['createdAt'] as String?;
-      if (createdAt == null) continue;
-      final timestamp = DateTime.parse(createdAt);
-      final groupedDate = _groupDateByPeriod(timestamp, period);
-      grouped.putIfAbsent(groupedDate, () => {'left': [], 'right': []});
+    final Map<DateTime, Map<String, double>> grouped = {};
 
-      // Récupérer la valeur du champ (peut être null)
-      final value = data[fieldName];
-      if (value != null) {
-        final doubleValue = (value is int) ? value.toDouble() : (value as double);
-        // Les valeurs sont en millisecondes, convertir en minutes (/ 60000)
-        grouped[groupedDate]!['left']!.add(doubleValue / 60000.0);
-      }
+    // Grouper les deltas gauche
+    for (final entry in leftDeltas.entries) {
+      grouped.putIfAbsent(entry.key, () => {'left': 0.0, 'right': 0.0});
+      grouped[entry.key]!['left'] = entry.value / 60000.0; // Convertir ms en minutes
     }
 
-    // Grouper droite
-    for (final data in rightData) {
-      // Utiliser createdAt (date réelle d'enregistrement) au lieu de timestamp (timestamp montre)
-      final createdAt = data['createdAt'] as String?;
-      if (createdAt == null) continue;
-      final timestamp = DateTime.parse(createdAt);
-      final groupedDate = _groupDateByPeriod(timestamp, period);
-      grouped.putIfAbsent(groupedDate, () => {'left': [], 'right': []});
-
-      final value = data[fieldName];
-      if (value != null) {
-        final doubleValue = (value is int) ? value.toDouble() : (value as double);
-        // Les valeurs sont en millisecondes, convertir en minutes (/ 60000)
-        grouped[groupedDate]!['right']!.add(doubleValue / 60000.0);
-      }
+    // Grouper les deltas droite
+    for (final entry in rightDeltas.entries) {
+      grouped.putIfAbsent(entry.key, () => {'left': 0.0, 'right': 0.0});
+      grouped[entry.key]!['right'] = entry.value / 60000.0; // Convertir ms en minutes
     }
 
-    // Convertir en AsymmetryDataPoint
     final points = <AsymmetryDataPoint>[];
     final sortedKeys = grouped.keys.toList()..sort();
 
     for (final date in sortedKeys) {
       final values = grouped[date]!;
-
-      // Calculer les moyennes
-      final leftAvg = values['left']!.isEmpty
-          ? 0.0
-          : values['left']!.reduce((a, b) => a + b) / values['left']!.length;
-      final rightAvg = values['right']!.isEmpty
-          ? 0.0
-          : values['right']!.reduce((a, b) => a + b) / values['right']!.length;
-
-      // Calculer l'asymétrie (ratio membre atteint / total)
-      // 50% = équilibré
-      final total = leftAvg + rightAvg;
-      final affectedAvg = affectedSide == ArmSide.left ? leftAvg : rightAvg;
-      final asymmetryRatio = total > 0 ? (affectedAvg / total) * 100 : 50.0;
-
-      // Catégoriser l'asymétrie
+      final leftValue = values['left']!;
+      final rightValue = values['right']!;
+      final total = leftValue + rightValue;
+      final affectedValue = affectedSide == ArmSide.left ? leftValue : rightValue;
+      final asymmetryRatio = total > 0 ? (affectedValue / total) * 100 : 50.0;
       final category = _categorizeAsymmetry(asymmetryRatio);
 
       points.add(AsymmetryDataPoint(
         timestamp: date,
-        leftValue: leftAvg,
-        rightValue: rightAvg,
+        leftValue: leftValue,
+        rightValue: rightValue,
         asymmetryRatio: asymmetryRatio,
         asymmetryCategory: category,
       ));
     }
 
     return points;
+  }
+
+  /// Méthode d'agrégation pour la JAUGE uniquement
+  /// Retourne un seul point avec les totaux pour toute la période
+  /// Calcul: MAX - MIN sur toute la période pour chaque bras
+  AsymmetryDataPoint _aggregateAsymmetryForGauge(
+    List<Map<String, dynamic>> leftData,
+    List<Map<String, dynamic>> rightData,
+    String fieldName, // 'magnitudeActiveTime' ou 'axisActiveTime'
+    ArmSide affectedSide, // 'left' ou 'right'
+  ) {
+    // Calculer le temps actif total (MAX - MIN) pour chaque bras
+    final leftActiveTime = _calculateTotalActiveTime(leftData, fieldName);
+    final rightActiveTime = _calculateTotalActiveTime(rightData, fieldName);
+
+    // Convertir ms en minutes
+    final leftMinutes = leftActiveTime / 60000.0;
+    final rightMinutes = rightActiveTime / 60000.0;
+
+    final total = leftMinutes + rightMinutes;
+    final affectedValue = affectedSide == ArmSide.left ? leftMinutes : rightMinutes;
+    final asymmetryRatio = total > 0 ? (affectedValue / total) * 100 : 50.0;
+    final category = _categorizeAsymmetry(asymmetryRatio);
+
+    return AsymmetryDataPoint(
+      timestamp: DateTime.now(),
+      leftValue: leftMinutes,
+      rightValue: rightMinutes,
+      asymmetryRatio: asymmetryRatio,
+      asymmetryCategory: category,
+    );
+  }
+
+  /// Calcule les deltas (MAX - MIN) par période (heure/jour/mois)
+  /// Grouper les données par période et calculer MAX - MIN pour chaque groupe
+  Map<DateTime, double> _calculateDeltasByPeriod(
+    List<Map<String, dynamic>> data,
+    String fieldName,
+    String period,
+  ) {
+    if (data.isEmpty) return {};
+
+    // Grouper les données par période
+    final byPeriod = <DateTime, List<int>>{};
+
+    for (final entry in data) {
+      final createdAt = entry['createdAt'] as String?;
+      if (createdAt == null) continue;
+
+      final timestamp = DateTime.parse(createdAt);
+      final periodKey = _groupDateByPeriod(timestamp, period);
+
+      final value = entry[fieldName];
+      if (value == null) continue;
+
+      final intValue = (value is int) ? value : (value as double).toInt();
+
+      byPeriod.putIfAbsent(periodKey, () => []);
+      byPeriod[periodKey]!.add(intValue);
+    }
+
+    // Calculer MAX - MIN pour chaque période
+    final deltas = <DateTime, double>{};
+
+    for (final entry in byPeriod.entries) {
+      final values = entry.value;
+      if (values.isEmpty) continue;
+
+      final minVal = values.reduce((a, b) => a < b ? a : b);
+      final maxVal = values.reduce((a, b) => a > b ? a : b);
+      final activeTime = maxVal - minVal;
+
+      // Ignorer les valeurs négatives ou trop grandes
+      if (activeTime > 0 && activeTime <= 86400000) {
+        deltas[entry.key] = activeTime.toDouble();
+      }
+    }
+
+    return deltas;
+  }
+
+  /// Calcule le temps actif total (MAX - MIN) pour un champ cumulatif
+  double _calculateTotalActiveTime(
+    List<Map<String, dynamic>> data,
+    String fieldName,
+  ) {
+    if (data.isEmpty) return 0.0;
+
+    int? minValue;
+    int? maxValue;
+
+    for (final entry in data) {
+      final value = entry[fieldName];
+      if (value == null) continue;
+
+      final intValue = (value is int) ? value : (value as double).toInt();
+
+      if (minValue == null || intValue < minValue) {
+        minValue = intValue;
+      }
+      if (maxValue == null || intValue > maxValue) {
+        maxValue = intValue;
+      }
+    }
+
+    if (minValue == null || maxValue == null) return 0.0;
+
+    final activeTime = maxValue - minValue;
+
+    // Ignorer les valeurs négatives (reboot possible) ou > 24h
+    if (activeTime < 0 || activeTime > 86400000) return 0.0;
+
+    return activeTime.toDouble();
+  }
+
+  /// Calcule le temps actif (MAX - MIN) par période
+  /// Les valeurs de la montre sont cumulatives depuis le boot.
+  /// Pour obtenir le temps actif réel par période, on calcule: MAX - MIN
+  Map<DateTime, double> _calculateDeltas(
+    List<Map<String, dynamic>> data,
+    String fieldName,
+  ) {
+    if (data.isEmpty) return {};
+
+    // Grouper par heure pour avoir MAX - MIN par heure
+    final byHour = <DateTime, List<int>>{};
+
+    for (final entry in data) {
+      final createdAt = entry['createdAt'] as String?;
+      if (createdAt == null) continue;
+
+      final timestamp = DateTime.parse(createdAt);
+      final hourKey = DateTime(timestamp.year, timestamp.month, timestamp.day, timestamp.hour);
+
+      final value = entry[fieldName];
+      if (value == null) continue;
+
+      final intValue = (value is int) ? value : (value as double).toInt();
+
+      byHour.putIfAbsent(hourKey, () => []);
+      byHour[hourKey]!.add(intValue);
+    }
+
+    final deltas = <DateTime, double>{};
+
+    for (final entry in byHour.entries) {
+      final values = entry.value;
+      if (values.isEmpty) continue;
+
+      final minVal = values.reduce((a, b) => a < b ? a : b);
+      final maxVal = values.reduce((a, b) => a > b ? a : b);
+      final activeTime = maxVal - minVal;
+
+      // Ignorer les valeurs négatives ou > 1 heure
+      if (activeTime > 0 && activeTime <= 3600000) {
+        deltas[entry.key] = activeTime.toDouble();
+      }
+    }
+
+    return deltas;
   }
 
   /// Normalise les données en ajoutant les points manquants avec valeurs nulles

@@ -89,8 +89,9 @@ class _ReusableComparisonChartState extends State<ReusableComparisonChart> {
   DateTime? _selectedDate;
   late ChartMode _currentMode;
 
-  // Clé pour forcer le rafraîchissement du FutureBuilder
-  int _refreshKey = 0;
+  // Cache pour les données du graphique - évite les rebuilds inutiles
+  Future<List<ChartDataPoint>>? _cachedFuture;
+  String? _lastCacheKey;
   StreamSubscription<ChartRefreshEvent>? _refreshSubscription;
 
   @override
@@ -101,14 +102,35 @@ class _ReusableComparisonChartState extends State<ReusableComparisonChart> {
       _selectedPeriod = widget.availablePeriods.first;
     }
 
-    // S'abonner aux notifications de rafraîchissement
+    // S'abonner aux notifications de rafraîchissement avec debounce
     _refreshSubscription = ChartRefreshNotifier().stream.listen((event) {
       if (mounted) {
-        setState(() {
-          _refreshKey++;
-        });
+        // Invalider le cache et reconstruire
+        _invalidateCache();
       }
     });
+  }
+
+  void _invalidateCache() {
+    setState(() {
+      _cachedFuture = null;
+      _lastCacheKey = null;
+    });
+  }
+
+  /// Obtenir ou créer le Future avec mise en cache intelligente
+  Future<List<ChartDataPoint>> _getDataFuture() {
+    final currentKey = '$_selectedPeriod-${_selectedDate?.toIso8601String()}';
+
+    // Réutiliser le cache si la clé n'a pas changé
+    if (_cachedFuture != null && _lastCacheKey == currentKey) {
+      return _cachedFuture!;
+    }
+
+    // Créer un nouveau Future et le mettre en cache
+    _lastCacheKey = currentKey;
+    _cachedFuture = widget.dataProvider(_selectedPeriod, _selectedDate);
+    return _cachedFuture!;
   }
 
   @override
@@ -136,8 +158,7 @@ class _ReusableComparisonChartState extends State<ReusableComparisonChart> {
             _buildHeader(context),
             const SizedBox(height: 24),
             FutureBuilder<List<ChartDataPoint>>(
-              key: ValueKey('$_selectedPeriod-$_currentMode-${_selectedDate?.toIso8601String()}-$_refreshKey'),
-              future: widget.dataProvider(_selectedPeriod, _selectedDate),
+              future: _getDataFuture(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const SizedBox(
@@ -265,9 +286,10 @@ class _ReusableComparisonChartState extends State<ReusableComparisonChart> {
             color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
           ),
           onChanged: (String? newValue) {
-            if (newValue != null) {
+            if (newValue != null && newValue != _selectedPeriod) {
               setState(() {
                 _selectedPeriod = newValue;
+                _cachedFuture = null; // Invalider le cache
               });
             }
           },

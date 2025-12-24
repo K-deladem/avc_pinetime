@@ -145,10 +145,23 @@ class ConnectionCoordinator {
   ServiceInstance? _service;
   bool _isServiceRunning = false;
 
+  // Timers gérés pour un nettoyage propre
+  final List<Timer> _activeTimers = [];
+
   final _Debouncer _notifyDebouncer = _Debouncer(const Duration(milliseconds: 250));
 
   @pragma('vm:entry-point')
   ConnectionCoordinator._();
+
+  /// Arrête tous les timers actifs
+  void _stopAllTimers() {
+    _isServiceRunning = false;
+    for (final timer in _activeTimers) {
+      timer.cancel();
+    }
+    _activeTimers.clear();
+    _notifyDebouncer.dispose();
+  }
 
   @pragma('vm:entry-point')
   Future<void> _initialize(ServiceInstance service) async {
@@ -186,36 +199,48 @@ class ConnectionCoordinator {
       });
 
       service.on('stopService').listen((event) {
-        _isServiceRunning = false;
+        _stopAllTimers();
         AppLogger.i('Service arrêté - nettoyage des timers');
       });
 
       // Timer pour surveillance des connexions (toutes les 2 minutes)
-      Timer.periodic(const Duration(minutes: 2), (timer) async {
+      _activeTimers.add(Timer.periodic(const Duration(minutes: 2), (timer) async {
         if (!_isServiceRunning) {
           timer.cancel();
           return;
         }
-        await _checkAndCoordinate();
-      });
+        try {
+          await _checkAndCoordinate();
+        } catch (e) {
+          AppLogger.e('Erreur lors de la vérification des connexions', error: e);
+        }
+      }));
 
       // Timer pour collecte de données (toutes les 5 minutes - optimisé batterie)
-      Timer.periodic(const Duration(minutes: 5), (timer) async {
+      _activeTimers.add(Timer.periodic(const Duration(minutes: 5), (timer) async {
         if (!_isServiceRunning) {
           timer.cancel();
           return;
         }
-        await _collectDataFromDevices();
-      });
+        try {
+          await _collectDataFromDevices();
+        } catch (e) {
+          AppLogger.e('Erreur lors de la collecte de données', error: e);
+        }
+      }));
 
       // Timer pour maintenir le service en vie et gérer les reconnexions
-      Timer.periodic(const Duration(minutes: 1), (timer) async {
+      _activeTimers.add(Timer.periodic(const Duration(minutes: 1), (timer) async {
         if (!_isServiceRunning) {
           timer.cancel();
           return;
         }
-        await _ensureConnectionsAlive();
-      });
+        try {
+          await _ensureConnectionsAlive();
+        } catch (e) {
+          AppLogger.e('Erreur lors du maintien des connexions', error: e);
+        }
+      }));
 
       // Collecte initiale immédiate
       await _collectDataFromDevices();

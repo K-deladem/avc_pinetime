@@ -140,7 +140,9 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                             .colorScheme
                             .primary
                             .withValues(alpha: 0.1),
-                        child: imagePath != null && File(imagePath).existsSync()
+                        // OPTIMISÉ: Pas de File.existsSync() bloquant
+                        // On laisse Image.file avec errorBuilder gérer les fichiers manquants
+                        child: imagePath != null && imagePath.isNotEmpty
                             ? ClipOval(
                                 child: Image.file(
                                   File(imagePath),

@@ -42,8 +42,9 @@ class _AsymmetryRatioChartState extends State<AsymmetryRatioChart> {
   final _adapter = ChartDataAdapter();
   final _goalCalculator = GoalCalculatorService();
 
-  // Clé pour forcer le rafraîchissement du FutureBuilder
-  int _refreshKey = 0;
+  // Cache pour les données du graphique - évite les rebuilds inutiles
+  Future<_ChartData>? _cachedFuture;
+  String? _lastCacheKey;
   StreamSubscription<ChartRefreshEvent>? _refreshSubscription;
 
   @override
@@ -55,12 +56,32 @@ class _AsymmetryRatioChartState extends State<AsymmetryRatioChart> {
       if (event.type == ChartRefreshType.movement ||
           event.type == ChartRefreshType.all) {
         if (mounted) {
-          setState(() {
-            _refreshKey++;
-          });
+          _invalidateCache();
         }
       }
     });
+  }
+
+  void _invalidateCache() {
+    setState(() {
+      _cachedFuture = null;
+      _lastCacheKey = null;
+    });
+  }
+
+  /// Obtenir ou créer le Future avec mise en cache intelligente
+  Future<_ChartData> _getDataFuture() {
+    final currentKey = '$_selectedPeriod-$_selectedType-${_selectedDate?.toIso8601String()}';
+
+    // Réutiliser le cache si la clé n'a pas changé
+    if (_cachedFuture != null && _lastCacheKey == currentKey) {
+      return _cachedFuture!;
+    }
+
+    // Créer un nouveau Future et le mettre en cache
+    _lastCacheKey = currentKey;
+    _cachedFuture = _loadChartData();
+    return _cachedFuture!;
   }
 
   @override
@@ -159,9 +180,10 @@ class _AsymmetryRatioChartState extends State<AsymmetryRatioChart> {
             color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
           ),
           onChanged: (String? newValue) {
-            if (newValue != null) {
+            if (newValue != null && newValue != _selectedType) {
               setState(() {
                 _selectedType = newValue;
+                _cachedFuture = null; // Invalider le cache
               });
             }
           },
@@ -201,9 +223,10 @@ class _AsymmetryRatioChartState extends State<AsymmetryRatioChart> {
             color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
           ),
           onChanged: (String? newValue) {
-            if (newValue != null) {
+            if (newValue != null && newValue != _selectedPeriod) {
               setState(() {
                 _selectedPeriod = newValue;
+                _cachedFuture = null; // Invalider le cache
               });
             }
           },
@@ -220,8 +243,7 @@ class _AsymmetryRatioChartState extends State<AsymmetryRatioChart> {
 
   Widget _buildChart() {
     return FutureBuilder<_ChartData>(
-      key: ValueKey('$_selectedPeriod-$_selectedType-${_selectedDate?.toIso8601String()}-$_refreshKey'),
-      future: _loadChartData(),
+      future: _getDataFuture(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const SizedBox(
@@ -267,16 +289,22 @@ class _AsymmetryRatioChartState extends State<AsymmetryRatioChart> {
     // - Semaine : 7 points (Lun-Dim)
     // - Mois : 12 points (Jan-Déc)
 
-    // Calculer les objectifs pour chaque point si goalConfig existe
+    // Calculer les objectifs pour chaque point EN PARALLÈLE si goalConfig existe
     final goals = <DateTime, double>{};
-    if (widget.goalConfig != null) {
-      for (final point in asymmetryData) {
-        final goalForDate = await _goalCalculator.calculateGoalForDate(
+    if (widget.goalConfig != null && asymmetryData.isNotEmpty) {
+      // Utiliser Future.wait() pour calculer tous les objectifs en parallèle
+      final futures = asymmetryData.map((point) async {
+        final goal = await _goalCalculator.calculateGoalForDate(
           widget.goalConfig!,
           widget.affectedSide,
           point.timestamp,
         );
-        goals[point.timestamp] = goalForDate;
+        return MapEntry(point.timestamp, goal);
+      }).toList();
+
+      final results = await Future.wait(futures);
+      for (final entry in results) {
+        goals[entry.key] = entry.value;
       }
     }
 
@@ -308,7 +336,7 @@ class _AsymmetryRatioChartState extends State<AsymmetryRatioChart> {
           show: true,
           drawVerticalLine: false,
           getDrawingHorizontalLine: (value) => FlLine(
-            color: Colors.grey.withOpacity(0.3),
+            color: Colors.grey.withValues(alpha: 0.3),
             strokeWidth: 1,
           ),
         ),
@@ -357,7 +385,7 @@ class _AsymmetryRatioChartState extends State<AsymmetryRatioChart> {
         ),
         borderData: FlBorderData(
           show: true,
-          border: Border.all(color: Colors.grey.withOpacity(0.3)),
+          border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
         ),
         minY: 0,
         maxY: 100,
@@ -382,7 +410,7 @@ class _AsymmetryRatioChartState extends State<AsymmetryRatioChart> {
             ),
             belowBarData: BarAreaData(
               show: true,
-              color: Colors.purple.withOpacity(0.1),
+              color: Colors.purple.withValues(alpha: 0.1),
             ),
           ),
           // Ligne de l'objectif (rouge)
