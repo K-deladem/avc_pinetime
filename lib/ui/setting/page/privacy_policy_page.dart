@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc_app_template/constants/app_constants.dart';
 
 class PrivacyPolicyPage extends StatelessWidget {
   static const routeName = '/privacyPolicy';
@@ -75,8 +76,8 @@ class PrivacyPolicyPage extends StatelessWidget {
               style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            const Text(
-              "Pour toute question relative à cette politique, veuillez contacter : support@monapp.com.",
+            Text(
+              "Pour toute question relative à cette politique, veuillez contacter : ${AppConfig.supportEmail}.",
             ),
             const SizedBox(height: 24),
             Center(

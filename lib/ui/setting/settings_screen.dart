@@ -28,6 +28,7 @@ import 'package:flutter_bloc_app_template/models/watch_device.dart';
 import 'package:flutter_bloc_app_template/ui/setting/page/movement_sampling_page.dart';
 import 'package:flutter_bloc_app_template/routes/app_routes.dart';
 import 'package:flutter_bloc_app_template/service/goal_check_service.dart';
+import 'package:flutter_bloc_app_template/constants/app_constants.dart';
 import 'package:flutter_bloc_app_template/ui/setting/page/watchface_Install_Page.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
@@ -875,7 +876,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return _buildNavTile(
       Icons.email_outlined,
       'Contacter le support',
-      'support@monapp.com',
+      AppConfig.supportEmail,
       () => Navigator.pushNamed(context, AppRoutes.contact),
     );
   }

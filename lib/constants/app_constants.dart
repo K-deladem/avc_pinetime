@@ -131,7 +131,7 @@ class AppConfig {
   static const String apiBaseUrl = '';
 
   /// Support email
-  static const String supportEmail = 'support@avcpinetime.com';
+  static const String supportEmail = 'kdetou@etu.uqac.ca';
 }
 
 /// Permission Constants

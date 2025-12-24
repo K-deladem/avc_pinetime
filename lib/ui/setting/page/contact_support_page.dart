@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc_app_template/generated/l10n.dart';
+import 'package:flutter_bloc_app_template/constants/app_constants.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ContactSupportPage extends StatefulWidget {
   static const routeName = '/contactSupport';
@@ -17,21 +18,61 @@ class _ContactSupportPageState extends State<ContactSupportPage> {
 
   bool _isSending = false;
 
-  void _sendMessage() async {
+  Future<void> _sendMessage() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isSending = true);
 
-    await Future.delayed(const Duration(seconds: 2)); // Simule l'envoi
+    try {
+      final subject = Uri.encodeComponent(_subjectController.text);
+      final body = Uri.encodeComponent(_messageController.text);
 
-    setState(() => _isSending = false);
+      final emailUri = Uri.parse(
+        'mailto:${AppConfig.supportEmail}?subject=$subject&body=$body'
+      );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Message envoyé au support.")),
-    );
+      if (await canLaunchUrl(emailUri)) {
+        await launchUrl(emailUri);
 
-    _subjectController.clear();
-    _messageController.clear();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text("Client email ouvert. Envoyez votre message."),
+              backgroundColor: Theme.of(context).colorScheme.primary,
+            ),
+          );
+
+          _subjectController.clear();
+          _messageController.clear();
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                "Impossible d'ouvrir le client email.\n"
+                "Contactez-nous à: ${AppConfig.supportEmail}"
+              ),
+              backgroundColor: Theme.of(context).colorScheme.error,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Erreur: $e"),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSending = false);
+      }
+    }
   }
 
   @override
@@ -49,7 +90,46 @@ class _ContactSupportPageState extends State<ContactSupportPage> {
           key: _formKey,
           child: ListView(
             children: [
-              Text("Envoyez un message à notre équipe d’assistance :", style: theme.textTheme.bodyLarge),
+              // Info card avec l'email
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.email_outlined,
+                      color: theme.colorScheme.onPrimaryContainer,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Email du support",
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: theme.colorScheme.onPrimaryContainer,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            AppConfig.supportEmail,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onPrimaryContainer,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text("Envoyez un message à notre équipe d'assistance :", style: theme.textTheme.bodyLarge),
               const SizedBox(height: 20),
               TextFormField(
                 controller: _subjectController,
@@ -78,25 +158,21 @@ class _ContactSupportPageState extends State<ContactSupportPage> {
                   onPressed: _isSending ? null : _sendMessage,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                    elevation: 0,
-                    shadowColor: Colors.transparent,
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: theme.colorScheme.onPrimary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
-                      side: BorderSide(
-                        color: Theme.of(context).colorScheme.primary,
-                        width: 1.5,
-                      ),
                     ),
                   ),
                   icon: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 200),
                     child: _isSending
-                        ? const SizedBox(
+                        ? SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.onPrimary),
                       ),
                     )
                         : const Icon(Icons.send, key: ValueKey('send_icon')),
