@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_bloc_app_template/bloc/settings/settings_event.dart';
 import 'package:flutter_bloc_app_template/bloc/settings/settings_repository.dart';
 import 'package:flutter_bloc_app_template/bloc/settings/settings_states.dart';
+import 'package:flutter_bloc_app_template/service/goal_check_service.dart';
 
 class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   final SettingsRepository repository;
@@ -38,6 +39,10 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     final updated = await repository.fetchSettings();
     if (updated != null) {
       emit(SettingsLoaded(updated));
+
+      // Mettre à jour GoalCheckService avec les nouveaux paramètres
+      // pour que les notifications/vibrations utilisent les bons settings
+      await GoalCheckService().updateConfiguration(updated);
     } else {
       emit(SettingsError('Impossible de recharger les paramètres après mise à jour'));
     }

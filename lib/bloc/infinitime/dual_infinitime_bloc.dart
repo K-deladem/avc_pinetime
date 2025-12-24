@@ -23,6 +23,7 @@ import 'package:synchronized/synchronized.dart';
 
 import '../../service/firmware_source.dart';
 import '../../service/chart_refresh_notifier.dart';
+import '../../service/watch_vibration_service.dart';
 
 // ============================================================================
 // CLASS: DualInfiniTimeBloc
@@ -693,6 +694,9 @@ class DualInfiniTimeBloc
         emit(_withArm(side, _armState(side).copyWith(connected: true)));
         _retries[side] = 0;
         _restartSharedRssiIfNeeded();
+
+        // Mettre à jour les sessions dans WatchVibrationService pour les notifications
+        _updateVibrationServiceSessions();
 
         _log('Connection successful for ${side.displayName}', level: _LOG_INFO);
         _logConnectionDiagnostic(side, 'CONNEXION_REUSSIE');
@@ -2563,6 +2567,9 @@ class DualInfiniTimeBloc
 
       await _sessions[side]?.dispose();
       _sessions[side] = null;
+
+      // Mettre à jour les sessions dans WatchVibrationService après déconnexion
+      _updateVibrationServiceSessions();
     } catch (e) {
       _log('Dispose error for ${side.displayName}: $e', level: _LOG_ERROR);
     }
@@ -2615,6 +2622,14 @@ class DualInfiniTimeBloc
   // ============================================================================
   // UTILITIES
   // ============================================================================
+
+  /// Met à jour les sessions dans WatchVibrationService pour les notifications de vibration
+  void _updateVibrationServiceSessions() {
+    WatchVibrationService().configureSessions(
+      leftSession: _sessions[ArmSide.left],
+      rightSession: _sessions[ArmSide.right],
+    );
+  }
 
   ArmDeviceState _armState(ArmSide side) =>
       side == ArmSide.left ? state.left : state.right;

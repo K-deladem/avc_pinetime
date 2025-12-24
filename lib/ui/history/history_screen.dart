@@ -128,13 +128,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         title: const Text('Historique'),
         elevation: 0,
         automaticallyImplyLeading: false,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.file_download),
-            onPressed: _exportData,
-            tooltip: 'Exporter les données',
-          ),
-        ],
+        actions: [],
       ),
       body: Column(
         children: [
@@ -1283,9 +1277,4 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
   }
 
-  void _exportData() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Export en cours de développement...')),
-    );
-  }
 }

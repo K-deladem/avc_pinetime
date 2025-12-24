@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'package:flutter_bloc_app_template/extension/notification_strategy.dart';
-import 'package:flutter_bloc_app_template/extension/vibration_arm.dart';
 import 'package:flutter_bloc_app_template/models/app_settings.dart';
 import 'package:flutter_bloc_app_template/service/goal_calculator_service.dart';
 import 'package:flutter_bloc_app_template/service/notification_service.dart';
@@ -83,7 +81,7 @@ class GoalCheckService {
   /// Met à jour la configuration
   Future<void> updateConfiguration(AppSettings settings) async {
     _currentSettings = settings;
-    AppLogger.i('Configuration GoalCheckService mise à jour: notifications=${settings.notificationsEnabled}, stratégie=${settings.notificationStrategy.label}, bras=${settings.vibrationTargetArm.label}');
+    AppLogger.i('Configuration GoalCheckService mise à jour: notifications=${settings.notificationsEnabled}, fréquence=${settings.checkRatioFrequencyMin}min');
 
     if (_isRunning) {
       // Vérifier si la fréquence a changé pour redémarrer le timer
@@ -129,23 +127,24 @@ class GoalCheckService {
     int goalRatio,
     AppSettings settings,
   ) async {
-    final strategy = settings.notificationStrategy;
+    AppLogger.i('_sendSuccessNotification: ratio=$currentRatio, objectif=$goalRatio');
 
-    // Notification discrète: ne notifier que si largement dépassé
-    if (strategy.label == 'Discrète' && currentRatio < goalRatio * 1.1) {
-      return;
-    }
-
+    AppLogger.i('Envoi notification téléphone...');
     await _notificationService.showNotification(
       id: 1,
       title: 'Objectif atteint!',
-      body: 'Excellent! Ratio actuel: ${currentRatio.toStringAsFixed(1)}% (objectif: $goalRatio%)',
+      body: 'Bravo! Ratio actuel: ${currentRatio.toStringAsFixed(1)}% (objectif: $goalRatio%)',
     );
 
-    // Vibration optionnelle selon la stratégie (succès = vibration légère)
-    if (strategy.label == 'Agressive') {
-      await _vibrationService.triggerVibration(settings, reason: 'objectif_atteint');
-    }
+    // Toujours vibrer pour feedback positif
+    AppLogger.i('Déclenchement vibration montre (succès)...');
+    AppLogger.i('WatchVibrationService.hasActiveSession: ${_vibrationService.hasActiveSession}');
+    await _vibrationService.triggerVibration(
+      settings,
+      reason: 'objectif_atteint',
+      currentRatio: currentRatio,
+      goalRatio: goalRatio,
+    );
   }
 
   /// Envoie une notification de rappel
@@ -154,40 +153,48 @@ class GoalCheckService {
     int goalRatio,
     AppSettings settings,
   ) async {
-    final strategy = settings.notificationStrategy;
     final gap = goalRatio - currentRatio;
+    AppLogger.i('_sendReminderNotification: ratio=$currentRatio, objectif=$goalRatio, gap=$gap');
 
-    // Stratégie discrète: ne rappeler que si très loin de l'objectif
-    if (strategy.label == 'Discrète' && gap < goalRatio * 0.3) {
-      return;
-    }
-
-    // Stratégie équilibrée: rappeler si modérément loin
-    if (strategy.label == 'Équilibrée' && gap < goalRatio * 0.15) {
-      return;
-    }
-
-    // Stratégie agressive: toujours rappeler
-
-    String urgencyLevel = 'Rappel';
-    if (gap > goalRatio * 0.5) {
-      urgencyLevel = 'Attention';
-    } else if (gap > goalRatio * 0.3) {
-      urgencyLevel = 'Important';
-    }
-
+    AppLogger.i('Envoi notification téléphone...');
     await _notificationService.showNotification(
       id: 2,
-      title: '$urgencyLevel - Objectif',
-      body: 'Ratio actuel: ${currentRatio.toStringAsFixed(1)}% - Objectif: $goalRatio% (${gap.toStringAsFixed(1)}% restant)',
+      title: 'Objectif en cours',
+      body: 'Ratio: ${currentRatio.toStringAsFixed(1)}% - ${gap.toStringAsFixed(1)}% restant pour atteindre $goalRatio%',
     );
 
-    // Vibration selon la stratégie et l'écart
-    if (strategy.label == 'Agressive' || gap > goalRatio * 0.4) {
-      await _vibrationService.triggerVibration(settings, reason: 'rappel_objectif');
-    }
+    // Toujours envoyer la vibration avec les infos de progression
+    AppLogger.i('Déclenchement vibration montre (rappel)...');
+    AppLogger.i('WatchVibrationService.hasActiveSession: ${_vibrationService.hasActiveSession}');
+    await _vibrationService.triggerVibration(
+      settings,
+      reason: 'rappel_objectif',
+      currentRatio: currentRatio,
+      goalRatio: goalRatio,
+    );
   }
 
   /// Getter pour savoir si le service est actif
   bool get isRunning => _isRunning;
+
+  /// Force une vérification immédiate (pour tests/debug)
+  Future<void> forceCheck() async {
+    if (_currentSettings != null) {
+      AppLogger.i('Force check triggered');
+      await _performGoalCheck(_currentSettings!);
+    } else {
+      AppLogger.w('Force check: pas de settings disponibles');
+    }
+  }
+
+  /// Teste uniquement la vibration sans les conditions (pour debug)
+  Future<void> testVibration() async {
+    if (_currentSettings != null) {
+      AppLogger.i('Test vibration triggered');
+      AppLogger.i('Sessions actives: ${_vibrationService.hasActiveSession}');
+      await _vibrationService.triggerVibration(_currentSettings!, reason: 'test_manuel');
+    } else {
+      AppLogger.w('Test vibration: pas de settings disponibles');
+    }
+  }
 }

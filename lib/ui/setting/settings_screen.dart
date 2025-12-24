@@ -27,6 +27,7 @@ import 'package:flutter_bloc_app_template/models/time_preferences.dart';
 import 'package:flutter_bloc_app_template/models/watch_device.dart';
 import 'package:flutter_bloc_app_template/ui/setting/page/movement_sampling_page.dart';
 import 'package:flutter_bloc_app_template/routes/app_routes.dart';
+import 'package:flutter_bloc_app_template/service/goal_check_service.dart';
 import 'package:flutter_bloc_app_template/ui/setting/page/watchface_Install_Page.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
@@ -61,10 +62,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // Configuration des vibrations
   VibrationArm vibrationTargetArm = VibrationArm.both;
-  NotificationStrategy notificationStrategy = NotificationStrategy.normal;
   VibrationMode vibrationMode = VibrationMode.doubleShort;
-  int customOn = 200;
-  int customOff = 100;
   int customRepeat = 2;
 
   // Configuration des montres
@@ -270,9 +268,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       children: [
         _buildSectionTitle('Notifications & Vibrations'),
         _buildNotificationSwitch(),
-        _buildNotificationStrategyDropdown(),
         _buildVibrationTypeDropdown(),
         _buildVibrationArmDropdown(),
+        _buildTestVibrationButton(),
       ],
     );
   }
@@ -504,20 +502,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildProfileNavigation() {
-    return _buildNavTile(
-      Icons.person_outline,
-      'Profil',
-      'Gérer nom et photo de profil',
-      () async {
-        await Navigator.pushNamed(context, AppRoutes.profile);
-        // Recharger les paramètres après modification
-        if (!mounted) return;
-        context.read<SettingsBloc>().add(LoadSettings());
-      },
-    );
-  }
-
   Widget _buildLanguageNavigation() {
     return _buildNavTile(
       Icons.language,
@@ -593,57 +577,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildCollectionFrequencyTile() {
-    return ListTile(
-      leading: const Icon(Icons.timer_outlined),
-      title: const Text('Fréquence de collecte'),
-      subtitle: Text('$collectionFrequency s'),
-      trailing: const Icon(Icons.edit),
-      onTap: () => _editIntegerValue(
-        label: 'Fréquence de collecte',
-        initial: collectionFrequency,
-        onSave: (v) {
-          collectionFrequency = v;
-          _saveSettings();
-        },
-      ),
-    );
-  }
-
-  Widget _buildDailyObjectiveTile() {
-    return ListTile(
-      leading: const Icon(Icons.flag_outlined),
-      title: const Text('Objectif journalier'),
-      subtitle: Text('$dailyObjective pts'),
-      trailing: const Icon(Icons.edit),
-      onTap: () => _editIntegerValue(
-        label: 'Objectif journalier',
-        initial: dailyObjective,
-        onSave: (v) {
-          dailyObjective = v;
-          _saveSettings();
-        },
-      ),
-    );
-  }
-
-  Widget _buildCheckFrequencyTile() {
-    return ListTile(
-      leading: const Icon(Icons.schedule_outlined),
-      title: const Text('Fréquence de vérification'),
-      subtitle: Text('$checkFrequencyMin min'),
-      trailing: const Icon(Icons.edit),
-      onTap: () => _editIntegerValue(
-        label: 'Fréquence de vérification',
-        initial: checkFrequencyMin,
-        onSave: (v) {
-          checkFrequencyMin = v;
-          _saveSettings();
-        },
-      ),
-    );
-  }
-
   Widget _buildVibrationArmDropdown() {
     return _buildDropdownTile(
       Icons.back_hand_outlined,
@@ -660,39 +593,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildNotificationStrategyDropdown() {
-    return _buildDropdownTile(
-      Icons.notifications_active_outlined,
-      'Stratégie de notification',
-      notificationStrategy.label,
-      NotificationStrategy.values.map((e) => e.label).toList(),
-      (v) {
-        final selected = NotificationStrategyExtension.fromLabel(v);
-        if (selected != notificationStrategy) {
-          notificationStrategy = selected;
-          _saveSettings();
-        }
-      },
+  Widget _buildTestVibrationButton() {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: ElevatedButton.icon(
+        onPressed: () async {
+          _showSuccessSnackBar('Test de vibration en cours...');
+          await GoalCheckService().testVibration();
+        },
+        icon: const Icon(Icons.vibration),
+        label: const Text('Tester la vibration'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: theme.colorScheme.primaryContainer,
+          foregroundColor: theme.colorScheme.onPrimaryContainer,
+          minimumSize: const Size(double.infinity, 48),
+        ),
+      ),
     );
   }
 
   Widget _buildVibrationTypeDropdown() {
+    // Utiliser uniquement les modes disponibles (sans les obsolètes)
+    final availableLabels = VibrationModeExtension.availableModes.map((e) => e.label).toList();
+
     return _buildDropdownTile(
       Icons.vibration,
       'Type de vibration',
       vibrationMode.label,
-      VibrationMode.values.map((e) => e.label).toList(),
+      availableLabels,
       (v) {
         final selected = VibrationModeExtension.fromLabel(v);
-        if (selected != vibrationMode) {
+        if (selected == VibrationMode.custom) {
+          // Toujours ouvrir le dialogue pour custom, même si déjà sélectionné
           vibrationMode = selected;
-          if (selected == VibrationMode.custom) {
-            Future.delayed(const Duration(milliseconds: 200), () {
-              _showCustomVibrationDialog();
-            });
-          } else {
-            _saveSettings();
-          }
+          Future.delayed(const Duration(milliseconds: 200), () {
+            _showCustomVibrationDialog();
+          });
+        } else if (selected != vibrationMode) {
+          vibrationMode = selected;
+          _saveSettings();
         }
       },
     );
@@ -708,8 +648,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final theme = Theme.of(context);
     final isVibrationType = title == 'Type de vibration';
     final isCustomSelected =
-        isVibrationType && value.toLowerCase().contains('custom');
-    final customSubtitle = '$customOn ms / $customOff ms × $customRepeat';
+        isVibrationType && value == 'Personnalisé';
+    final customSubtitle = '$customRepeat vibration${customRepeat > 1 ? 's' : ''}';
 
     return ListTile(
       leading: Icon(
@@ -993,10 +933,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           vibrationMode: vibrationMode,
           vibrationTargetArm: vibrationTargetArm,
           checkFrequencyMin: checkFrequencyMin,
-          notificationStrategy: notificationStrategy,
+          notificationStrategy: NotificationStrategy.normal, // Valeur par défaut (non modifiable)
           notificationsEnabled: notificationsEnabled,
-          vibrationOnMs: customOn,
-          vibrationOffMs: customOff,
+          vibrationOnMs: 200, // Valeur par défaut (non modifiable)
+          vibrationOffMs: 300, // Valeur par défaut (non modifiable)
           vibrationRepeat: customRepeat,
           leftWatchName: leftWatchName,
           rightWatchName: rightWatchName,
@@ -1043,10 +983,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     dailyObjective = settings.dailyObjective;
     checkFrequencyMin = settings.checkFrequencyMin;
     vibrationTargetArm = settings.vibrationTargetArm;
-    notificationStrategy = settings.notificationStrategy;
     vibrationMode = settings.vibrationMode;
-    customOn = settings.vibrationOnMs;
-    customOff = settings.vibrationOffMs;
     customRepeat = settings.vibrationRepeat;
     affectedSide = settings.affectedSide;
     language = settings.language;
@@ -1071,54 +1008,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // DIALOGS ET BOTTOM SHEETS
   // ============================================================================
 
-  void _editIntegerValue({
-    required String label,
-    required int initial,
-    required ValueChanged<int> onSave,
-  }) {
-    final ctrl = TextEditingController(text: initial.toString());
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(label),
-        content: TextField(
-          controller: ctrl,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(hintText: 'Entrer une valeur'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(S.of(context).cancel),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final v = int.tryParse(ctrl.text);
-              if (v != null) onSave(v);
-              Navigator.pop(ctx);
-            },
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              elevation: 0,
-              shadowColor: Colors.transparent,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-                side: BorderSide(
-                  color: Theme.of(context).colorScheme.primary,
-                  width: 1.5,
-                ),
-              ),
-            ),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _showCustomVibrationDialog() {
-    final onCtrl = TextEditingController(text: customOn.toString());
-    final offCtrl = TextEditingController(text: customOff.toString());
     final repCtrl = TextEditingController(text: customRepeat.toString());
 
     showModalBottomSheet(
@@ -1143,15 +1033,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildCustomVibrationHeader(),
                 const SizedBox(height: 24),
                 _buildCustomField(
-                    'Durée de vibration (ms)', onCtrl, Icons.av_timer),
-                const SizedBox(height: 16),
-                _buildCustomField(
-                    'Pause entre répétitions (ms)', offCtrl, Icons.pause),
-                const SizedBox(height: 16),
-                _buildCustomField(
-                    'Nombre de répétitions', repCtrl, Icons.repeat),
+                    'Nombre de vibrations', repCtrl, Icons.repeat),
+                const SizedBox(height: 8),
+                Text(
+                  'La montre vibrera ce nombre de fois pour chaque notification.',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 13,
+                  ),
+                ),
                 const SizedBox(height: 24),
-                _buildCustomVibrationActions(ctx, onCtrl, offCtrl, repCtrl),
+                _buildSimpleCustomVibrationActions(ctx, repCtrl),
               ],
             ),
           ),
@@ -1200,10 +1092,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildCustomVibrationActions(
+  Widget _buildSimpleCustomVibrationActions(
     BuildContext ctx,
-    TextEditingController onCtrl,
-    TextEditingController offCtrl,
     TextEditingController repCtrl,
   ) {
     return Row(
@@ -1219,13 +1109,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
         Expanded(
           child: ElevatedButton.icon(
             onPressed: () {
-              //   PURE BLOC: Mise à jour directe puis BLoC
-              customOn = int.tryParse(onCtrl.text) ?? customOn;
-              customOff = int.tryParse(offCtrl.text) ?? customOff;
-              customRepeat = int.tryParse(repCtrl.text) ?? customRepeat;
-
-              Navigator.pop(ctx);
-              _saveSettings();
+              // Mettre à jour uniquement le nombre de répétitions
+              final newRepeat = int.tryParse(repCtrl.text);
+              if (newRepeat != null && newRepeat >= 1 && newRepeat <= 10) {
+                customRepeat = newRepeat;
+                Navigator.pop(ctx);
+                _saveSettings();
+              } else {
+                // Fermer le bottom sheet d'abord, puis afficher l'erreur
+                Navigator.pop(ctx);
+                _showErrorSnackBar('Le nombre doit être entre 1 et 10');
+              }
             },
             icon: const Icon(Icons.save),
             label: Text(S.of(context).save),
@@ -1386,10 +1280,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     dailyObjective = defaultSettings.dailyObjective;
     checkFrequencyMin = defaultSettings.checkFrequencyMin;
     vibrationTargetArm = defaultSettings.vibrationTargetArm;
-    notificationStrategy = defaultSettings.notificationStrategy;
     vibrationMode = defaultSettings.vibrationMode;
-    customOn = defaultSettings.vibrationOnMs;
-    customOff = defaultSettings.vibrationOffMs;
     customRepeat = defaultSettings.vibrationRepeat;
     affectedSide = defaultSettings.affectedSide;
     _imageTimestamp = DateTime.now().millisecondsSinceEpoch;

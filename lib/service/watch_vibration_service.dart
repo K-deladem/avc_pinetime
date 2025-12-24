@@ -26,9 +26,49 @@ class WatchVibrationService {
   }
 
   /// Déclenche une vibration selon les paramètres de l'application
-  Future<void> triggerVibration(AppSettings settings, {String? reason}) async {
+  /// [reason] peut être: 'objectif_atteint', 'rappel_objectif', 'test_manuel'
+  /// [currentRatio] et [goalRatio] sont optionnels pour personnaliser le message
+  Future<void> triggerVibration(
+    AppSettings settings, {
+    String? reason,
+    double? currentRatio,
+    int? goalRatio,
+  }) async {
     try {
-      AppLogger.i('Déclenchement vibration: ${reason ?? "notification"}');
+      AppLogger.i('=== VIBRATION TRIGGER START ===');
+      AppLogger.i('Raison: ${reason ?? "notification"}');
+      AppLogger.i('Target arm: ${settings.vibrationTargetArm.label}');
+      AppLogger.i('Mode: ${settings.vibrationMode}');
+      AppLogger.i('Left session: ${_leftSession != null ? "OK" : "NULL"}');
+      AppLogger.i('Right session: ${_rightSession != null ? "OK" : "NULL"}');
+
+      // Déterminer le message selon la raison
+      String title;
+      String message;
+      switch (reason) {
+        case 'objectif_atteint':
+          title = 'Objectif atteint!';
+          message = currentRatio != null
+              ? 'Bravo! ${currentRatio.toStringAsFixed(0)}%'
+              : 'Bravo!';
+          break;
+        case 'rappel_objectif':
+          title = 'Objectif en cours';
+          if (currentRatio != null && goalRatio != null) {
+            final gap = goalRatio - currentRatio;
+            message = '${currentRatio.toStringAsFixed(0)}% - ${gap.toStringAsFixed(0)}% restant';
+          } else {
+            message = 'Continuez vos efforts!';
+          }
+          break;
+        case 'test_manuel':
+          title = 'Test';
+          message = 'Vibration OK';
+          break;
+        default:
+          title = 'Rappel';
+          message = 'Vérifiez votre progression';
+      }
 
       // Déterminer quelle(s) montre(s) faire vibrer
       final targetArm = settings.vibrationTargetArm;
@@ -37,72 +77,87 @@ class WatchVibrationService {
       List<InfiniTimeSession?> sessionsToVibrate = [];
 
       if (targetArm == VibrationArm.left || targetArm == VibrationArm.both) {
+        AppLogger.i('Adding left session to vibrate list');
         sessionsToVibrate.add(_leftSession);
       }
       if (targetArm == VibrationArm.right || targetArm == VibrationArm.both) {
+        AppLogger.i('Adding right session to vibrate list');
         sessionsToVibrate.add(_rightSession);
       }
 
+      AppLogger.i('Sessions to vibrate: ${sessionsToVibrate.length} (non-null: ${sessionsToVibrate.where((s) => s != null).length})');
+
       // Appliquer la vibration selon le mode
+      int vibratedCount = 0;
       for (final session in sessionsToVibrate) {
         if (session != null) {
-          await _applyVibrationMode(session, mode, settings);
+          AppLogger.i('Applying vibration to session...');
+          await _applyVibrationMode(session, mode, settings, title: title, message: message);
+          vibratedCount++;
+        } else {
+          AppLogger.w('Session is null, skipping vibration');
         }
       }
 
-      AppLogger.i('Vibration déclenchée avec succès');
+      if (vibratedCount > 0) {
+        AppLogger.i('Vibration déclenchée avec succès sur $vibratedCount montre(s)');
+      } else {
+        AppLogger.w('AUCUNE VIBRATION: aucune session disponible');
+      }
+      AppLogger.i('=== VIBRATION TRIGGER END ===');
     } catch (e) {
       AppLogger.e('Erreur lors du déclenchement de la vibration', error: e);
     }
   }
 
   /// Applique le pattern de vibration selon le mode
+  /// Modes simplifiés: simple (1x), double (2x), custom (Nx)
   Future<void> _applyVibrationMode(
     InfiniTimeSession session,
     VibrationMode mode,
-    AppSettings settings,
-  ) async {
+    AppSettings settings, {
+    required String title,
+    required String message,
+  }) async {
     switch (mode) {
       case VibrationMode.short:
-        // Vibration courte: 200ms ON
-        await _vibratePattern(session, onMs: 200, offMs: 0, repeat: 1);
-        break;
-
-      case VibrationMode.long:
-        // Vibration longue: 500ms ON
-        await _vibratePattern(session, onMs: 500, offMs: 0, repeat: 1);
+        // Vibration simple: 1 notification
+        await _vibratePattern(session, onMs: 200, offMs: 0, repeat: 1, title: title, message: message);
         break;
 
       case VibrationMode.doubleShort:
-        // Double vibration courte: 200ms ON, 100ms OFF, 200ms ON
-        await _vibratePattern(session, onMs: 200, offMs: 100, repeat: 2);
+        // Double vibration: 2 notifications
+        await _vibratePattern(session, onMs: 200, offMs: 300, repeat: 2, title: title, message: message);
         break;
 
       case VibrationMode.custom:
-        // Pattern personnalisé depuis les settings
-        final onMs = settings.vibrationOnMs;
-        final offMs = settings.vibrationOffMs;
+        // Pattern personnalisé: N répétitions définies par l'utilisateur
         final repeat = settings.vibrationRepeat;
-        await _vibratePattern(session, onMs: onMs, offMs: offMs, repeat: repeat);
+        await _vibratePattern(session, onMs: 200, offMs: 300, repeat: repeat, title: title, message: message);
         break;
 
+      // Modes obsolètes - traités comme simple
+      case VibrationMode.long:
+      case VibrationMode.continuous:
       default:
-        AppLogger.w('Mode de vibration inconnu: $mode');
+        await _vibratePattern(session, onMs: 200, offMs: 0, repeat: 1, title: title, message: message);
     }
   }
 
-  /// Exécute un pattern de vibration
+  /// Exécute un pattern de vibration avec message personnalisé
   Future<void> _vibratePattern(
     InfiniTimeSession session, {
     required int onMs,
     required int offMs,
     required int repeat,
+    String title = 'Objectif',
+    String message = 'Vérifiez votre progression',
   }) async {
     for (int i = 0; i < repeat; i++) {
       // Activer la vibration via sendNotification
       await session.sendNotification(
-        title: 'Rappel',
-        message: 'Objectif de rééducation',
+        title: title,
+        message: message,
       );
 
       // Attendre la durée ON
