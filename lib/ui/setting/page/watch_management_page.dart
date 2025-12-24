@@ -55,6 +55,11 @@ class _WatchManagementPageState extends State<WatchManagementPage> {
               onPressed: () => Navigator.pop(ctx),
               child: Text(S.of(context).cancel)),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
             onPressed: () {
               final newName = controller.text;
               setState(() => watchName = newName);
@@ -127,7 +132,11 @@ class _WatchManagementPageState extends State<WatchManagementPage> {
               onPressed: () => Navigator.pop(ctx),
               child: Text(S.of(context).cancel)),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
             onPressed: () {
               context.read<WatchBloc>().add(DeleteWatchDevice(widget.watch.id));
              // context.read<BluetoothBloc>().add(DisconnectDevice(widget.watch.armSide));

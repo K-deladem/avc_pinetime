@@ -235,6 +235,11 @@ class _CarouselWithChartState extends State<CarouselWithChart> {
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(context, 'share'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
               child: const Text('Partager'),
             ),
           ],

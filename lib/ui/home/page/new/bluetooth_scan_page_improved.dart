@@ -198,6 +198,11 @@ class _ImprovedBluetoothScanPageState extends State<ImprovedBluetoothScanPage>
               Navigator.pop(context);
               await openAppSettings();
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
             child: const Text("Paramètres"),
           ),
         ],
@@ -1377,7 +1382,7 @@ class _ImprovedBluetoothScanPageState extends State<ImprovedBluetoothScanPage>
             disabledForegroundColor: Colors.grey.shade600,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(8),
             ),
             elevation: 0,
             minimumSize: const Size(120, 36),
@@ -1475,6 +1480,11 @@ class _ImprovedBluetoothScanPageState extends State<ImprovedBluetoothScanPage>
               icon: const Icon(Icons.refresh),
               label: const Text("Relancer le scan"),
               onPressed: _startScan,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
             ),
           ],
         ),
@@ -1501,6 +1511,11 @@ class _ImprovedBluetoothScanPageState extends State<ImprovedBluetoothScanPage>
             icon: const Icon(Icons.bluetooth_searching),
             label: const Text("Commencer le scan"),
             onPressed: _startScan,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
           ),
         ],
       ),

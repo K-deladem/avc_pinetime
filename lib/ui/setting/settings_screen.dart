@@ -192,7 +192,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             key: ValueKey(
                 'avatar_${profileImage?.path ?? 'no_image'}_$_imageTimestamp'),
             radius: 50,
-            backgroundColor: Colors.grey.shade300,
+            backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
             backgroundImage: profileImage != null ? FileImage(profileImage!) : null,
             onBackgroundImageError: profileImage != null
                 ? (exception, stackTrace) {
@@ -200,7 +200,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   }
                 : null,
             child: profileImage == null
-                ? const Icon(Icons.person, size: 48, color: Colors.white)
+                ? Icon(Icons.person, size: 48, color: Theme.of(context).colorScheme.onSurfaceVariant)
                 : null,
           ),
         ),
@@ -608,6 +608,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           backgroundColor: theme.colorScheme.primaryContainer,
           foregroundColor: theme.colorScheme.onPrimaryContainer,
           minimumSize: const Size(double.infinity, 48),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       ),
     );
@@ -677,20 +678,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
       onTap: () {
         showModalBottomSheet(
           context: context,
+          backgroundColor: Theme.of(context).colorScheme.surface,
           shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
-          builder: (_) => ListView(
-            shrinkWrap: true,
-            children: options.map((opt) {
-              return ListTile(
-                title: Text(opt),
-                onTap: () {
-                  Navigator.pop(context);
-                  onChanged(opt);
-                },
-              );
-            }).toList(),
+          builder: (_) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Handle
+                Container(
+                  width: 50,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Options
+                ...options.map((opt) {
+                  final isSelected = opt == value;
+                  return ListTile(
+                    leading: isSelected
+                        ? Icon(Icons.check_circle, color: Theme.of(context).colorScheme.primary)
+                        : const SizedBox(width: 24),
+                    title: Text(
+                      opt,
+                      style: TextStyle(
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        color: isSelected
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      onChanged(opt);
+                    },
+                  );
+                }),
+              ],
+            ),
           ),
         );
       },
@@ -1010,11 +1040,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _showCustomVibrationDialog() {
     final repCtrl = TextEditingController(text: customRepeat.toString());
+    final theme = Theme.of(context);
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: theme.colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -1022,14 +1053,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
         return Padding(
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-            left: 20,
-            right: 20,
-            top: 24,
+            left: 24,
+            right: 24,
+            top: 16,
           ),
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Handle
+                Center(
+                  child: Container(
+                    width: 50,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.outlineVariant,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
                 _buildCustomVibrationHeader(),
                 const SizedBox(height: 24),
                 _buildCustomField(
@@ -1038,7 +1081,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Text(
                   'La montre vibrera ce nombre de fois pour chaque notification.',
                   style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    color: theme.colorScheme.onSurfaceVariant,
                     fontSize: 13,
                   ),
                 ),
@@ -1053,15 +1096,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildCustomVibrationHeader() {
-    return const Center(
+    final theme = Theme.of(context);
+    return Center(
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.vibration, size: 24, color: Colors.deepPurple),
-          SizedBox(width: 8),
+          Icon(Icons.vibration, size: 24, color: theme.colorScheme.primary),
+          const SizedBox(width: 8),
           Text(
             'Vibration personnalisée',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),
@@ -1096,6 +1142,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     BuildContext ctx,
     TextEditingController repCtrl,
   ) {
+    final theme = Theme.of(context);
     return Row(
       children: [
         Expanded(
@@ -1103,6 +1150,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () => Navigator.pop(ctx),
             icon: const Icon(Icons.close),
             label: Text(S.of(context).cancel),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              side: BorderSide(color: theme.colorScheme.outline),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
           ),
         ),
         const SizedBox(width: 12),
@@ -1121,8 +1173,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _showErrorSnackBar('Le nombre doit être entre 1 et 10');
               }
             },
-            icon: const Icon(Icons.save),
+            icon: const Icon(Icons.check),
             label: Text(S.of(context).save),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: theme.colorScheme.onPrimary,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
           ),
         ),
       ],
@@ -1131,13 +1189,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _showNameDialog() {
     final ctrl = TextEditingController(text: userName);
+    final theme = Theme.of(context);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Modifier le nom'),
         content: TextField(
           controller: ctrl,
-          decoration: const InputDecoration(labelText: 'Nom complet'),
+          decoration: InputDecoration(
+            labelText: 'Nom complet',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          ),
         ),
         actions: [
           TextButton(
@@ -1151,6 +1214,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Navigator.pop(ctx);
               _saveSettings();
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: theme.colorScheme.onPrimary,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
             child: Text(S.of(context).save),
           ),
         ],
@@ -1183,6 +1251,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }) {
     final confirmController = TextEditingController();
     final confirmationCode = _generateRandomCode(5);
+    final theme = Theme.of(context);
 
     showDialog(
       context: context,
@@ -1192,6 +1261,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             final isValid = confirmController.text.trim() == confirmationCode;
 
             return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               title: Text(title),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -1204,9 +1274,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       children: [
                         TextSpan(
                           text: confirmationCode,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: Colors.red,
+                            color: theme.colorScheme.error,
                           ),
                         ),
                       ],
@@ -1216,9 +1286,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   TextField(
                     controller: confirmController,
                     onChanged: (_) => setDialogState(() {}),
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Saisir le code ci-dessus',
-                      border: OutlineInputBorder(),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                 ],
@@ -1230,7 +1300,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
+                    backgroundColor: theme.colorScheme.error,
+                    foregroundColor: theme.colorScheme.onError,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                   onPressed: isValid
                       ? () {

@@ -57,7 +57,12 @@ class _GoalSettingsPageState extends State<GoalSettingsPage> {
   }
 
   Widget _buildCheckFrequencySection() {
-    return Card(
+    final theme = Theme.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -67,22 +72,21 @@ class _GoalSettingsPageState extends State<GoalSettingsPage> {
               children: [
                 Icon(
                   Icons.schedule_outlined,
-                  color: Theme.of(context).colorScheme.primary,
+                  color: theme.colorScheme.primary,
                 ),
                 const SizedBox(width: 12),
-                const Text(
+                Text(
                   'Fréquence de vérification périodique',
-                  style: TextStyle(
-                    fontSize: 16,
+                  style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Définir la fréquence à laquelle le système vérifiera si l\'objectif est atteint.',
-              style: TextStyle(color: Colors.grey, fontSize: 13),
+              style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13),
             ),
             const SizedBox(height: 16),
             ListTile(
@@ -99,7 +103,12 @@ class _GoalSettingsPageState extends State<GoalSettingsPage> {
   }
 
   Widget _buildGoalTypeSection() {
-    return Card(
+    final theme = Theme.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -109,13 +118,12 @@ class _GoalSettingsPageState extends State<GoalSettingsPage> {
               children: [
                 Icon(
                   Icons.flag_outlined,
-                  color: Theme.of(context).colorScheme.primary,
+                  color: theme.colorScheme.primary,
                 ),
                 const SizedBox(width: 12),
-                const Text(
+                Text(
                   'Type d\'objectif',
-                  style: TextStyle(
-                    fontSize: 16,
+                  style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -146,7 +154,12 @@ class _GoalSettingsPageState extends State<GoalSettingsPage> {
   }
 
   Widget _buildFixedGoalSection() {
-    return Card(
+    final theme = Theme.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -156,22 +169,21 @@ class _GoalSettingsPageState extends State<GoalSettingsPage> {
               children: [
                 Icon(
                   Icons.straighten_outlined,
-                  color: Theme.of(context).colorScheme.primary,
+                  color: theme.colorScheme.primary,
                 ),
                 const SizedBox(width: 12),
-                const Text(
+                Text(
                   'Configuration objectif fixe',
-                  style: TextStyle(
-                    fontSize: 16,
+                  style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Définir directement le ratio de l\'objectif à atteindre.',
-              style: TextStyle(color: Colors.grey, fontSize: 13),
+              style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13),
             ),
             const SizedBox(height: 16),
             ListTile(
@@ -188,7 +200,12 @@ class _GoalSettingsPageState extends State<GoalSettingsPage> {
   }
 
   Widget _buildDynamicGoalSection() {
-    return Card(
+    final theme = Theme.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -198,22 +215,21 @@ class _GoalSettingsPageState extends State<GoalSettingsPage> {
               children: [
                 Icon(
                   Icons.trending_up_outlined,
-                  color: Theme.of(context).colorScheme.primary,
+                  color: theme.colorScheme.primary,
                 ),
                 const SizedBox(width: 12),
-                const Text(
+                Text(
                   'Configuration objectif dynamique',
-                  style: TextStyle(
-                    fontSize: 16,
+                  style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'L\'objectif sera calculé sur la base des X derniers jours avec une augmentation quotidienne de Y%.',
-              style: TextStyle(color: Colors.grey, fontSize: 13),
+              style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13),
             ),
             const SizedBox(height: 16),
             ListTile(
@@ -235,14 +251,14 @@ class _GoalSettingsPageState extends State<GoalSettingsPage> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(8),
+                color: theme.colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 children: [
                   Icon(
                     Icons.info_outline,
-                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    color: theme.colorScheme.onPrimaryContainer,
                     size: 20,
                   ),
                   const SizedBox(width: 8),
@@ -251,7 +267,7 @@ class _GoalSettingsPageState extends State<GoalSettingsPage> {
                       'L\'objectif sera automatiquement recalculé chaque jour en fonction de votre progression.',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                        color: theme.colorScheme.onPrimaryContainer,
                       ),
                     ),
                   ),
@@ -278,17 +294,20 @@ class _GoalSettingsPageState extends State<GoalSettingsPage> {
   void _editCheckFrequency() {
     final controller =
         TextEditingController(text: checkRatioFrequencyMin.toString());
+    final theme = Theme.of(context);
 
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Fréquence de vérification'),
         content: TextField(
           controller: controller,
           keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: 'Fréquence (minutes)',
             hintText: 'Entrer une valeur',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
         actions: [
@@ -297,6 +316,11 @@ class _GoalSettingsPageState extends State<GoalSettingsPage> {
             child: const Text('Annuler'),
           ),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: theme.colorScheme.onPrimary,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
             onPressed: () {
               final value = int.tryParse(controller.text);
               if (value != null && value > 0) {
@@ -314,17 +338,20 @@ class _GoalSettingsPageState extends State<GoalSettingsPage> {
   void _editFixedRatio() {
     final controller =
         TextEditingController(text: (goalConfig.fixedRatio ?? 80).toString());
+    final theme = Theme.of(context);
 
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Ratio de l\'objectif'),
         content: TextField(
           controller: controller,
           keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: 'Ratio (%)',
             hintText: 'Entrer une valeur entre 0 et 100',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
         actions: [
@@ -333,6 +360,11 @@ class _GoalSettingsPageState extends State<GoalSettingsPage> {
             child: const Text('Annuler'),
           ),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: theme.colorScheme.onPrimary,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
             onPressed: () {
               final value = int.tryParse(controller.text);
               if (value != null && value >= 0 && value <= 100) {
@@ -352,17 +384,20 @@ class _GoalSettingsPageState extends State<GoalSettingsPage> {
   void _editPeriodDays() {
     final controller = TextEditingController(
         text: (goalConfig.periodDays ?? 7).toString());
+    final theme = Theme.of(context);
 
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Nombre de jours de la période'),
         content: TextField(
           controller: controller,
           keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: 'Nombre de jours',
             hintText: 'Entrer une valeur',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
         actions: [
@@ -371,6 +406,11 @@ class _GoalSettingsPageState extends State<GoalSettingsPage> {
             child: const Text('Annuler'),
           ),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: theme.colorScheme.onPrimary,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
             onPressed: () {
               final value = int.tryParse(controller.text);
               if (value != null && value > 0) {
@@ -394,17 +434,20 @@ class _GoalSettingsPageState extends State<GoalSettingsPage> {
   void _editDailyIncrease() {
     final controller = TextEditingController(
         text: (goalConfig.dailyIncreasePercentage ?? 1.0).toString());
+    final theme = Theme.of(context);
 
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Augmentation journalière'),
         content: TextField(
           controller: controller,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: 'Pourcentage (%)',
             hintText: 'Entrer une valeur décimale',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
         actions: [
@@ -413,6 +456,11 @@ class _GoalSettingsPageState extends State<GoalSettingsPage> {
             child: const Text('Annuler'),
           ),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: theme.colorScheme.onPrimary,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
             onPressed: () {
               final value = double.tryParse(controller.text);
               if (value != null && value >= 0) {

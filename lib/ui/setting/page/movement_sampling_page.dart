@@ -399,6 +399,9 @@ class _MovementSamplingPageState extends State<MovementSamplingPage> {
                       timeUnit: SamplingTimeUnit.hour,
                     ));
                   },
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
                   child: const Text('Sélectionner ce mode'),
                 ),
               ),

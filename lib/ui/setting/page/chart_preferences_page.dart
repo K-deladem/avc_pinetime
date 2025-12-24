@@ -130,8 +130,11 @@ class _ChartPreferencesPageState extends State<ChartPreferencesPage> {
             },
           ),
           const SizedBox(height: 32),
-          Card(
-            color: theme.colorScheme.primaryContainer,
+          Container(
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(12),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Row(

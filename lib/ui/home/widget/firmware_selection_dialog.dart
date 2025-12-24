@@ -182,10 +182,17 @@ class _FirmwareSelectionDialogScreenState
             _selectedFirmware != null &&
                 _selectedFirmware.fileName == firmware.fileName;
 
-        return Card(
+        return Container(
           margin: const EdgeInsets.only(bottom: 8),
-          elevation: isSelected ? 4 : 1,
-          color: isSelected ? Colors.purple.shade50 : null,
+          decoration: BoxDecoration(
+            color: isSelected
+                ? Theme.of(context).colorScheme.primaryContainer
+                : Theme.of(context).colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(12),
+            border: isSelected
+                ? Border.all(color: Theme.of(context).colorScheme.primary, width: 2)
+                : null,
+          ),
           child: ListTile(
             leading: _buildSelectionIndicator(isSelected),
             title: Text(
@@ -199,7 +206,7 @@ class _FirmwareSelectionDialogScreenState
                 const SizedBox(height: 4),
                 Text(
                   'Taille: ${_formatFileSize(firmware.sizeBytes)}',
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
               ],
             ),
@@ -284,19 +291,20 @@ class _FirmwareSelectionDialogScreenState
 
   /// Indicateur de sélection (radio button)
   Widget _buildSelectionIndicator(bool isSelected) {
+    final theme = Theme.of(context);
     return Container(
       width: 24,
       height: 24,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(
-          color: isSelected ? Colors.purple.shade600 : Colors.grey[400]!,
+          color: isSelected ? theme.colorScheme.primary : theme.colorScheme.outline,
           width: 2,
         ),
-        color: isSelected ? Colors.purple.shade600 : Colors.transparent,
+        color: isSelected ? theme.colorScheme.primary : Colors.transparent,
       ),
       child: isSelected
-          ? const Icon(Icons.check, color: Colors.white, size: 16)
+          ? Icon(Icons.check, color: theme.colorScheme.onPrimary, size: 16)
           : null,
     );
   }
@@ -305,7 +313,7 @@ class _FirmwareSelectionDialogScreenState
   Widget _buildValidationIcon(dynamic firmware) {
     return Icon(
       Icons.check_circle,
-      color: Colors.green.shade600,
+      color: Theme.of(context).colorScheme.primary,
     );
   }
 
@@ -328,6 +336,9 @@ class _FirmwareSelectionDialogScreenState
         Expanded(
           child: OutlinedButton(
             onPressed: () => Navigator.pop(context),
+            style: OutlinedButton.styleFrom(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
             child: Text(S.of(context).cancel),
           ),
         ),
@@ -336,16 +347,154 @@ class _FirmwareSelectionDialogScreenState
         Expanded(
           child: ElevatedButton.icon(
             onPressed: isButtonEnabled
-                ? () {
-              // ÉTAPE 3: Lancer la mise à jour
-              _startFirmwareUpdate(_selectedFirmware.assetPath);
-            }
+                ? () => _showConfirmationDialog()
                 : null,
             icon: const Icon(Icons.download),
             label: Text(S.of(context).install),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.purple.shade600,
-              foregroundColor: Colors.white,
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Affiche le dialogue de confirmation avant la mise à jour
+  void _showConfirmationDialog() {
+    final theme = Theme.of(context);
+    final firmware = _selectedFirmware;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(
+              Icons.warning_amber_rounded,
+              color: theme.colorScheme.error,
+              size: 28,
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text('Confirmer la mise à jour'),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.memory,
+                    color: theme.colorScheme.primary,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          firmware.fileName,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          'Taille: ${_formatFileSize(firmware.sizeBytes)}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Attention :',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.error,
+              ),
+            ),
+            const SizedBox(height: 8),
+            _buildWarningItem(
+              theme,
+              Icons.battery_alert,
+              'Assurez-vous que la montre a suffisamment de batterie (> 30%)',
+            ),
+            const SizedBox(height: 8),
+            _buildWarningItem(
+              theme,
+              Icons.bluetooth_disabled,
+              'Ne déconnectez pas la montre pendant la mise à jour',
+            ),
+            const SizedBox(height: 8),
+            _buildWarningItem(
+              theme,
+              Icons.timer,
+              'La mise à jour peut prendre plusieurs minutes',
+            ),
+            const SizedBox(height: 8),
+            _buildWarningItem(
+              theme,
+              Icons.restart_alt,
+              'La montre redémarrera automatiquement à la fin',
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(S.of(context).cancel),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _startFirmwareUpdate(firmware.assetPath);
+            },
+            icon: const Icon(Icons.system_update),
+            label: const Text('Démarrer'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: theme.colorScheme.onPrimary,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWarningItem(ThemeData theme, IconData icon, String text) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          icon,
+          size: 18,
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: 13,
+              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
         ),

@@ -261,14 +261,18 @@ class _TimePreferencesPageState extends State<TimePreferencesPage> {
           padding: const EdgeInsets.symmetric(vertical: 16),
           backgroundColor: theme.colorScheme.primary,
           foregroundColor: theme.colorScheme.onPrimary,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       ),
     );
   }
 
   Widget _buildInfoCard(ThemeData theme) {
-    return Card(
-      color: theme.colorScheme.primaryContainer,
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primaryContainer,
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
