@@ -77,13 +77,14 @@ class _TimePreferencesPageState extends State<TimePreferencesPage> {
 
     // Afficher un message de confirmation
     if (mounted) {
+      final theme = Theme.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             'Synchronisation de l\'heure lancée pour les deux montres.\n'
             'Fuseau: ${_preferences.timezoneDescription}',
           ),
-          backgroundColor: Colors.green,
+          backgroundColor: theme.colorScheme.primary,
           duration: const Duration(seconds: 3),
         ),
       );

@@ -5,8 +5,9 @@ import 'package:flutter_bloc_app_template/theme/palette/extra.dart';
 /// Palette pour le thème "Gold"
 /// ------------------------------
 class GoldPalette {
-  static const Color primary = Color(0x80F6CD99);
-  static const Color onPrimary = Color(0xFFFFFFFF);
+  // Couleur primaire Gold avec opacité complète pour un bon contraste
+  static const Color primary = Color(0xFFD4A574);
+  static const Color onPrimary = Color(0xFF3D2314);
   static const Color primaryContainer = Color(0xFFFFDCC1);
   static const Color onPrimaryContainer = Color(0xFF2E1500);
 

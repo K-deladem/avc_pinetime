@@ -9,6 +9,7 @@ import 'package:flutter_bloc_app_template/theme/palette/experimental/experimenta
 import 'package:flutter_bloc_app_template/theme/palette/extra.dart';
 import 'package:flutter_bloc_app_template/theme/palette/gold/gold.dart';
 import 'package:flutter_bloc_app_template/theme/palette/mint/mint.dart';
+import 'package:flutter_bloc_app_template/theme/palette/standard/standard.dart';
 import 'package:flutter_bloc_app_template/theme/scaffold/scaffold.dart';
 import 'package:flutter_bloc_app_template/theme/tabbar/tabbar.dart';
 import 'package:flutter_bloc_app_template/theme/typography/typo.dart';
@@ -235,15 +236,31 @@ class Style {
 
   static ThemeData get light {
     return ThemeData(
-      brightness: Brightness.light,
-      fontFamily: "Plus Jakarta",
-      primarySwatch: AppColors.primaryMaterial,
-      primaryColor: AppColors.primary,
-      scaffoldBackgroundColor: Colors.white,
-      iconTheme: const IconThemeData(color: AppColors.black),
-      textTheme: const TextTheme(
-        bodyMedium: TextStyle(color: AppColors.black40),
+      useMaterial3: true,
+      colorScheme: _buildColorScheme(
+        brightness: Brightness.light,
+        primary: StandardPalette.primaryLight,
+        onPrimary: StandardPalette.onPrimaryLight,
+        primaryContainer: StandardPalette.primaryContainerLight,
+        onPrimaryContainer: StandardPalette.onPrimaryContainerLight,
+        secondary: StandardPalette.secondaryLight,
+        onSecondary: StandardPalette.onSecondaryLight,
+        secondaryContainer: StandardPalette.secondaryContainerLight,
+        onSecondaryContainer: StandardPalette.onSecondaryContainerLight,
+        tertiary: StandardPalette.tertiaryLight,
+        onTertiary: StandardPalette.onTertiaryLight,
+        tertiaryContainer: StandardPalette.tertiaryContainerLight,
+        onTertiaryContainer: StandardPalette.onTertiaryContainerLight,
+        error: StandardPalette.errorLight,
+        errorContainer: StandardPalette.errorContainerLight,
+        onError: StandardPalette.onErrorLight,
+        onErrorContainer: StandardPalette.onErrorContainerLight,
+        extras: StandardPalette.lightExtras,
+        outline: StandardPalette.outlineLight,
+        surfaceTint: StandardPalette.surfaceTintLight,
       ),
+      fontFamily: "Plus Jakarta",
+      textTheme: AppTypography.getTextTheme(ThemeData.light().textTheme),
       elevatedButtonTheme: AppButton.elevatedButtonThemeData,
       textButtonTheme: AppButton.textButtonThemeData,
       outlinedButtonTheme: AppButton.outlinedButtonTheme(),
@@ -254,22 +271,40 @@ class Style {
       appBarTheme: AppAppBarTheme.appBarLightTheme,
       scrollbarTheme: AppAppBarTheme.scrollbarThemeData,
       dataTableTheme: AppAppBarTheme.dataTableLightThemeData,
+      pageTransitionsTheme: _pageTransitionsTheme,
+      cupertinoOverrideTheme: const CupertinoThemeData(
+        textTheme: CupertinoTextThemeData(),
+      ),
     );
   }
 
-
-
   static ThemeData get dark {
     return ThemeData(
-      brightness: Brightness.dark,
-      fontFamily: "Plus Jakarta",
-      primarySwatch: AppColors.primaryMaterial,
-      primaryColor: AppColors.primary,
-      scaffoldBackgroundColor: Colors.black,
-      iconTheme: const IconThemeData(color: AppColors.white40),
-      textTheme: const TextTheme(
-        bodyMedium: TextStyle(color: AppColors.white40),
+      useMaterial3: true,
+      colorScheme: _buildColorScheme(
+        brightness: Brightness.dark,
+        primary: StandardPalette.primaryDark,
+        onPrimary: StandardPalette.onPrimaryDark,
+        primaryContainer: StandardPalette.primaryContainerDark,
+        onPrimaryContainer: StandardPalette.onPrimaryContainerDark,
+        secondary: StandardPalette.secondaryDark,
+        onSecondary: StandardPalette.onSecondaryDark,
+        secondaryContainer: StandardPalette.secondaryContainerDark,
+        onSecondaryContainer: StandardPalette.onSecondaryContainerDark,
+        tertiary: StandardPalette.tertiaryDark,
+        onTertiary: StandardPalette.onTertiaryDark,
+        tertiaryContainer: StandardPalette.tertiaryContainerDark,
+        onTertiaryContainer: StandardPalette.onTertiaryContainerDark,
+        error: StandardPalette.errorDark,
+        errorContainer: StandardPalette.errorContainerDark,
+        onError: StandardPalette.onErrorDark,
+        onErrorContainer: StandardPalette.onErrorContainerDark,
+        extras: StandardPalette.darkExtras,
+        outline: StandardPalette.outlineDark,
+        surfaceTint: StandardPalette.surfaceTintDark,
       ),
+      fontFamily: "Plus Jakarta",
+      textTheme: AppTypography.getTextTheme(ThemeData.dark().textTheme),
       elevatedButtonTheme: AppButton.elevatedButtonThemeData,
       textButtonTheme: AppButton.textButtonThemeData,
       outlinedButtonTheme: AppButton.outlinedButtonTheme(),
@@ -280,6 +315,10 @@ class Style {
       appBarTheme: AppAppBarTheme.appBarDarkTheme,
       scrollbarTheme: AppAppBarTheme.scrollbarThemeData,
       dataTableTheme: AppAppBarTheme.dataTableDarkThemeData,
+      pageTransitionsTheme: _pageTransitionsTheme,
+      cupertinoOverrideTheme: const CupertinoThemeData(
+        textTheme: CupertinoTextThemeData(),
+      ),
     );
   }
 

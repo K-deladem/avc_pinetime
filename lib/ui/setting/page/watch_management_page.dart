@@ -200,9 +200,9 @@ class _WatchManagementPageState extends State<WatchManagementPage> {
             onTap: _updateFirmware,
           ),
           ListTile(
-            leading: const Icon(Icons.delete_forever, color: Colors.red),
-            title: const Text("Supprimer la montre",
-                style: TextStyle(color: Colors.red)),
+            leading: Icon(Icons.delete_forever, color: Theme.of(context).colorScheme.error),
+            title: Text("Supprimer la montre",
+                style: TextStyle(color: Theme.of(context).colorScheme.error)),
             onTap: _forgetWatch,
           ),
         ],
