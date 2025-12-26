@@ -4,6 +4,7 @@ import 'dart:async';
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc_app_template/generated/l10n.dart';
 import 'package:flutter_bloc_app_template/models/arm_side.dart';
 import 'package:flutter_bloc_app_template/models/goal_config.dart';
 import 'package:flutter_bloc_app_template/service/chart_data_adapter.dart';
@@ -142,7 +143,7 @@ class _AsymmetryRatioChartState extends State<AsymmetryRatioChart> {
                 maxLines: 1,
               ),
               Text(
-                'Période: $_selectedPeriod • Type: $_selectedType',
+                S.of(context).typeLabel(_getPeriodLabel(context), _selectedType),
                 style: const TextStyle(fontSize: 11),
               ),
             ],
@@ -253,9 +254,9 @@ class _AsymmetryRatioChartState extends State<AsymmetryRatioChart> {
         }
 
         if (!snapshot.hasData || snapshot.data!.ratios.isEmpty) {
-          return const SizedBox(
+          return SizedBox(
             height: 270,
-            child: Center(child: Text('Aucune donnée disponible')),
+            child: Center(child: Text(S.of(context).noDataAvailable)),
           );
         }
 
@@ -493,11 +494,24 @@ class _AsymmetryRatioChartState extends State<AsymmetryRatioChart> {
         runSpacing: 5,
         alignment: WrapAlignment.center,
         children: [
-          _buildLegendItem('Ratio réel', Colors.purple),
-          _buildLegendItem('Objectif', Colors.red),
+          _buildLegendItem(S.of(context).actualRatio, Colors.purple),
+          _buildLegendItem(S.of(context).goal, Colors.red),
         ],
       ),
     );
+  }
+
+  String _getPeriodLabel(BuildContext context) {
+    switch (_selectedPeriod) {
+      case 'Jour':
+        return S.of(context).periodDay;
+      case 'Semaine':
+        return S.of(context).periodWeek;
+      case 'Mois':
+        return S.of(context).periodMonth;
+      default:
+        return _selectedPeriod;
+    }
   }
 
   Widget _buildLegendItem(String label, Color color) {

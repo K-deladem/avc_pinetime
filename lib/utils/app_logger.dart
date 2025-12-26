@@ -101,6 +101,33 @@ class AppLogger {
     _logger.close();
   }
 
+  // Convenience aliases for cleaner API
+
+  /// Alias for [d] - debug level logging
+  static void debug(dynamic message, [Object? error, StackTrace? stackTrace]) {
+    d(message, error: error, stackTrace: stackTrace);
+  }
+
+  /// Alias for [i] - info level logging
+  static void info(dynamic message, [Object? error, StackTrace? stackTrace]) {
+    i(message, error: error, stackTrace: stackTrace);
+  }
+
+  /// Alias for [w] - warning level logging
+  static void warning(dynamic message, [Object? error, StackTrace? stackTrace]) {
+    w(message, error: error, stackTrace: stackTrace);
+  }
+
+  /// Alias for [e] - error level logging
+  static void error(dynamic message, [Object? error, StackTrace? stackTrace]) {
+    e(message, error: error, stackTrace: stackTrace);
+  }
+
+  /// Alias for [f] - fatal level logging
+  static void fatal(dynamic message, [Object? error, StackTrace? stackTrace]) {
+    f(message, error: error, stackTrace: stackTrace);
+  }
+
   /// Configure logger level based on build mode
   ///
   /// Call this in main() to set appropriate log level:

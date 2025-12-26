@@ -3,6 +3,7 @@ import 'package:flutter_bloc_app_template/app_runner.dart';
 import 'package:flutter_bloc_app_template/config/app_config.dart';
 import 'package:flutter_bloc_app_template/config/build_type.dart';
 import 'package:flutter_bloc_app_template/config/environment.dart';
+import 'package:flutter_bloc_app_template/core/di/injection_container.dart';
 import 'package:flutter_bloc_app_template/service/notification_service.dart';
 import 'package:flutter_bloc_app_template/utils/app_logger.dart';
 
@@ -18,6 +19,9 @@ void main(List<String> args) async {
       url: '',
     ),
   );
+
+  // Initialiser l'injection de dépendances
+  await initDependencies();
 
   // Lancer l'app immédiatement, les services seront initialisés après
   run();

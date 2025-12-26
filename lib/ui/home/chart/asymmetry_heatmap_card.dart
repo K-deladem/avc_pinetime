@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc_app_template/app/app_database.dart';
+import 'package:flutter_bloc_app_template/generated/l10n.dart';
 import 'package:flutter_bloc_app_template/models/arm_side.dart';
 import 'package:flutter_bloc_app_template/models/goal_config.dart';
 import 'package:flutter_bloc_app_template/service/chart_refresh_notifier.dart';
@@ -465,7 +466,15 @@ class _AsymmetryHeatMapCardState extends State<AsymmetryHeatMapCard> {
   }
 
   Widget _buildWeekdayLabels(BuildContext context) {
-    final List<String> weekDays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+    final List<String> weekDays = [
+      S.of(context).weekdayMon,
+      S.of(context).weekdayTue,
+      S.of(context).weekdayWed,
+      S.of(context).weekdayThu,
+      S.of(context).weekdayFri,
+      S.of(context).weekdaySat,
+      S.of(context).weekdaySun,
+    ];
     return Row(
       children: weekDays.map((label) {
         return Expanded(
@@ -568,10 +577,10 @@ class _AsymmetryHeatMapCardState extends State<AsymmetryHeatMapCard> {
       runSpacing: 4,
       alignment: WrapAlignment.center,
       children: [
-        _legendItem(Colors.grey.shade300, "Aucune"),
-        _legendItem(Colors.red.shade600, "Déséquilibré"),
-        _legendItem(Colors.orange.shade400, "Proche"),
-        _legendItem(Colors.green.shade600, "Équilibré"),
+        _legendItem(Colors.grey.shade300, S.of(context).noLegendData),
+        _legendItem(Colors.red.shade600, S.of(context).unbalanced),
+        _legendItem(Colors.orange.shade400, S.of(context).closeToGoal),
+        _legendItem(Colors.green.shade600, S.of(context).balancedStatus),
       ],
     );
   }
@@ -643,36 +652,36 @@ class _AsymmetryHeatMapCardState extends State<AsymmetryHeatMapCard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Type: ${_selectedType == HeatMapType.magnitude ? 'Magnitude' : 'Axis'}',
+              S.of(context).typeDisplay(_selectedType == HeatMapType.magnitude ? 'Magnitude' : 'Axis'),
               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 16),
             if (!hasData)
-              const Text(
-                'Aucune donnée disponible pour ce jour',
-                style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+              Text(
+                S.of(context).noDataForDay,
+                style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
               )
             else ...[
-              _buildDetailRow('Gauche', leftValue, Colors.blueAccent),
+              _buildDetailRow(S.of(context).left, leftValue, Colors.blueAccent),
               const SizedBox(height: 4),
               Text(
-                '${leftData.length} enregistrements',
+                S.of(context).recordsCount(leftData.length),
                 style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
               ),
               const SizedBox(height: 12),
-              _buildDetailRow('Droite', rightValue, Colors.green),
+              _buildDetailRow(S.of(context).right, rightValue, Colors.green),
               const SizedBox(height: 4),
               Text(
-                '${rightData.length} enregistrements',
+                S.of(context).recordsCount(rightData.length),
                 style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
               ),
               const Divider(height: 24),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Ratio:',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                  Text(
+                    S.of(context).ratioLabel,
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -693,7 +702,7 @@ class _AsymmetryHeatMapCardState extends State<AsymmetryHeatMapCard> {
               ),
               const SizedBox(height: 8),
               Text(
-                _getAsymmetryLabel(calculatedRatio ?? 50),
+                _getAsymmetryLabel(context, calculatedRatio ?? 50),
                 style: TextStyle(
                   fontSize: 11,
                   fontStyle: FontStyle.italic,
@@ -706,9 +715,9 @@ class _AsymmetryHeatMapCardState extends State<AsymmetryHeatMapCard> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Objectif du jour:',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                    Text(
+                      S.of(context).goalOfTheDay,
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -748,8 +757,8 @@ class _AsymmetryHeatMapCardState extends State<AsymmetryHeatMapCard> {
                         child: Text(
                           calculatedRatio >= (dailyGoals[date]! - 5) &&
                           calculatedRatio <= (dailyGoals[date]! + 5)
-                              ? 'Objectif atteint'
-                              : 'Objectif non atteint (écart: ${(calculatedRatio - dailyGoals[date]!).abs().toStringAsFixed(1)}%)',
+                              ? S.of(context).goalReached
+                              : S.of(context).goalNotReached((calculatedRatio - dailyGoals[date]!).abs().toStringAsFixed(1)),
                           style: TextStyle(
                             fontSize: 11,
                             fontStyle: FontStyle.italic,
@@ -769,7 +778,7 @@ class _AsymmetryHeatMapCardState extends State<AsymmetryHeatMapCard> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Fermer'),
+            child: Text(S.of(context).close),
           ),
         ],
       ),
@@ -805,34 +814,27 @@ class _AsymmetryHeatMapCardState extends State<AsymmetryHeatMapCard> {
     );
   }
 
-  /// Formate une durée en minutes vers heures/minutes/secondes lisibles
+  /// Formate une durée en minutes vers le format 00:00:00
   String _formatDuration(double minutes) {
-    if (minutes <= 0) return '0s';
+    if (minutes <= 0) return '00:00:00';
 
     final totalSeconds = (minutes * 60).round();
     final hours = totalSeconds ~/ 3600;
     final remainingMinutes = (totalSeconds % 3600) ~/ 60;
     final seconds = totalSeconds % 60;
 
-    if (hours > 0) {
-      if (remainingMinutes > 0) {
-        return '${hours}h ${remainingMinutes}m';
-      }
-      return '${hours}h';
-    } else if (remainingMinutes > 0) {
-      if (seconds > 0) {
-        return '${remainingMinutes}m ${seconds}s';
-      }
-      return '${remainingMinutes}m';
-    } else {
-      return '${seconds}s';
-    }
+    // Format: 00:00:00 (heures:minutes:secondes)
+    final hoursStr = hours.toString().padLeft(2, '0');
+    final minutesStr = remainingMinutes.toString().padLeft(2, '0');
+    final secondsStr = seconds.toString().padLeft(2, '0');
+
+    return '$hoursStr:$minutesStr:$secondsStr';
   }
 
-  String _getAsymmetryLabel(double ratio) {
-    if (ratio >= 45 && ratio <= 55) return 'Équilibré';
-    if (ratio > 55) return 'Dominance droite';
-    if (ratio < 45) return 'Dominance gauche';
+  String _getAsymmetryLabel(BuildContext context, double ratio) {
+    if (ratio >= 45 && ratio <= 55) return S.of(context).balancedStatus;
+    if (ratio > 55) return S.of(context).rightDominanceStatus;
+    if (ratio < 45) return S.of(context).leftDominanceStatus;
     return '';
   }
 
@@ -886,38 +888,30 @@ class _AsymmetryHeatMapCardState extends State<AsymmetryHeatMapCard> {
     }
   }
 
-  /// Calcule le temps actif total en minutes à partir des valeurs cumulatives
+  /// Récupère la dernière valeur (temps cumulé) en minutes
   /// Les valeurs sont cumulatives depuis le boot de la montre
-  /// On utilise (MAX - MIN) pour calculer le temps actif pendant la période
   double _calculateTotalActiveTime(List<Map<String, dynamic>> data, String fieldName) {
     if (data.isEmpty) return 0.0;
 
-    int? minValue;
-    int? maxValue;
+    // Trier par timestamp pour obtenir le plus récent
+    final sorted = List<Map<String, dynamic>>.from(data);
+    sorted.sort((a, b) {
+      final aTime = DateTime.parse(a['createdAt'] as String);
+      final bTime = DateTime.parse(b['createdAt'] as String);
+      return bTime.compareTo(aTime); // Ordre décroissant (plus récent en premier)
+    });
 
-    for (final entry in data) {
-      final value = entry[fieldName];
-      if (value == null) continue;
+    // Prendre la première valeur (la plus récente)
+    final latest = sorted.first;
+    final value = latest[fieldName];
+    if (value == null) return 0.0;
 
-      final intValue = (value is int) ? value : (value as double).toInt();
+    final intValue = (value is int) ? value : (value as double).toInt();
 
-      if (minValue == null || intValue < minValue) {
-        minValue = intValue;
-      }
-      if (maxValue == null || intValue > maxValue) {
-        maxValue = intValue;
-      }
-    }
+    // Valider que la valeur est raisonnable (< 24h en ms)
+    if (intValue < 0 || intValue > 86400000) return 0.0;
 
-    if (minValue == null || maxValue == null) return 0.0;
-
-    // Le temps actif = différence entre la valeur max et min
-    final activeTime = maxValue - minValue;
-
-    // Si négatif ou trop grand (> 24h), c'est une anomalie
-    if (activeTime < 0 || activeTime > 86400000) return 0.0;
-
-    return activeTime / 60000.0; // Convertir ms en minutes
+    return intValue / 60000.0; // Convertir ms en minutes
   }
 }
 
@@ -985,9 +979,9 @@ Map<DateTime, double> computeMonthlyAsymmetry(HeatMapComputeParams params) {
 
     if (leftData.isEmpty && rightData.isEmpty) continue;
 
-    // Calculer la somme des deltas pour le jour (en minutes)
-    final leftTotal = _calculateDeltaSum(leftData, params.fieldName) / 60000.0;
-    final rightTotal = _calculateDeltaSum(rightData, params.fieldName) / 60000.0;
+    // Récupérer la dernière valeur cumulée pour le jour (en minutes)
+    final leftTotal = _getLatestValue(leftData, params.fieldName) / 60000.0;
+    final rightTotal = _getLatestValue(rightData, params.fieldName) / 60000.0;
 
     // Calculer le ratio d'asymétrie (membre atteint / total)
     final total = leftTotal + rightTotal;
@@ -1002,34 +996,28 @@ Map<DateTime, double> computeMonthlyAsymmetry(HeatMapComputeParams params) {
   return asymmetryData;
 }
 
-/// Calcule le temps actif (MAX - MIN) pour une liste de données
+/// Récupère la dernière valeur (temps cumulé) pour une liste de données
 /// Les valeurs sont cumulatives depuis le boot de la montre
-double _calculateDeltaSum(List<Map<String, dynamic>> data, String fieldName) {
+double _getLatestValue(List<Map<String, dynamic>> data, String fieldName) {
   if (data.isEmpty) return 0.0;
 
-  int? minValue;
-  int? maxValue;
+  // Trier par timestamp pour obtenir le plus récent
+  final sorted = List<Map<String, dynamic>>.from(data);
+  sorted.sort((a, b) {
+    final aTime = DateTime.parse(a['createdAt'] as String);
+    final bTime = DateTime.parse(b['createdAt'] as String);
+    return bTime.compareTo(aTime); // Ordre décroissant (plus récent en premier)
+  });
 
-  for (final entry in data) {
-    final value = entry[fieldName];
-    if (value == null) continue;
+  // Prendre la première valeur (la plus récente)
+  final latest = sorted.first;
+  final value = latest[fieldName];
+  if (value == null) return 0.0;
 
-    final intValue = (value is int) ? value : (value as double).toInt();
+  final intValue = (value is int) ? value : (value as double).toInt();
 
-    if (minValue == null || intValue < minValue) {
-      minValue = intValue;
-    }
-    if (maxValue == null || intValue > maxValue) {
-      maxValue = intValue;
-    }
-  }
+  // Valider que la valeur est raisonnable (< 24h en ms)
+  if (intValue < 0 || intValue > 86400000) return 0.0;
 
-  if (minValue == null || maxValue == null) return 0.0;
-
-  final activeTime = maxValue - minValue;
-
-  // Si négatif ou trop grand (> 24h), c'est une anomalie
-  if (activeTime < 0 || activeTime > 86400000) return 0.0;
-
-  return activeTime.toDouble();
+  return intValue.toDouble();
 }

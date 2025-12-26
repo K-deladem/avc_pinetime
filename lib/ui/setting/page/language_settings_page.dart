@@ -14,7 +14,7 @@ class LanguageSettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Langue de l'application"),
+        title: Text(S.of(context).appLanguageTitle),
         elevation: 0,
         scrolledUnderElevation: 3,
         backgroundColor: Theme.of(context).colorScheme.surface,
@@ -43,7 +43,7 @@ class LanguageSettingsPage extends StatelessWidget {
                     context.read<SettingsBloc>().add(UpdateSettings(updated));
 
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("Langue changée en ${newLang.displayName}")),
+                      SnackBar(content: Text(S.of(context).languageChangedToName(newLang.displayName))),
                     );
 
                     Navigator.pop(context);

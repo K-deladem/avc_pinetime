@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc_app_template/generated/l10n.dart';
 
 class WatchfaceInstallSheet extends StatefulWidget {
   final List<String> deviceIds;
@@ -83,16 +84,16 @@ class _WatchfaceInstallSheetState extends State<WatchfaceInstallSheet> {
   }
 
   Widget _buildTitle() {
-    return const Text(
-      "Installation de la Watchface",
-      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+    return Text(
+      S.of(context).watchfaceInstallation,
+      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
       textAlign: TextAlign.center,
     );
   }
 
   Widget _buildDescription(ThemeData theme) {
     return Text(
-      "${widget.deviceIds.length} montre(s) connectée(s) vont être mises à jour avec la nouvelle watchface.",
+      S.of(context).watchesWillBeUpdated(widget.deviceIds.length),
       style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey[700]),
       textAlign: TextAlign.center,
     );
@@ -124,18 +125,18 @@ class _WatchfaceInstallSheetState extends State<WatchfaceInstallSheet> {
     }
 
     if (isDownloading) {
-      return const Column(
+      return Column(
         children: [
-          LinearProgressIndicator(
+          const LinearProgressIndicator(
             color: Colors.blueAccent,
             backgroundColor: Colors.blue,
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           Text(
-            "Téléchargement en cours...",
-            style: TextStyle(fontWeight: FontWeight.w600),
+            S.of(context).downloadingInProgress,
+            style: const TextStyle(fontWeight: FontWeight.w600),
           ),
-          SizedBox(height: 28),
+          const SizedBox(height: 28),
         ],
       );
     }
@@ -151,13 +152,13 @@ class _WatchfaceInstallSheetState extends State<WatchfaceInstallSheet> {
           ),
           const SizedBox(height: 12),
           Text(
-            "Appareil ${currentDeviceIndex + 1}/${widget.deviceIds.length} - ${progress.toInt()}%",
+            S.of(context).deviceProgress(currentDeviceIndex + 1, widget.deviceIds.length, progress.toInt()),
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
           if (speed != null) ...[
             const SizedBox(height: 4),
             Text(
-              "Vitesse: ${speed!.toStringAsFixed(1)} KB/s",
+              S.of(context).speedKbps(speed!.toStringAsFixed(1)),
               style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
           ],
@@ -166,7 +167,7 @@ class _WatchfaceInstallSheetState extends State<WatchfaceInstallSheet> {
             width: double.infinity,
             child: OutlinedButton.icon(
               icon: const Icon(Icons.stop, size: 16),
-              label: const Text("Annuler", style: TextStyle(fontSize: 14)),
+              label: Text(S.of(context).cancelInstallation, style: const TextStyle(fontSize: 14)),
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.red,
                 side: const BorderSide(color: Colors.red),
@@ -178,7 +179,7 @@ class _WatchfaceInstallSheetState extends State<WatchfaceInstallSheet> {
                 // Action d'annulation
                 setState(() {
                   isInstalling = false;
-                  messageText = "Installation annulée par l'utilisateur.";
+                  messageText = S.of(context).installationCancelledByUser;
                   messageColor = Colors.orange;
                 });
               },
@@ -203,8 +204,8 @@ class _WatchfaceInstallSheetState extends State<WatchfaceInstallSheet> {
         icon: const Icon(Icons.cloud_download_outlined),
         label: Text(
           widget.deviceIds.length == 1
-              ? "Installer sur la montre"
-              : "Installer sur ${widget.deviceIds.length} montres",
+              ? S.of(context).installOnWatch
+              : S.of(context).installOnWatches(widget.deviceIds.length),
           style: const TextStyle(fontSize: 14),
         ),
         style: ElevatedButton.styleFrom(
@@ -222,7 +223,7 @@ class _WatchfaceInstallSheetState extends State<WatchfaceInstallSheet> {
         onPressed: () {
           // Simulation du démarrage de l'installation
           setState(() {
-            messageText = "Téléchargement du fichier de mise à jour en cours...";
+            messageText = S.of(context).downloadingUpdateFile;
             messageColor = Colors.blueAccent;
             isDownloading = true;
           });
@@ -233,7 +234,7 @@ class _WatchfaceInstallSheetState extends State<WatchfaceInstallSheet> {
               setState(() {
                 isDownloading = false;
                 isInstalling = true;
-                messageText = "Installation sur l'appareil 1/${widget.deviceIds.length}...";
+                messageText = S.of(context).installingOnDevice(1, widget.deviceIds.length);
                 messageColor = Colors.blueAccent;
                 progress = 0;
               });

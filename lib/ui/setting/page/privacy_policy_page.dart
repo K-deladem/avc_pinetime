@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc_app_template/constants/app_constants.dart';
+import 'package:flutter_bloc_app_template/generated/l10n.dart';
 
 class PrivacyPolicyPage extends StatelessWidget {
   static const routeName = '/privacyPolicy';
@@ -12,7 +13,7 @@ class PrivacyPolicyPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Politique de confidentialité"),
+        title: Text(S.of(context).privacyPolicyTitle),
           elevation: 0,
           scrolledUnderElevation: 3,
           backgroundColor: Theme.of(context).colorScheme.surface,
@@ -22,67 +23,67 @@ class PrivacyPolicyPage extends StatelessWidget {
         child: ListView(
           children: [
             Text(
-              "Dernière mise à jour : 1er mai 2025",
+              S.of(context).lastUpdated("1er mai 2025"),
               style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
             ),
             const SizedBox(height: 16),
             Text(
-              "1. Introduction",
+              S.of(context).introductionTitle,
               style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            const Text(
-              "Nous nous engageons à protéger votre vie privée. Cette politique explique quelles données nous collectons, pourquoi, et comment elles sont utilisées dans le cadre de notre application.",
+            Text(
+              S.of(context).introductionContent,
             ),
             const SizedBox(height: 16),
             Text(
-              "2. Données collectées",
+              S.of(context).dataCollectedTitle,
               style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            const Text(
-              "Nous collectons des données liées à votre activité dans l’application, y compris votre nom, vos préférences, vos objectifs de rééducation, et les données d'utilisation des montres connectées. Ces informations servent uniquement à améliorer votre expérience et à assurer un suivi personnalisé.",
+            Text(
+              S.of(context).dataCollectedContent,
             ),
             const SizedBox(height: 16),
             Text(
-              "3. Utilisation des données",
+              S.of(context).dataUsageTitle,
               style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            const Text(
-              "Les données sont utilisées pour afficher vos progrès, vous notifier lorsque vous atteignez vos objectifs, et personnaliser les fonctionnalités de l’application. Aucune donnée n’est partagée avec des tiers sans votre consentement.",
+            Text(
+              S.of(context).dataUsageContent,
             ),
             const SizedBox(height: 16),
             Text(
-              "4. Sécurité",
+              S.of(context).securityTitle,
               style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            const Text(
-              "Vos données sont stockées localement sur votre appareil. Nous ne transmettons aucune information vers des serveurs distants sans votre autorisation explicite.",
+            Text(
+              S.of(context).securityContent,
             ),
             const SizedBox(height: 16),
             Text(
-              "5. Vos droits",
+              S.of(context).yourRightsTitle,
               style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            const Text(
-              "Vous pouvez à tout moment consulter, modifier ou supprimer vos données depuis l’application. Pour toute demande spécifique, vous pouvez contacter notre support.",
+            Text(
+              S.of(context).yourRightsContent,
             ),
             const SizedBox(height: 16),
             Text(
-              "6. Contact",
+              S.of(context).contactTitle,
               style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
-              "Pour toute question relative à cette politique, veuillez contacter : ${AppConfig.supportEmail}.",
+              S.of(context).contactPolicyContent(AppConfig.supportEmail),
             ),
             const SizedBox(height: 24),
             Center(
               child: Text(
-                "Merci d'utiliser notre application !",
+                S.of(context).thankYouForUsing,
                 style: theme.textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic),
               ),
             ),

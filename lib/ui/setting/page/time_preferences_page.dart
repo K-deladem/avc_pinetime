@@ -4,9 +4,9 @@ import 'package:flutter_bloc_app_template/bloc/settings/settings_bloc.dart';
 import 'package:flutter_bloc_app_template/bloc/settings/settings_event.dart';
 import 'package:flutter_bloc_app_template/bloc/settings/settings_states.dart';
 import 'package:flutter_bloc_app_template/models/time_preferences.dart';
-import 'package:flutter_bloc_app_template/bloc/infinitime/dual_infinitime_bloc.dart';
-import 'package:flutter_bloc_app_template/bloc/infinitime/dual_infinitime_event.dart';
+import 'package:flutter_bloc_app_template/bloc/device/device.dart';
 import 'package:flutter_bloc_app_template/models/arm_side.dart';
+import 'package:flutter_bloc_app_template/generated/l10n.dart';
 
 class TimePreferencesPage extends StatefulWidget {
   const TimePreferencesPage({super.key});
@@ -52,28 +52,49 @@ class _TimePreferencesPageState extends State<TimePreferencesPage> {
       _isSyncing = true;
     });
 
-    final infiniTimeBloc = context.read<DualInfiniTimeBloc>();
-    final now = DateTime.now();
+    final deviceBloc = context.read<DeviceBloc>();
+    final deviceState = deviceBloc.state;
 
-    // Déterminer l'heure locale à envoyer à la montre
-    // La montre affiche l'heure telle quelle, sans conversion de fuseau
-    DateTime localTimeToSend;
+    // Vérifier quelles montres sont connectées
+    final leftConnected = deviceState.left.connected;
+    final rightConnected = deviceState.right.connected;
 
-    if (_preferences.usePhoneTimezone) {
-      // Utiliser l'heure locale du téléphone directement
-      localTimeToSend = now;
-    } else {
-      // Calculer l'heure pour le fuseau personnalisé
-      // D'abord convertir en UTC, puis ajouter le décalage personnalisé
-      final utcNow = now.toUtc();
-      localTimeToSend = utcNow.add(_preferences.timezoneOffset);
+    if (!leftConnected && !rightConnected) {
+      // Aucune montre connectée
+      if (mounted) {
+        final theme = Theme.of(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(S.of(context).noWatchConnected),
+            backgroundColor: theme.colorScheme.error,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+      setState(() {
+        _isSyncing = false;
+      });
+      return;
     }
 
-    // Synchroniser les deux montres avec l'heure locale
-    // Note: On utilise syncTimeUtc mais on envoie l'heure locale car
-    // la montre n'applique pas de conversion de fuseau horaire
-    infiniTimeBloc.add(OnSyncTimeUtc(ArmSide.left, localTimeToSend));
-    infiniTimeBloc.add(OnSyncTimeUtc(ArmSide.right, localTimeToSend));
+    // Synchroniser les montres connectées
+    final List<String> syncedWatches = [];
+
+    // Déterminer le fuseau horaire à utiliser
+    // Si usePhoneTimezone est true, on passe null pour utiliser le fuseau du téléphone
+    // Sinon, on passe le fuseau personnalisé
+    final double? timezoneOffset = _preferences.usePhoneTimezone
+        ? null
+        : _preferences.timezoneOffsetHours;
+
+    if (leftConnected) {
+      deviceBloc.add(SyncTime(ArmSide.left, timezoneOffsetHours: timezoneOffset));
+      syncedWatches.add(S.of(context).left);
+    }
+    if (rightConnected) {
+      deviceBloc.add(SyncTime(ArmSide.right, timezoneOffsetHours: timezoneOffset));
+      syncedWatches.add(S.of(context).right);
+    }
 
     // Afficher un message de confirmation
     if (mounted) {
@@ -81,8 +102,7 @@ class _TimePreferencesPageState extends State<TimePreferencesPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Synchronisation de l\'heure lancée pour les deux montres.\n'
-            'Fuseau: ${_preferences.timezoneDescription}',
+            S.of(context).timeSyncedFor(syncedWatches.join(", "), _preferences.timezoneDescription),
           ),
           backgroundColor: theme.colorScheme.primary,
           duration: const Duration(seconds: 3),
@@ -105,7 +125,7 @@ class _TimePreferencesPageState extends State<TimePreferencesPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Paramètres de Synchronisation'),
+        title: Text(S.of(context).syncSettings),
         backgroundColor: theme.colorScheme.surface,
         elevation: 0,
       ),
@@ -113,7 +133,7 @@ class _TimePreferencesPageState extends State<TimePreferencesPage> {
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            'Configuration de l\'heure',
+            S.of(context).timeConfiguration,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
               color: theme.colorScheme.primary,
@@ -121,20 +141,16 @@ class _TimePreferencesPageState extends State<TimePreferencesPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Personnalisez les paramètres de synchronisation de l\'heure avec vos montres',
+            S.of(context).timeConfigurationDescription,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 24),
 
-          // Format d'heure
-          _buildFormatSwitch(theme),
-          const Divider(),
-
           // Source du fuseau horaire
           _buildTimezoneSourceSwitch(theme),
-          const Divider(),
+          const SizedBox(height: 16,),
 
           // Sélection du fuseau horaire personnalisé
           if (!_preferences.usePhoneTimezone) ...[
@@ -156,39 +172,14 @@ class _TimePreferencesPageState extends State<TimePreferencesPage> {
     );
   }
 
-  Widget _buildFormatSwitch(ThemeData theme) {
-    return SwitchListTile(
-      value: _preferences.use24HourFormat,
-      onChanged: (value) {
-        _updatePreferences(_preferences.copyWith(use24HourFormat: value));
-      },
-      title: Row(
-        children: [
-          Icon(
-            Icons.access_time_outlined,
-            color: theme.colorScheme.primary,
-            size: 24,
-          ),
-          const SizedBox(width: 12),
-          const Text('Format 24 heures'),
-        ],
-      ),
-      subtitle: Padding(
-        padding: const EdgeInsets.only(left: 36, top: 4),
-        child: Text(
-          _preferences.use24HourFormat
-              ? 'Affichage au format 24h (ex: 14:30)'
-              : 'Affichage au format 12h (ex: 2:30 PM)',
-          style: theme.textTheme.bodySmall,
-        ),
-      ),
-      activeThumbColor: theme.colorScheme.primary,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-    );
-  }
-
   Widget _buildTimezoneSourceSwitch(ThemeData theme) {
-    return SwitchListTile(
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.3),
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),child: SwitchListTile(
       value: _preferences.usePhoneTimezone,
       onChanged: (value) {
         _updatePreferences(_preferences.copyWith(usePhoneTimezone: value));
@@ -201,21 +192,21 @@ class _TimePreferencesPageState extends State<TimePreferencesPage> {
             size: 24,
           ),
           const SizedBox(width: 12),
-          const Text('Fuseau du téléphone'),
+          Text(S.of(context).usePhoneTimezone),
         ],
       ),
       subtitle: Padding(
         padding: const EdgeInsets.only(left: 36, top: 4),
         child: Text(
           _preferences.usePhoneTimezone
-              ? 'Utiliser le fuseau horaire du téléphone'
-              : 'Utiliser un fuseau horaire personnalisé',
+              ? S.of(context).phoneTimezone
+              : S.of(context).useCustomTimezone,
           style: theme.textTheme.bodySmall,
         ),
       ),
       activeThumbColor: theme.colorScheme.primary,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-    );
+    ));
   }
 
   Widget _buildTimezoneSelector(ThemeData theme) {
@@ -225,7 +216,7 @@ class _TimePreferencesPageState extends State<TimePreferencesPage> {
         color: theme.colorScheme.primary,
         size: 24,
       ),
-      title: const Text('Fuseau horaire personnalisé'),
+      title: Text(S.of(context).customTimezone),
       subtitle: Text(
         _preferences.timezoneDescription,
         style: theme.textTheme.bodySmall,
@@ -257,7 +248,7 @@ class _TimePreferencesPageState extends State<TimePreferencesPage> {
                 ),
               )
             : const Icon(Icons.sync),
-        label: Text(_isSyncing ? 'Synchronisation...' : 'Synchroniser maintenant'),
+        label: Text(_isSyncing ? S.of(context).syncing : S.of(context).syncNow),
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 16),
           backgroundColor: theme.colorScheme.primary,
@@ -287,7 +278,7 @@ class _TimePreferencesPageState extends State<TimePreferencesPage> {
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  'Information',
+                  S.of(context).information,
                   style: theme.textTheme.titleSmall?.copyWith(
                     color: theme.colorScheme.onPrimaryContainer,
                     fontWeight: FontWeight.bold,
@@ -297,9 +288,7 @@ class _TimePreferencesPageState extends State<TimePreferencesPage> {
             ),
             const SizedBox(height: 12),
             Text(
-              'L\'heure est automatiquement synchronisée à chaque connexion des montres. '
-              'Utilisez la synchronisation manuelle après un voyage dans un autre fuseau horaire '
-              'ou lors du changement d\'heure (été/hiver).',
+              S.of(context).timeSyncInfo,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onPrimaryContainer,
               ),
@@ -356,7 +345,7 @@ class _TimezonePickerDialogState extends State<_TimezonePickerDialog> {
     }
 
     return AlertDialog(
-      title: const Text('Sélectionner le fuseau horaire'),
+      title: Text(S.of(context).selectTimezone),
       content: SizedBox(
         width: double.maxFinite,
         child: ListView.builder(
@@ -400,7 +389,7 @@ class _TimezonePickerDialogState extends State<_TimezonePickerDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Annuler'),
+          child: Text(S.of(context).cancel),
         ),
       ],
     );

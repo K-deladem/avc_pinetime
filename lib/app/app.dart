@@ -3,20 +3,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_bloc_app_template/app/lang_helper.dart';
 import 'package:flutter_bloc_app_template/app/theme_helper.dart';
+import 'package:flutter_bloc_app_template/core/di/injection_container.dart';
+import 'package:flutter_bloc_app_template/domain/repositories/settings_repository.dart';
+import 'package:flutter_bloc_app_template/domain/repositories/watch_repository.dart';
 import 'package:flutter_bloc_app_template/service/background_infinitime_service.dart';
 import 'package:flutter_bloc_app_template/service/firmware_source.dart';
 import 'package:flutter_bloc_app_template/service/goal_check_service.dart';
 import 'package:flutter_bloc_app_template/utils/app_logger.dart';
-import 'package:flutter_bloc_app_template/bloc/infinitime/dual_infinitime_bloc.dart';
-import 'package:flutter_bloc_app_template/bloc/infinitime/dual_infinitime_event.dart';
+import 'package:flutter_bloc_app_template/bloc/chart/chart.dart';
+import 'package:flutter_bloc_app_template/bloc/device/device.dart';
 import 'package:flutter_bloc_app_template/bloc/init/init_bloc.dart';
 import 'package:flutter_bloc_app_template/bloc/settings/settings_bloc.dart';
 import 'package:flutter_bloc_app_template/bloc/settings/settings_event.dart';
-import 'package:flutter_bloc_app_template/bloc/settings/settings_repository.dart';
 import 'package:flutter_bloc_app_template/bloc/settings/settings_states.dart';
 import 'package:flutter_bloc_app_template/bloc/watch/watch_bloc.dart';
 import 'package:flutter_bloc_app_template/bloc/watch/watch_event.dart';
-import 'package:flutter_bloc_app_template/bloc/watch/watch_repository.dart';
 import 'package:flutter_bloc_app_template/generated/l10n.dart';
 import 'package:flutter_bloc_app_template/index.dart';
 import 'package:flutter_bloc_app_template/routes/app_routes.dart';
@@ -29,11 +30,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'app_database.dart';
 
 class MyApp extends StatelessWidget {
-  MyApp({super.key});
-
-  final watchRepository = WatchRepository();
-  final ble = FlutterReactiveBle();
-  final firmwareManager = FirmwareManager(FirmwareSource());
+  const MyApp({super.key});
 
   // Variable pour éviter les rechargements en boucle
   static int _retryCount = 0;
@@ -47,10 +44,17 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Récupérer les dépendances depuis le service locator
+    final navigationService = sl<NavigationService>();
+    final watchRepository = sl<WatchRepository>();
+    final settingsRepository = sl<SettingsRepository>();
+    final ble = sl<FlutterReactiveBle>();
+    final firmwareManager = FirmwareManager(FirmwareSource());
+
     return MultiRepositoryProvider(
       providers: [
-        RepositoryProvider(create: (_) => NavigationService()),
-        RepositoryProvider<WatchRepository>(create: (_) => watchRepository),
+        RepositoryProvider<NavigationService>.value(value: navigationService),
+        RepositoryProvider<WatchRepository>.value(value: watchRepository),
         RepositoryProvider<FlutterReactiveBle>.value(value: ble),
         RepositoryProvider<FirmwareManager>.value(value: firmwareManager),
       ],
@@ -63,18 +67,21 @@ class MyApp extends StatelessWidget {
                   WatchBloc(watchRepository)..add(LoadWatchDevices())),
           BlocProvider<SettingsBloc>(
               create: (_) =>
-                  SettingsBloc(SettingsRepositoryImpl())..add(LoadSettings())),
-          BlocProvider<DualInfiniTimeBloc>(
+                  SettingsBloc(settingsRepository)..add(LoadSettings())),
+          BlocProvider<DeviceBloc>(
             create: (ctx) {
-              AppLogger.d('Création du DualInfiniTimeBloc...');
-              final bloc = DualInfiniTimeBloc(ctx.read<FlutterReactiveBle>());
+              AppLogger.d('Création du DeviceBloc...');
+              final bloc = DeviceBloc(ble);
               // Charger les bindings après un court délai pour ne pas bloquer le rendu
               Future.delayed(const Duration(milliseconds: 100), () {
                 AppLogger.d('Chargement des bindings...');
-                bloc.add(DualLoadBindingsRequested());
+                bloc.add(const LoadBindings());
               });
               return bloc;
             },
+          ),
+          BlocProvider<ChartBloc>(
+            create: (_) => ChartBloc(),
           )
         ],
         child: Builder(
@@ -126,9 +133,9 @@ class MyApp extends StatelessWidget {
 
                 final settings = state.settings;
 
-                // Mettre à jour la configuration du DualInfiniTimeBloc quand les settings changent
+                // Mettre à jour la configuration du DeviceBloc quand les settings changent
                 context
-                    .read<DualInfiniTimeBloc>()
+                    .read<DeviceBloc>()
                     .updateConfiguration(settings);
 
                 // Démarrer les services en arrière-plan de manière différée

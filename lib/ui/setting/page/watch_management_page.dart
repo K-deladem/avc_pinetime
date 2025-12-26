@@ -35,9 +35,14 @@ class _WatchManagementPageState extends State<WatchManagementPage> {
     isConnected = widget.watch.isLastConnected;
     batteryLevel = widget.watch.batteryLevel ?? 0;
     side = widget.watch.armSide;
-    lastSync = widget.watch.lastSyncTime != null
-        ? "Il y a ${DateTime.now().difference(widget.watch.lastSyncTime!).inMinutes} minutes"
-        : "Jamais synchronisée";
+    lastSync = "";
+  }
+
+  String _getLastSyncText() {
+    if (widget.watch.lastSyncTime != null) {
+      return S.of(context).syncedAgo(DateTime.now().difference(widget.watch.lastSyncTime!).inMinutes);
+    }
+    return S.of(context).neverSynced;
   }
 
   void _renameWatch() {
@@ -45,10 +50,10 @@ class _WatchManagementPageState extends State<WatchManagementPage> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text("Renommer la montre"),
+        title: Text(S.of(context).renameWatch),
         content: TextField(
           controller: controller,
-          decoration: const InputDecoration(labelText: "Nouveau nom"),
+          decoration: InputDecoration(labelText: S.of(context).newName),
         ),
         actions: [
           TextButton(
@@ -92,15 +97,15 @@ class _WatchManagementPageState extends State<WatchManagementPage> {
   void _testVibration() {
     //context.read<BluetoothBloc>().add(WriteToWatch(widget.watch.armSide, '{"action":"vibrate"}'),);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Vibration testée avec succès")),
+      SnackBar(content: Text(S.of(context).vibrationTestedSuccessfully)),
     );
   }
 
   void _syncWatch() {
     //context.read<BluetoothBloc>().add(WriteToWatch(widget.watch.armSide, '{"action":"sync"}'),);
-    setState(() => lastSync = "Synchronisée à l'instant");
+    setState(() => lastSync = S.of(context).syncedJustNow);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Montre synchronisée")),
+      SnackBar(content: Text(S.of(context).watchSynced)),
     );
   }
 
@@ -112,11 +117,11 @@ class _WatchManagementPageState extends State<WatchManagementPage> {
 
   void _updateFirmware() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Vérification du firmware...")),
+      SnackBar(content: Text(S.of(context).checkingFirmware)),
     );
     Future.delayed(const Duration(seconds: 2), () {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Firmware à jour.")),
+        SnackBar(content: Text(S.of(context).firmwareUpToDate)),
       );
     });
   }
@@ -125,8 +130,8 @@ class _WatchManagementPageState extends State<WatchManagementPage> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text("Supprimer la montre ?"),
-        content: const Text("Cette action est définitive."),
+        title: Text(S.of(context).deleteWatchQuestion),
+        content: Text(S.of(context).thisActionIsPermanent),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
@@ -143,7 +148,7 @@ class _WatchManagementPageState extends State<WatchManagementPage> {
               Navigator.pop(ctx);
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Montre supprimée.")),
+                SnackBar(content: Text(S.of(context).watchDeleted)),
               );
             },
             child: Text(S.of(context).delete),
@@ -158,7 +163,7 @@ class _WatchManagementPageState extends State<WatchManagementPage> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text("Montre ${side == ArmSide.left ? S.of(context).left : S.of(context).right}"),
+        title: Text(S.of(context).watchSide(side == ArmSide.left ? S.of(context).left : S.of(context).right)),
           elevation: 0,
           scrolledUnderElevation: 3,
           backgroundColor: Theme.of(context).colorScheme.surface,
@@ -169,7 +174,7 @@ class _WatchManagementPageState extends State<WatchManagementPage> {
           ListTile(
             leading: Icon(Icons.watch, color: theme.primaryColor),
             title: Text(watchName),
-            subtitle: Text(isConnected ? "Connectée" : "Non connectée"),
+            subtitle: Text(isConnected ? S.of(context).watchConnected : S.of(context).watchNotConnected),
             trailing: IconButton(
               icon: const Icon(Icons.edit),
               onPressed: _renameWatch,
@@ -178,7 +183,7 @@ class _WatchManagementPageState extends State<WatchManagementPage> {
           const Divider(),
           ListTile(
             leading: const Icon(Icons.battery_std),
-            title: const Text("Niveau de batterie"),
+            title: Text(S.of(context).batteryLevel),
             subtitle: Text("$batteryLevel%"),
             trailing: const Icon(Icons.refresh),
             onTap: _checkBattery,
@@ -186,22 +191,22 @@ class _WatchManagementPageState extends State<WatchManagementPage> {
           ListTile(
             leading: const Icon(Icons.sync),
             title: Text(S.of(context).synchronization),
-            subtitle: Text(lastSync),
+            subtitle: Text(lastSync.isEmpty ? _getLastSyncText() : lastSync),
             onTap: _syncWatch,
           ),
           ListTile(
             leading: const Icon(Icons.vibration),
-            title: const Text("Tester la vibration"),
+            title: Text(S.of(context).testVibration),
             onTap: _testVibration,
           ),
           ListTile(
             leading: const Icon(Icons.system_update),
-            title: const Text("Mise à jour firmware"),
+            title: Text(S.of(context).firmwareUpdate),
             onTap: _updateFirmware,
           ),
           ListTile(
             leading: Icon(Icons.delete_forever, color: Theme.of(context).colorScheme.error),
-            title: Text("Supprimer la montre",
+            title: Text(S.of(context).deleteWatch,
                 style: TextStyle(color: Theme.of(context).colorScheme.error)),
             onTap: _forgetWatch,
           ),

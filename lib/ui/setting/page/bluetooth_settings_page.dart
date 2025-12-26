@@ -27,9 +27,9 @@ class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
     bloc.add(UpdateSettings(updatedSettings));
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Paramètres Bluetooth mis à jour"),
-        duration: Duration(seconds: 2),
+      SnackBar(
+        content: Text(S.of(context).bluetoothSettingsUpdated),
+        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -48,7 +48,7 @@ class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text("Paramètres Bluetooth"),
+            title: Text(S.of(context).bluetoothSettings),
             centerTitle: true,
             elevation: 0,
             backgroundColor: Theme.of(context).colorScheme.surface,
@@ -59,16 +59,16 @@ class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
             children: [
               _buildInfoCard(context),
               const SizedBox(height: 24),
-              _buildSectionTitle(context, "Connexion"),
+              _buildSectionTitle(context, S.of(context).connection),
               _buildSliderTile(
                 context: context,
-                title: "Durée de scan",
-                subtitle: "Temps d'attente pour trouver les montres",
+                title: S.of(context).scanDuration,
+                subtitle: S.of(context).scanDurationDescription,
                 currentValue: settings.bluetoothScanTimeout.toDouble(),
                 min: 10,
                 max: 30,
                 divisions: 4,
-                unit: "secondes",
+                unit: S.of(context).seconds,
                 onChanged: (value) {
                   final updated = settings.copyWith(
                     bluetoothScanTimeout: value.toInt(),
@@ -78,13 +78,13 @@ class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
               ),
               _buildSliderTile(
                 context: context,
-                title: "Délai de connexion",
-                subtitle: "Temps maximum pour établir la connexion",
+                title: S.of(context).connectionDelay,
+                subtitle: S.of(context).connectionDelayDescription,
                 currentValue: settings.bluetoothConnectionTimeout.toDouble(),
                 min: 15,
                 max: 60,
                 divisions: 9,
-                unit: "secondes",
+                unit: S.of(context).seconds,
                 onChanged: (value) {
                   final updated = settings.copyWith(
                     bluetoothConnectionTimeout: value.toInt(),
@@ -94,13 +94,13 @@ class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
               ),
               _buildSliderTile(
                 context: context,
-                title: "Tentatives de reconnexion",
-                subtitle: "Nombre d'essais en cas d'échec",
+                title: S.of(context).reconnectionAttempts,
+                subtitle: S.of(context).reconnectionAttemptsDescription,
                 currentValue: settings.bluetoothMaxRetries.toDouble(),
                 min: 3,
                 max: 10,
                 divisions: 7,
-                unit: "tentatives",
+                unit: S.of(context).attempts,
                 onChanged: (value) {
                   final updated = settings.copyWith(
                     bluetoothMaxRetries: value.toInt(),
@@ -109,16 +109,16 @@ class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
                 },
               ),
               const SizedBox(height: 24),
-              _buildSectionTitle(context, "Enregistrement des données"),
+              _buildSectionTitle(context, S.of(context).dataRecording),
               _buildSliderTile(
                 context: context,
-                title: "Fréquence batterie/RSSI",
-                subtitle: "Intervalle d'enregistrement des infos de base",
+                title: S.of(context).batteryRssiFrequency,
+                subtitle: S.of(context).batteryRssiFrequencyDescription,
                 currentValue: settings.dataRecordInterval.toDouble(),
                 min: 1,
                 max: 10,
                 divisions: 9,
-                unit: "minutes",
+                unit: S.of(context).minutes,
                 onChanged: (value) {
                   final updated = settings.copyWith(
                     dataRecordInterval: value.toInt(),
@@ -128,13 +128,13 @@ class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
               ),
               _buildSliderTile(
                 context: context,
-                title: "Fréquence mouvement",
-                subtitle: "Intervalle d'enregistrement des données de mouvement",
+                title: S.of(context).movementFrequency,
+                subtitle: S.of(context).movementFrequencyDescription,
                 currentValue: settings.movementRecordInterval.toDouble(),
                 min: 10,
                 max: 120,
                 divisions: 11,
-                unit: "secondes",
+                unit: S.of(context).seconds,
                 onChanged: (value) {
                   final updated = settings.copyWith(
                     movementRecordInterval: value.toInt(),
@@ -166,7 +166,7 @@ class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
             const SizedBox(width: 16),
             Expanded(
               child: Text(
-                "Ajustez les paramètres Bluetooth pour optimiser la connexion et la consommation de batterie",
+                S.of(context).adjustBluetoothSettings,
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onPrimaryContainer,
                 ),
@@ -202,9 +202,15 @@ class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
     required String unit,
     required ValueChanged<double> onChanged,
   }) {
+    var theme = Theme.of(context);
+
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.3),
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -238,8 +244,10 @@ class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: theme.colorScheme.outline.withValues(alpha: 0.3),
+                    ),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     "${currentValue.toInt()} $unit",
@@ -266,20 +274,26 @@ class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
   }
 
   Widget _buildPresetSection(BuildContext context, AppSettings settings) {
+    var theme = Theme.of(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle(context, "Profils prédéfinis"),
+        _buildSectionTitle(context, S.of(context).presetProfiles),
         Container(
           decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest),
+            border: Border.all(
+              color: theme.colorScheme.outline.withValues(alpha: 0.3),
+            ),
+            borderRadius: BorderRadius.circular(12),
+          ),
           margin: const EdgeInsets.symmetric(horizontal: 8),
           child: Column(
             children: [
               _buildPresetTile(
                 context,
-                "Économie d'énergie",
-                "Connexions plus espacées pour préserver la batterie",
+                S.of(context).powerSaving,
+                S.of(context).powerSavingDescription,
                 Icons.battery_saver,
                 () => _applyPreset(
                   context,
@@ -295,8 +309,8 @@ class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
               const Divider(height: 1),
               _buildPresetTile(
                 context,
-                "Équilibré",
-                "Paramètres par défaut recommandés",
+                S.of(context).balancedProfile,
+                S.of(context).balancedProfileDescription,
                 Icons.balance,
                 () => _applyPreset(
                   context,
@@ -312,8 +326,8 @@ class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
               const Divider(height: 1),
               _buildPresetTile(
                 context,
-                "Performance",
-                "Connexions rapides et données fréquentes",
+                S.of(context).performanceProfile,
+                S.of(context).performanceProfileDescription,
                 Icons.speed,
                 () => _applyPreset(
                   context,
@@ -353,10 +367,8 @@ class _BluetoothSettingsPageState extends State<BluetoothSettingsPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Appliquer le profil ?"),
-        content: const Text(
-          "Cette action modifiera tous vos paramètres Bluetooth selon le profil sélectionné.",
-        ),
+        title: Text(S.of(context).applyProfileQuestion),
+        content: Text(S.of(context).applyProfileDescription),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),

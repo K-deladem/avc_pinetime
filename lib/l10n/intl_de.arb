@@ -194,7 +194,7 @@
   "@about": {},
   "contactSupport": "Support kontaktieren",
   "@contactSupport": {},
-  "supportEmail": "support@monapp.com",
+  "supportEmail": "kdetou@etu.uqac.ca",
   "@supportEmail": {},
   "shareMyData": "Meine Daten teilen",
   "@shareMyData": {},
@@ -469,9 +469,1284 @@
   "newName": "Neuer Name",
   "@newName": {},
 
+  "_TIME_PREFERENCES": "=== ZEITEINSTELLUNGEN ===",
+  "syncSettings": "Synchronisierungseinstellungen",
+  "@syncSettings": {},
+  "format24Hours": "24-Stunden-Format",
+  "@format24Hours": {},
+  "phoneTimezone": "Telefon-Zeitzone",
+  "@phoneTimezone": {},
+  "customTimezone": "Benutzerdefinierte Zeitzone",
+  "@customTimezone": {},
+  "selectTimezone": "Zeitzone auswählen",
+  "@selectTimezone": {},
+  "timeSynchronization": "Zeitsynchronisation",
+  "@timeSynchronization": {},
+  "timezoneFormatSync": "Zeitzone, Zeitformat und Synchronisation",
+  "@timezoneFormatSync": {},
+
+  "_GOAL_SETTINGS": "=== ZIELEINSTELLUNGEN ===",
+  "goalConfiguration": "Zielkonfiguration",
+  "@goalConfiguration": {},
+  "checkFrequencyMinutes": "Minuten",
+  "@checkFrequencyMinutes": {},
+  "fixedGoal": "Festes Ziel",
+  "@fixedGoal": {},
+  "fixedGoalDescription": "Ein festes Verhältnis festlegen",
+  "@fixedGoalDescription": {},
+  "dynamicGoal": "Dynamisches Ziel",
+  "@dynamicGoal": {},
+  "goalRatio": "Zielverhältnis",
+  "@goalRatio": {},
+  "periodDays": "Anzahl der Tage im Zeitraum",
+  "@periodDays": {},
+  "periodDaysUnit": "Tage",
+  "@periodDaysUnit": {},
+  "dailyIncreasePercent": "Tägliche Steigerung in Prozent",
+  "@dailyIncreasePercent": {},
+  "dailyIncrease": "Tägliche Steigerung",
+  "@dailyIncrease": {},
+
+  "_MOVEMENT_SAMPLING": "=== BEWEGUNGS-ABTASTUNG ===",
+  "movementSampling": "Bewegungs-Abtastung",
+  "@movementSampling": {},
+  "samplingMode": "Abtastmodus",
+  "@samplingMode": {},
+  "interval": "Intervall",
+  "@interval": {},
+  "intervalMs": "ms (Sekunden)",
+  "@intervalMs": {},
+  "intervalMsValue": "{value} ms",
+  "@intervalMsValue": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "changeThreshold": "Änderungsschwelle",
+  "@changeThreshold": {},
+  "thresholdUnit": "g",
+  "@thresholdUnit": {},
+  "maxSamplesPerFlush": "Max. Proben pro Flush",
+  "@maxSamplesPerFlush": {},
+  "samplesUnit": "Proben",
+  "@samplesUnit": {},
+
+  "_BLUETOOTH_SETTINGS": "=== BLUETOOTH-EINSTELLUNGEN ===",
+  "scanDuration": "Scandauer",
+  "@scanDuration": {},
+  "scanDurationDescription": "Wartezeit zum Finden der Uhren",
+  "@scanDurationDescription": {},
+  "connectionDelay": "Verbindungsverzögerung",
+  "@connectionDelay": {},
+  "connectionDelayDescription": "Maximale Zeit zum Herstellen der Verbindung",
+  "@connectionDelayDescription": {},
+  "reconnectionAttempts": "Wiederverbindungsversuche",
+  "@reconnectionAttempts": {},
+  "reconnectionAttemptsDescription": "Anzahl der Versuche bei Fehler",
+  "@reconnectionAttemptsDescription": {},
+  "batteryRssiFrequency": "Batterie/RSSI-Frequenz",
+  "@batteryRssiFrequency": {},
+  "batteryRssiFrequencyDescription": "Aufzeichnungsintervall für Basisinformationen",
+  "@batteryRssiFrequencyDescription": {},
+  "movementFrequency": "Bewegungsfrequenz",
+  "@movementFrequency": {},
+  "movementFrequencyDescription": "Aufzeichnungsintervall für Bewegungsdaten",
+  "@movementFrequencyDescription": {},
+
+  "_CHART_PREFERENCES_PAGE": "=== DIAGRAMM-EINSTELLUNGEN ===",
+  "asymmetryMagnitudeAxis": "Asymmetrie (Größe & Achse)",
+  "@asymmetryMagnitudeAxis": {},
+  "asymmetryMagnitudeAxisDescription": "Kombiniertes Messdiagramm für Asymmetrie - Immer aktiviert",
+  "@asymmetryMagnitudeAxisDescription": {},
+  "batteryLevelDescription": "Batteriestandvergleich beider Uhren",
+  "@batteryLevelDescription": {},
+  "balanceGoalDescription": "Größe/Achse-Heatmap zur Gleichgewichtsverfolgung",
+  "@balanceGoalDescription": {},
+  "movementAsymmetry": "Bewegungsasymmetrie",
+  "@movementAsymmetry": {},
+  "movementAsymmetryDescription": "Asymmetrie-Verhältnis-Diagramm mit Größe/Achse-Filter und Ziel",
+  "@movementAsymmetryDescription": {},
+  "stepCountDescription": "Schrittvergleich zwischen beiden Armen",
+  "@stepCountDescription": {},
+
+  "_CONTACT_SUPPORT": "=== SUPPORT KONTAKTIEREN ===",
+  "contactSupportTitle": "Support kontaktieren",
+  "@contactSupportTitle": {},
+  "supportEmailLabel": "Support-E-Mail",
+  "@supportEmailLabel": {},
+  "sendMessageToSupport": "Senden Sie eine Nachricht an unser Support-Team:",
+  "@sendMessageToSupport": {},
+  "subject": "Betreff",
+  "@subject": {},
+  "message": "Nachricht",
+  "@message": {},
+  "pleaseEnterSubject": "Bitte geben Sie einen Betreff ein.",
+  "@pleaseEnterSubject": {},
+  "pleaseEnterMessage": "Bitte geben Sie eine Nachricht ein.",
+  "@pleaseEnterMessage": {},
+  "sendingInProgress": "Wird gesendet...",
+  "@sendingInProgress": {},
+  "sendMessage": "Nachricht senden",
+  "@sendMessage": {},
+  "emailClientOpened": "E-Mail-Client geöffnet. Senden Sie Ihre Nachricht.",
+  "@emailClientOpened": {},
+  "cannotOpenEmailClient": "E-Mail-Client kann nicht geöffnet werden.",
+  "@cannotOpenEmailClient": {},
+  "contactUsAt": "Kontaktieren Sie uns unter: {email}",
+  "@contactUsAt": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+
+  "_PDF_EXPORT": "=== PDF-EXPORT ===",
+  "pdfGeneratedSuccessfully": "PDF erfolgreich erstellt",
+  "@pdfGeneratedSuccessfully": {},
+  "preview": "Vorschau",
+  "@preview": {},
+  "share": "Teilen",
+  "@share": {},
+  "pdfGeneratedWithCharts": "PDF mit {count} Diagramm(en) erstellt",
+  "@pdfGeneratedWithCharts": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pdfGenerationError": "Fehler beim Erstellen des PDFs: {error}",
+  "@pdfGenerationError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "_WATCHFACE_INSTALL": "=== ZIFFERBLATT-INSTALLATION ===",
+  "downloadingUpdateFile": "Update-Datei wird heruntergeladen...",
+  "@downloadingUpdateFile": {},
+  "downloadInProgress": "Download läuft...",
+  "@downloadInProgress": {},
+
+  "_WATCH_CARD": "=== UHR-KARTE ===",
+  "cancelDfu": "DFU abbrechen",
+  "@cancelDfu": {},
+  "deleteWatch": "Uhr löschen",
+  "@deleteWatch": {},
+
+  "_RESET_DIALOGS": "=== ZURÜCKSETZEN-DIALOGE ===",
+  "resetDataQuestion": "Daten zurücksetzen?",
+  "@resetDataQuestion": {},
+  "resetConfigurationsQuestion": "Konfigurationen zurücksetzen?",
+  "@resetConfigurationsQuestion": {},
+
   "_EMPTY_STATE": "=== LEERE ZUSTÄNDE ===",
   "sorryNoProductWishlist": "Entschuldigung, Sie haben kein Produkt in Ihrer Wunschliste",
   "@sorryNoProductWishlist": {},
   "startAdding": "Beginnen Sie mit dem Hinzufügen",
-  "@startAdding": {}
+  "@startAdding": {},
+
+  "_CHART_PREFERENCES": "=== DIAGRAMM-EINSTELLUNGEN ===",
+  "chartPreferences": "Diagramm-Einstellungen",
+  "@chartPreferences": {},
+  "selectChartsToDisplay": "Wählen Sie die anzuzeigenden Diagramme",
+  "@selectChartsToDisplay": {},
+  "disabledChartsNotShown": "Deaktivierte Diagramme werden auf dem Hauptbildschirm nicht angezeigt",
+  "@disabledChartsNotShown": {},
+  "chartsEnabledCount": "{count} Diagramm(e) aktiviert",
+  "@chartsEnabledCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "_HOME_SCREEN": "=== HAUPTBILDSCHIRM ===",
+  "historicalData": "Historische Daten",
+  "@historicalData": {},
+  "infiniTimeSensors": "InfiniTime-Sensoren",
+  "@infiniTimeSensors": {},
+  "sensorTrackingDescription": "Vollständige Verfolgung von Batterie, Herzfrequenz, Schritten und anderen Metriken von Ihren PineTime-Uhren.",
+  "@sensorTrackingDescription": {},
+  "learnMore": "Mehr erfahren",
+  "@learnMore": {},
+  "asymmetry": "Asymmetrie",
+  "@asymmetry": {},
+  "asymmetryMagnitudeAndAxis": "Asymmetrie Größe & Achse",
+  "@asymmetryMagnitudeAndAxis": {},
+  "asymmetryMovementRatio": "Bewegungsasymmetrie (Verhältnis)",
+  "@asymmetryMovementRatio": {},
+  "balanceGoalHeatmap": "Gleichgewichtsziel (Heatmap)",
+  "@balanceGoalHeatmap": {},
+  "leftWatchConnected": "Linke Uhr verbunden",
+  "@leftWatchConnected": {},
+  "leftWatchDisconnected": "Linke Uhr getrennt",
+  "@leftWatchDisconnected": {},
+  "rightWatchConnected": "Rechte Uhr verbunden",
+  "@rightWatchConnected": {},
+  "rightWatchDisconnected": "Rechte Uhr getrennt",
+  "@rightWatchDisconnected": {},
+  "connectionSuccessFor": "Verbindung erfolgreich für {side}",
+  "@connectionSuccessFor": {
+    "placeholders": {
+      "side": {
+        "type": "String"
+      }
+    }
+  },
+  "connectionError": "Verbindungsfehler: {error}",
+  "@connectionError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "disconnectionOf": "Trennung von {side}",
+  "@disconnectionOf": {
+    "placeholders": {
+      "side": {
+        "type": "String"
+      }
+    }
+  },
+  "reconnectionInProgressFor": "Wiederverbindung läuft für {side}",
+  "@reconnectionInProgressFor": {
+    "placeholders": {
+      "side": {
+        "type": "String"
+      }
+    }
+  },
+  "forgetWatchQuestion": "Uhr {side} vergessen?",
+  "@forgetWatchQuestion": {
+    "placeholders": {
+      "side": {
+        "type": "String"
+      }
+    }
+  },
+  "forgetWatchDescription": "Diese Aktion wird:\n• Die Uhr trennen\n• Verbindungsdaten löschen\n• Verbindungsverlauf löschen\n\nSie müssen sie manuell wieder verbinden.",
+  "@forgetWatchDescription": {},
+  "forget": "Vergessen",
+  "@forget": {},
+  "deletingWatch": "Uhr {side} wird gelöscht...",
+  "@deletingWatch": {
+    "placeholders": {
+      "side": {
+        "type": "String"
+      }
+    }
+  },
+  "watchForgottenSuccessfully": "Uhr {side} erfolgreich vergessen",
+  "@watchForgottenSuccessfully": {
+    "placeholders": {
+      "side": {
+        "type": "String"
+      }
+    }
+  },
+  "errorForgettingWatch": "Fehler beim Vergessen der Uhr {side}",
+  "@errorForgettingWatch": {
+    "placeholders": {
+      "side": {
+        "type": "String"
+      }
+    }
+  },
+  "updateWatch": "Uhr {side} aktualisieren",
+  "@updateWatch": {
+    "placeholders": {
+      "side": {
+        "type": "String"
+      }
+    }
+  },
+  "whatToUpdate": "Was möchten Sie aktualisieren?",
+  "@whatToUpdate": {},
+  "firmwareUpdateInProgress": "Firmware-Update läuft...",
+  "@firmwareUpdateInProgress": {},
+  "deviceInfoRequest": "Geräteinformationen für {side}",
+  "@deviceInfoRequest": {
+    "placeholders": {
+      "side": {
+        "type": "String"
+      }
+    }
+  },
+  "neverSynchronized": "Nie synchronisiert",
+  "@neverSynchronized": {},
+  "agoSeconds": "vor {seconds}s",
+  "@agoSeconds": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "agoMinutes": "vor {minutes}min",
+  "@agoMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "agoHours": "vor {hours}h",
+  "@agoHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "agoDays": "vor {days}T",
+  "@agoDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "simulator": "Simulator",
+  "@simulator": {},
+  "dataSimulator": "Daten-Simulator",
+  "@dataSimulator": {},
+  "testModeOnly": "Nur Testmodus\n\nGeneriert gefälschte Daten zum Testen von Diagrammen.",
+  "@testModeOnly": {},
+  "generateDays": "{days} Tage generieren",
+  "@generateDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "leftDominant": "Links Dominant ({percent}%)",
+  "@leftDominant": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "rightDominant": "Rechts Dominant ({percent}%)",
+  "@rightDominant": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "balanced": "Ausgeglichen (50/50)",
+  "@balanced": {},
+  "showStats": "Stats anzeigen",
+  "@showStats": {},
+  "deleteAll": "Alles löschen",
+  "@deleteAll": {},
+  "confirmDeletion": "Löschen bestätigen",
+  "@confirmDeletion": {},
+  "deleteAllDataWarning": "Sind Sie sicher, dass Sie ALLE Daten löschen möchten?\n\nDiese Aktion ist unwiderruflich.",
+  "@deleteAllDataWarning": {},
+  "delete": "Löschen",
+  "@delete": {},
+  "generatingDaysData": "{days} Tage Daten werden generiert...",
+  "@generatingDaysData": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "daysDataGenerated": "{days} Tage Daten generiert!",
+  "@daysDataGenerated": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "generatingAsymmetry": "Generierung mit Asymmetrie ({percent}% links)...",
+  "@generatingAsymmetry": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "asymmetricDataGenerated": "Asymmetrische Daten generiert!",
+  "@asymmetricDataGenerated": {},
+  "deletionInProgress": "Löschen läuft...",
+  "@deletionInProgress": {},
+  "allDataDeleted": "Alle Daten gelöscht",
+  "@allDataDeleted": {},
+  "statsDisplayedInConsole": "Stats in Konsole angezeigt",
+  "@statsDisplayedInConsole": {},
+
+  "_HISTORY_SCREEN": "=== VERLAUF-BILDSCHIRM ===",
+  "history": "Verlauf",
+  "@history": {},
+  "exportData": "Daten exportieren",
+  "@exportData": {},
+  "all": "Alle",
+  "@all": {},
+  "left": "Links",
+  "@left": {},
+  "right": "Rechts",
+  "@right": {},
+  "today": "Heute",
+  "@today": {},
+  "sevenDays": "7 Tage",
+  "@sevenDays": {},
+  "thirtyDays": "30 Tage",
+  "@thirtyDays": {},
+  "allData": "Alle",
+  "@allData": {},
+  "custom": "Benutzerdefiniert",
+  "@custom": {},
+  "noDataAvailable": "Keine Daten verfügbar",
+  "@noDataAvailable": {},
+  "errorLabel": "Fehler: {error}",
+  "@errorLabel": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "yesterday": "Gestern",
+  "@yesterday": {},
+  "eventsCount": "{count} Ereignisse",
+  "@eventsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "battery": "Batterie",
+  "@battery": {},
+  "steps": "Schritte",
+  "@steps": {},
+  "connections": "Verbindungen",
+  "@connections": {},
+  "movements": "Bewegungen",
+  "@movements": {},
+  "events": "Ereignisse",
+  "@events": {},
+  "stepsUnit": "{count} Schritte",
+  "@stepsUnit": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "batteryLevelLabel": "Batteriestand",
+  "@batteryLevelLabel": {},
+  "batteryExcellent": "Ausgezeichnet",
+  "@batteryExcellent": {},
+  "batteryGood": "Gut",
+  "@batteryGood": {},
+  "batteryLow": "Niedrig",
+  "@batteryLow": {},
+  "batteryCritical": "Kritisch",
+  "@batteryCritical": {},
+  "activityDetected": "Aktivität erkannt",
+  "@activityDetected": {},
+  "connected": "Verbunden",
+  "@connected": {},
+  "disconnected": "Getrennt",
+  "@disconnected": {},
+  "duration": "Dauer: {duration}",
+  "@duration": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "batteryAt": "Batterie: {level}%",
+  "@batteryAt": {
+    "placeholders": {
+      "level": {
+        "type": "int"
+      }
+    }
+  },
+  "movement": "Bewegung",
+  "@movement": {},
+  "intense": "Intensiv",
+  "@intense": {},
+  "moderate": "Moderat",
+  "@moderate": {},
+  "light": "Leicht",
+  "@light": {},
+  "rest": "Ruhe",
+  "@rest": {},
+  "active": "Aktiv: {time}",
+  "@active": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "magnitudeValue": "Größe: {value}",
+  "@magnitudeValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "last7Days": "Letzte 7 Tage",
+  "@last7Days": {},
+  "last30Days": "Letzte 30 Tage",
+  "@last30Days": {},
+  "allDataLabel": "Alle Daten",
+  "@allDataLabel": {},
+  "customPeriod": "Benutzerdefinierter Zeitraum",
+  "@customPeriod": {},
+  "fromToDate": "Von {start} bis {end}",
+  "@fromToDate": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "selectDateRange": "Datumsbereich auswählen",
+  "@selectDateRange": {},
+  "startDate": "Startdatum",
+  "@startDate": {},
+  "endDate": "Enddatum",
+  "@endDate": {},
+  "applyButton": "Anwenden",
+  "@applyButton": {},
+  "selectStartDate": "Startdatum auswählen",
+  "@selectStartDate": {},
+  "selectEndDate": "Enddatum auswählen",
+  "@selectEndDate": {},
+  "endDateMustBeAfterStart": "Enddatum muss nach dem Startdatum liegen",
+  "@endDateMustBeAfterStart": {},
+  "exportInDevelopment": "Export wird entwickelt...",
+  "@exportInDevelopment": {},
+
+  "_CHART_LABELS": "=== DIAGRAMM-LABELS ===",
+  "periodDay": "Tag",
+  "@periodDay": {},
+  "periodWeek": "Woche",
+  "@periodWeek": {},
+  "periodMonth": "Monat",
+  "@periodMonth": {},
+  "periodLabel": "Zeitraum: {period}",
+  "@periodLabel": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "typeLabel": "Zeitraum: {period} • Typ: {type}",
+  "@typeLabel": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      },
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "errorLoadingData": "Ladefehler",
+  "@errorLoadingData": {},
+  "balancedStatus": "Ausgeglichen",
+  "@balancedStatus": {},
+  "rightDominanceStatus": "Rechtsdominanz",
+  "@rightDominanceStatus": {},
+  "leftDominanceStatus": "Linksdominanz",
+  "@leftDominanceStatus": {},
+  "actualRatio": "Tatsächliches Verhältnis",
+  "@actualRatio": {},
+  "goal": "Ziel",
+  "@goal": {},
+  "averageLabel": "Durchschn.: {value} {unit}",
+  "@averageLabel": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "noDataForDay": "Keine Daten für diesen Tag verfügbar",
+  "@noDataForDay": {},
+  "recordsCount": "{count} Datensätze",
+  "@recordsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ratioLabel": "Verhältnis:",
+  "@ratioLabel": {},
+  "goalOfTheDay": "Tagesziel:",
+  "@goalOfTheDay": {},
+  "goalReached": "Ziel erreicht",
+  "@goalReached": {},
+  "goalNotReached": "Ziel nicht erreicht (Abweichung: {gap}%)",
+  "@goalNotReached": {
+    "placeholders": {
+      "gap": {
+        "type": "String"
+      }
+    }
+  },
+  "typeDisplay": "Typ: {type}",
+  "@typeDisplay": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "noLegendData": "Keine",
+  "@noLegendData": {},
+  "unbalanced": "Unausgeglichen",
+  "@unbalanced": {},
+  "closeToGoal": "Nah",
+  "@closeToGoal": {},
+  "weekdayMon": "Mo",
+  "@weekdayMon": {},
+  "weekdayTue": "Di",
+  "@weekdayTue": {},
+  "weekdayWed": "Mi",
+  "@weekdayWed": {},
+  "weekdayThu": "Do",
+  "@weekdayThu": {},
+  "weekdayFri": "Fr",
+  "@weekdayFri": {},
+  "weekdaySat": "Sa",
+  "@weekdaySat": {},
+  "weekdaySun": "So",
+  "@weekdaySun": {},
+
+  "_CONNECTION_ERRORS": "=== VERBINDUNGSFEHLER ===",
+  "connectionErrorTimeout": "Verbindungszeitüberschreitung. Stellen Sie sicher, dass das Gerät in der Nähe ist, und versuchen Sie es erneut.",
+  "@connectionErrorTimeout": {},
+  "connectionErrorGatt": "Bluetooth-Kommunikationsfehler. Starten Sie Bluetooth neu und versuchen Sie es erneut.",
+  "@connectionErrorGatt": {},
+  "connectionErrorBluetooth": "Bluetooth-Fehler. Bitte überprüfen Sie, ob Bluetooth aktiviert ist.",
+  "@connectionErrorBluetooth": {},
+  "connectionErrorPermission": "Bluetooth-Berechtigung erforderlich. Bitte erteilen Sie die Berechtigung in den Einstellungen.",
+  "@connectionErrorPermission": {},
+  "connectionErrorUnknown": "Verbindung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+  "@connectionErrorUnknown": {},
+  "connectionRetrying": "Erneuter Versuch... ({current}/{max})",
+  "@connectionRetrying": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "connectionMaxRetriesReached": "Maximale Anzahl an Verbindungsversuchen erreicht",
+  "@connectionMaxRetriesReached": {},
+
+  "_TIME_PREFERENCES_PAGE": "=== ZEITEINSTELLUNGEN SEITE ===",
+  "timeConfiguration": "Zeitkonfiguration",
+  "@timeConfiguration": {},
+  "timeConfigurationDescription": "Passen Sie die Zeitsynchronisierungseinstellungen mit Ihren Uhren an",
+  "@timeConfigurationDescription": {},
+  "usePhoneTimezone": "Telefon-Zeitzone",
+  "@usePhoneTimezone": {},
+  "useCustomTimezone": "Benutzerdefinierte Zeitzone verwenden",
+  "@useCustomTimezone": {},
+  "syncNow": "Jetzt synchronisieren",
+  "@syncNow": {},
+  "syncing": "Synchronisierung...",
+  "@syncing": {},
+  "noWatchConnected": "Keine Uhr verbunden.\nVerbinden Sie mindestens eine Uhr, um die Zeit zu synchronisieren.",
+  "@noWatchConnected": {},
+  "timeSyncedFor": "Zeit synchronisiert für: {watches}\nZeitzone: {timezone}",
+  "@timeSyncedFor": {
+    "placeholders": {
+      "watches": { "type": "String" },
+      "timezone": { "type": "String" }
+    }
+  },
+  "information": "Information",
+  "@information": {},
+  "timeSyncInfo": "Die Zeit wird bei jeder Uhrenverbindung automatisch synchronisiert. Verwenden Sie die manuelle Synchronisierung nach einer Reise in eine andere Zeitzone oder bei der Zeitumstellung (Sommer/Winter).",
+  "@timeSyncInfo": {},
+
+  "_GOAL_SETTINGS_PAGE": "=== ZIELEINSTELLUNGEN SEITE ===",
+  "periodicCheckFrequency": "Periodische Überprüfungshäufigkeit",
+  "@periodicCheckFrequency": {},
+  "periodicCheckFrequencyDescription": "Legen Sie fest, wie oft das System überprüft, ob das Ziel erreicht ist.",
+  "@periodicCheckFrequencyDescription": {},
+  "goalType": "Zieltyp",
+  "@goalType": {},
+  "fixedGoalConfig": "Festes Ziel Konfiguration",
+  "@fixedGoalConfig": {},
+  "fixedGoalConfigDescription": "Legen Sie das zu erreichende Zielverhältnis direkt fest.",
+  "@fixedGoalConfigDescription": {},
+  "dynamicGoalConfig": "Dynamisches Ziel Konfiguration",
+  "@dynamicGoalConfig": {},
+  "dynamicGoalConfigDescription": "Das Ziel wird basierend auf den letzten X Tagen mit einer täglichen Steigerung von Y% berechnet.",
+  "@dynamicGoalConfigDescription": {},
+  "dynamicGoalInfo": "Das Ziel wird jeden Tag automatisch basierend auf Ihrem Fortschritt neu berechnet.",
+  "@dynamicGoalInfo": {},
+  "frequencyLabel": "Häufigkeit (Minuten)",
+  "@frequencyLabel": {},
+  "enterValue": "Wert eingeben",
+  "@enterValue": {},
+  "ratioPercent": "Verhältnis (%)",
+  "@ratioPercent": {},
+  "enterValueBetween0And100": "Wert zwischen 0 und 100 eingeben",
+  "@enterValueBetween0And100": {},
+  "numberOfDays": "Anzahl der Tage",
+  "@numberOfDays": {},
+  "percentageDecimal": "Prozentsatz (%)",
+  "@percentageDecimal": {},
+  "enterDecimalValue": "Dezimalwert eingeben",
+  "@enterDecimalValue": {},
+  "dynamicGoalDescription": "Berechnet über die letzten Tage mit täglicher Steigerung",
+  "@dynamicGoalDescription": {},
+
+  "_BLUETOOTH_SETTINGS_PAGE": "=== BLUETOOTH-EINSTELLUNGEN SEITE ===",
+  "adjustBluetoothSettings": "Passen Sie die Bluetooth-Einstellungen an, um Verbindung und Batterieverbrauch zu optimieren",
+  "@adjustBluetoothSettings": {},
+  "connection": "Verbindung",
+  "@connection": {},
+  "seconds": "Sekunden",
+  "@seconds": {},
+  "attempts": "Versuche",
+  "@attempts": {},
+  "dataRecording": "Datenaufzeichnung",
+  "@dataRecording": {},
+  "minutes": "Minuten",
+  "@minutes": {},
+  "presetProfiles": "Voreingestellte Profile",
+  "@presetProfiles": {},
+  "powerSaving": "Energiesparmodus",
+  "@powerSaving": {},
+  "powerSavingDescription": "Längere Verbindungsintervalle um Batterie zu sparen",
+  "@powerSavingDescription": {},
+  "balancedProfile": "Ausgewogen",
+  "@balancedProfile": {},
+  "balancedProfileDescription": "Empfohlene Standardeinstellungen",
+  "@balancedProfileDescription": {},
+  "performanceProfile": "Leistung",
+  "@performanceProfile": {},
+  "performanceProfileDescription": "Schnelle Verbindungen und häufige Daten",
+  "@performanceProfileDescription": {},
+  "applyProfileQuestion": "Profil anwenden?",
+  "@applyProfileQuestion": {},
+  "applyProfileDescription": "Dies ändert alle Ihre Bluetooth-Einstellungen gemäß dem ausgewählten Profil.",
+  "@applyProfileDescription": {},
+
+  "_SETTINGS_SCREEN_EXTRA": "=== EINSTELLUNGSBILDSCHIRM EXTRA ===",
+  "appearance": "Erscheinungsbild",
+  "@appearance": {},
+  "notificationsAndVibrations": "Benachrichtigungen & Vibrationen",
+  "@notificationsAndVibrations": {},
+  "therapyConfiguration": "Therapie-Konfiguration",
+  "@therapyConfiguration": {},
+  "watches": "Uhren",
+  "@watches": {},
+  "support": "Support",
+  "@support": {},
+  "localData": "Lokale Daten",
+  "@localData": {},
+  "resetAppAndSettings": "App und Einstellungen zurücksetzen",
+  "@resetAppAndSettings": {},
+  "goalSettings": "Zieleinstellungen",
+  "@goalSettings": {},
+  "defineGoalsAndVerification": "Ziele und Überprüfung definieren",
+  "@defineGoalsAndVerification": {},
+  "armToVibrate": "Arm zum Vibrieren",
+  "@armToVibrate": {},
+  "vibrationType": "Vibrationstyp",
+  "@vibrationType": {},
+  "affectedSide": "Betroffene Seite",
+  "@affectedSide": {},
+  "watchStatus": "Status: {status}",
+  "@watchStatus": {
+    "placeholders": {
+      "status": { "type": "String" }
+    }
+  },
+  "installFirmwareOnBothWatches": "Firmware auf beiden Uhren installieren",
+  "@installFirmwareOnBothWatches": {},
+  "vibrationCount": "Vibrationsanzahl",
+  "@vibrationCount": {},
+  "vibrationCountDescription": "Die Uhr wird bei jeder Benachrichtigung so oft vibrieren.",
+  "@vibrationCountDescription": {},
+  "customVibration": "Benutzerdefinierte Vibration",
+  "@customVibration": {},
+  "fullName": "Vollständiger Name",
+  "@fullName": {},
+  "allLocalDataWillBeDeleted": "Alle Ihre lokalen Daten werden gelöscht.\nDiese Aktion ist **unwiderruflich**.",
+  "@allLocalDataWillBeDeleted": {},
+  "allConfigurationsWillBeReset": "Alle Ihre Konfigurationen werden zurückgesetzt.\nDiese Aktion ist **unwiderruflich**.",
+  "@allConfigurationsWillBeReset": {},
+  "enterCodeAbove": "Code oben eingeben",
+  "@enterCodeAbove": {},
+  "vibrationTestInProgress": "Vibrationstest läuft...",
+  "@vibrationTestInProgress": {},
+  "numberMustBeBetween1And10": "Zahl muss zwischen 1 und 10 liegen",
+  "@numberMustBeBetween1And10": {},
+  "profilePhotoUpdated": "Profilfoto aktualisiert!",
+  "@profilePhotoUpdated": {},
+  "resetError": "Zurücksetzungsfehler: {error}",
+  "@resetError": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "settingsNotLoaded": "Einstellungen nicht geladen. Export nicht möglich.",
+  "@settingsNotLoaded": {},
+  "dataExportedSuccessfully": "Daten erfolgreich exportiert ({size} Bytes)",
+  "@dataExportedSuccessfully": {
+    "placeholders": {
+      "size": { "type": "int" }
+    }
+  },
+  "exportError": "Exportfehler: {error}",
+  "@exportError": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "fileNotFound": "Datei nicht gefunden",
+  "@fileNotFound": {},
+  "fileIsEmpty": "Datei ist leer",
+  "@fileIsEmpty": {},
+  "settingsImportedSuccessfully": "Einstellungen erfolgreich importiert!",
+  "@settingsImportedSuccessfully": {},
+  "invalidFileFormat": "Ungültiges Dateiformat: {error}",
+  "@invalidFileFormat": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "importError": "Importfehler: {error}",
+  "@importError": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+
+  "_LANGUAGE_SETTINGS_PAGE": "=== SPRACHEINSTELLUNGEN ===",
+  "appLanguageTitle": "App-Sprache",
+  "@appLanguageTitle": {},
+  "languageChangedToName": "Sprache geändert zu {name}",
+  "@languageChangedToName": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+
+  "_MOVEMENT_SAMPLING_PAGE": "=== BEWEGUNGSABTASTUNG ===",
+  "movementSamplingTitle": "Bewegungsabtastung",
+  "@movementSamplingTitle": {},
+  "recordingFrequency": "Aufnahmefrequenz",
+  "@recordingFrequency": {},
+  "recordingFrequencyDescription": "Reduzieren Sie das Volumen der gespeicherten Bewegungsdaten. Weniger häufige Abtastung spart Speicherplatz.",
+  "@recordingFrequencyDescription": {},
+  "currentMode": "Aktueller Modus: {mode}",
+  "@currentMode": {
+    "placeholders": {
+      "mode": { "type": "String" }
+    }
+  },
+  "presets": "Voreinstellungen",
+  "@presets": {},
+  "perTimeUnit": "Pro Zeiteinheit",
+  "@perTimeUnit": {},
+  "perTimeUnitDescription": "Anzahl der Aufnahmen pro Stunde/Minute/Sekunde festlegen",
+  "@perTimeUnitDescription": {},
+  "numberOfRecords": "Anzahl der Aufnahmen",
+  "@numberOfRecords": {},
+  "per": "Pro",
+  "@per": {},
+  "selectThisMode": "Diesen Modus auswählen",
+  "@selectThisMode": {},
+  "classicModes": "Klassische Modi",
+  "@classicModes": {},
+  "economyMax": "Max. Sparen",
+  "@economyMax": {},
+  "economyMaxDescription": "1 Probe / 5s (~12/min)",
+  "@economyMaxDescription": {},
+  "economy": "Sparen",
+  "@economy": {},
+  "economyDescription": "1 Probe / 2s (~30/min)",
+  "@economyDescription": {},
+  "normal": "Normal",
+  "@normal": {},
+  "normalDescription": "1 Probe / Sekunde (~60/min)",
+  "@normalDescription": {},
+  "precise": "Präzise",
+  "@precise": {},
+  "preciseDescription": "2 Proben / Sekunde (~120/min)",
+  "@preciseDescription": {},
+  "maximum": "Maximum",
+  "@maximum": {},
+  "maximumDescription": "Alles aufzeichnen (~600/min)",
+  "@maximumDescription": {},
+  "advancedSettings": "Erweiterte Einstellungen",
+  "@advancedSettings": {},
+  "samplingModeLabel": "Abtastmodus",
+  "@samplingModeLabel": {},
+  "intervalLabel": "Intervall",
+  "@intervalLabel": {},
+  "changeThresholdLabel": "Änderungsschwelle",
+  "@changeThresholdLabel": {},
+  "maxSamplesPerFlushLabel": "Max. Proben pro Flush",
+  "@maxSamplesPerFlushLabel": {},
+  "samplesPerFlushUnit": "{count} Proben",
+  "@samplesPerFlushUnit": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "modeAll": "Alle",
+  "@modeAll": {},
+  "modeInterval": "Intervall",
+  "@modeInterval": {},
+  "modeThreshold": "Schwelle",
+  "@modeThreshold": {},
+  "modeAggregate": "Durchschnitt",
+  "@modeAggregate": {},
+  "modePerUnit": "Pro Einheit",
+  "@modePerUnit": {},
+  "modeAllDescription": "Zeichnet alle empfangenen Daten auf",
+  "@modeAllDescription": {},
+  "modeIntervalDescription": "Behält eine Probe pro Zeitintervall",
+  "@modeIntervalDescription": {},
+  "modeThresholdDescription": "Zeichnet nur bei signifikanten Änderungen auf",
+  "@modeThresholdDescription": {},
+  "modeAggregateDescription": "Berechnet Durchschnitt über Intervall",
+  "@modeAggregateDescription": {},
+  "modePerUnitDescription": "Anzahl der Aufnahmen pro Stunde/Minute/Sekunde",
+  "@modePerUnitDescription": {},
+  "timeUnitSecond": "Sekunde",
+  "@timeUnitSecond": {},
+  "timeUnitMinute": "Minute",
+  "@timeUnitMinute": {},
+  "timeUnitHour": "Stunde",
+  "@timeUnitHour": {},
+  "storageEstimate": "Speicherschätzung",
+  "@storageEstimate": {},
+  "samplesPerHour": "~{count} Proben/Stunde",
+  "@samplesPerHour": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "mbPerDay": "~{value} MB/Tag (8h Nutzung, 2 Uhren)",
+  "@mbPerDay": {
+    "placeholders": {
+      "value": { "type": "String" }
+    }
+  },
+  "samplesPerMinutePerWatch": "Etwa {count} Proben/min pro Uhr",
+  "@samplesPerMinutePerWatch": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "samplesPerHourPerWatch": "{count} Proben/Stunde pro Uhr",
+  "@samplesPerHourPerWatch": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+
+  "_PRIVACY_POLICY_PAGE": "=== DATENSCHUTZRICHTLINIE ===",
+  "privacyPolicyTitle": "Datenschutzrichtlinie",
+  "@privacyPolicyTitle": {},
+  "lastUpdated": "Letzte Aktualisierung: {date}",
+  "@lastUpdated": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "introductionTitle": "1. Einleitung",
+  "@introductionTitle": {},
+  "introductionContent": "Wir sind dem Schutz Ihrer Privatsphäre verpflichtet. Diese Richtlinie erklärt, welche Daten wir sammeln, warum, und wie sie in unserer Anwendung verwendet werden.",
+  "@introductionContent": {},
+  "dataCollectedTitle": "2. Gesammelte Daten",
+  "@dataCollectedTitle": {},
+  "dataCollectedContent": "Wir sammeln Daten zu Ihrer Aktivität in der App, einschließlich Ihres Namens, Ihrer Präferenzen, Rehabilitationsziele und Daten von verbundenen Uhren. Diese Informationen dienen nur zur Verbesserung Ihrer Erfahrung und zur personalisierten Nachverfolgung.",
+  "@dataCollectedContent": {},
+  "dataUsageTitle": "3. Datennutzung",
+  "@dataUsageTitle": {},
+  "dataUsageContent": "Die Daten werden verwendet, um Ihre Fortschritte anzuzeigen, Sie zu benachrichtigen, wenn Sie Ihre Ziele erreichen, und die App-Funktionen zu personalisieren. Keine Daten werden ohne Ihre Zustimmung an Dritte weitergegeben.",
+  "@dataUsageContent": {},
+  "securityTitle": "4. Sicherheit",
+  "@securityTitle": {},
+  "securityContent": "Ihre Daten werden lokal auf Ihrem Gerät gespeichert. Wir übertragen keine Informationen an Remote-Server ohne Ihre ausdrückliche Genehmigung.",
+  "@securityContent": {},
+  "yourRightsTitle": "5. Ihre Rechte",
+  "@yourRightsTitle": {},
+  "yourRightsContent": "Sie können Ihre Daten jederzeit in der App einsehen, ändern oder löschen. Für spezifische Anfragen können Sie unseren Support kontaktieren.",
+  "@yourRightsContent": {},
+  "contactTitle": "6. Kontakt",
+  "@contactTitle": {},
+  "contactPolicyContent": "Bei Fragen zu dieser Richtlinie kontaktieren Sie bitte: {email}.",
+  "@contactPolicyContent": {
+    "placeholders": {
+      "email": { "type": "String" }
+    }
+  },
+  "thankYouForUsing": "Danke, dass Sie unsere App nutzen!",
+  "@thankYouForUsing": {},
+
+  "_PROFILE_HEADER": "=== PROFILE HEADER ===",
+  "hello": "Hallo! ",
+  "@hello": {},
+  "defaultUserName": "Benutzer",
+  "@defaultUserName": {},
+  "readyForRehabilitation": "Bereit für die nächsten Schritte Ihrer Rehabilitation?",
+  "@readyForRehabilitation": {},
+  "everyDayCounts": "Jeder Tag zählt!",
+  "@everyDayCounts": {},
+
+  "_THEME_SETTINGS_PAGE": "=== THEMENEINSTELLUNGEN ===",
+  "appThemeTitle": "App-Thema",
+  "@appThemeTitle": {},
+  "themeUpdated": "Thema aktualisiert.",
+  "@themeUpdated": {},
+  "themeGoldLight": "Gold (Hell)",
+  "@themeGoldLight": {},
+  "themeGoldLightDescription": "Elegantes helles Thema mit goldenen Akzenten",
+  "@themeGoldLightDescription": {},
+  "themeMintLight": "Minze (Hell)",
+  "@themeMintLight": {},
+  "themeMintLightDescription": "Helles Thema mit minzgrünem Farbton",
+  "@themeMintLightDescription": {},
+  "themeGoldDark": "Gold (Dunkel)",
+  "@themeGoldDark": {},
+  "themeGoldDarkDescription": "Elegantes dunkles Thema mit goldenen Akzenten",
+  "@themeGoldDarkDescription": {},
+  "themeMintDark": "Minze (Dunkel)",
+  "@themeMintDark": {},
+  "themeMintDarkDescription": "Dunkles Thema mit Minzfarbton",
+  "@themeMintDarkDescription": {},
+  "themeSystem": "System folgen",
+  "@themeSystem": {},
+  "themeSystemDescription": "Passt Thema automatisch an Geräteeinstellungen an",
+  "@themeSystemDescription": {},
+  "themeExperimental": "Experimentell",
+  "@themeExperimental": {},
+  "themeExperimentalDescription": "Erweiterter visueller Modus zum Testen",
+  "@themeExperimentalDescription": {},
+
+  "_ABOUT_PAGE": "=== ÜBER-SEITE ===",
+  "versionBuild": "Version {version} (Build {buildNumber})",
+  "@versionBuild": {
+    "placeholders": {
+      "version": { "type": "String" },
+      "buildNumber": { "type": "String" }
+    }
+  },
+  "privacyPolicyMenuItem": "Datenschutzrichtlinie",
+  "@privacyPolicyMenuItem": {},
+  "privacyPolicyWillBeAdded": "Die Datenschutzrichtlinie wird hier hinzugefügt.",
+  "@privacyPolicyWillBeAdded": {},
+  "termsOfUse": "Nutzungsbedingungen",
+  "@termsOfUse": {},
+  "termsOfUseWillBeAdded": "Die Nutzungsbedingungen werden hier hinzugefügt.",
+  "@termsOfUseWillBeAdded": {},
+  "credits": "Credits",
+  "@credits": {},
+  "developedBy": "Entwickelt vom Health & Tech Team – 2025",
+  "@developedBy": {},
+
+  "_PROFILE_SETTINGS_PAGE": "=== PROFILSEITE ===",
+  "profileTitle": "Profil",
+  "@profileTitle": {},
+  "imageSelectionErrorMessage": "Fehler bei der Bildauswahl: {error}",
+  "@imageSelectionErrorMessage": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "nameCannotBeEmpty": "Der Name darf nicht leer sein",
+  "@nameCannotBeEmpty": {},
+  "profileUpdatedSuccessfully": "Profil erfolgreich aktualisiert",
+  "@profileUpdatedSuccessfully": {},
+  "tapToChangePhoto": "Tippen, um Foto zu ändern",
+  "@tapToChangePhoto": {},
+  "userName": "Benutzername",
+  "@userName": {},
+  "enterYourName": "Geben Sie Ihren Namen ein",
+  "@enterYourName": {},
+  "deletePhoto": "Foto löschen",
+  "@deletePhoto": {},
+
+  "_WATCH_MANAGEMENT_PAGE": "=== UHRENVERWALTUNG ===",
+  "watchSide": "Uhr {side}",
+  "@watchSide": {
+    "placeholders": {
+      "side": { "type": "String" }
+    }
+  },
+  "renameWatch": "Uhr umbenennen",
+  "@renameWatch": {},
+  "newName": "Neuer Name",
+  "@newName": {},
+  "watchConnected": "Verbunden",
+  "@watchConnected": {},
+  "watchNotConnected": "Nicht verbunden",
+  "@watchNotConnected": {},
+  "batteryLevel": "Akkustand",
+  "@batteryLevel": {},
+  "syncedAgo": "Vor {minutes} Minuten",
+  "@syncedAgo": {
+    "placeholders": {
+      "minutes": { "type": "int" }
+    }
+  },
+  "neverSynced": "Nie synchronisiert",
+  "@neverSynced": {},
+  "testVibration": "Vibration testen",
+  "@testVibration": {},
+  "vibrationTestedSuccessfully": "Vibration erfolgreich getestet",
+  "@vibrationTestedSuccessfully": {},
+  "syncedJustNow": "Gerade synchronisiert",
+  "@syncedJustNow": {},
+  "watchSynced": "Uhr synchronisiert",
+  "@watchSynced": {},
+  "firmwareUpdate": "Firmware-Update",
+  "@firmwareUpdate": {},
+  "checkingFirmware": "Firmware wird überprüft...",
+  "@checkingFirmware": {},
+  "firmwareUpToDate": "Firmware ist aktuell.",
+  "@firmwareUpToDate": {},
+  "deleteWatch": "Uhr löschen",
+  "@deleteWatch": {},
+  "deleteWatchQuestion": "Uhr löschen?",
+  "@deleteWatchQuestion": {},
+  "thisActionIsPermanent": "Diese Aktion ist endgültig.",
+  "@thisActionIsPermanent": {},
+  "watchDeleted": "Uhr gelöscht.",
+  "@watchDeleted": {},
+
+  "_WATCHFACE_INSTALL_SHEET": "=== WATCHFACE INSTALLATION ===",
+  "watchfaceInstallation": "Watchface Installation",
+  "@watchfaceInstallation": {},
+  "watchesWillBeUpdated": "{count} verbundene Uhr(en) werden mit der neuen Watchface aktualisiert.",
+  "@watchesWillBeUpdated": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "downloadingInProgress": "Download läuft...",
+  "@downloadingInProgress": {},
+  "deviceProgress": "Gerät {current}/{total} - {percent}%",
+  "@deviceProgress": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" },
+      "percent": { "type": "int" }
+    }
+  },
+  "speedKbps": "Geschwindigkeit: {speed} KB/s",
+  "@speedKbps": {
+    "placeholders": {
+      "speed": { "type": "String" }
+    }
+  },
+  "cancelInstallation": "Abbrechen",
+  "@cancelInstallation": {},
+  "installationCancelledByUser": "Installation vom Benutzer abgebrochen.",
+  "@installationCancelledByUser": {},
+  "installOnWatch": "Auf Uhr installieren",
+  "@installOnWatch": {},
+  "installOnWatches": "Auf {count} Uhren installieren",
+  "@installOnWatches": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "downloadingUpdateFile": "Update-Datei wird heruntergeladen...",
+  "@downloadingUpdateFile": {},
+  "installingOnDevice": "Installation auf Gerät {current}/{total}...",
+  "@installingOnDevice": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+
+  "_ONBOARDING_SCREEN": "=== ONBOARDING-BILDSCHIRM ===",
+  "welcomeTitle": "Willkommen!",
+  "@welcomeTitle": {},
+  "letsConfigureProfile": "Lassen Sie uns Ihr Profil einrichten",
+  "@letsConfigureProfile": {},
+  "backButton": "Zurück",
+  "@backButton": {},
+  "nextButton": "Weiter",
+  "@nextButton": {},
+  "startButton": "Starten",
+  "@startButton": {},
+  "whatIsYourName": "Wie heißen Sie?",
+  "@whatIsYourName": {},
+  "yourFirstName": "Ihr Vorname",
+  "@yourFirstName": {},
+  "firstNameExample": "Z.B.: Marie",
+  "@firstNameExample": {},
+  "pleaseEnterFirstName": "Bitte geben Sie Ihren Vornamen ein",
+  "@pleaseEnterFirstName": {},
+  "firstNameMinLength": "Der Vorname muss mindestens 2 Zeichen haben",
+  "@firstNameMinLength": {},
+  "whichSideAffected": "Welche Seite ist betroffen?",
+  "@whichSideAffected": {},
+  "sideInfoDescription": "Diese Information hilft uns, Ihre Rehabilitation zu personalisieren",
+  "@sideInfoDescription": {},
+  "leftSide": "Links",
+  "@leftSide": {},
+  "rightSide": "Rechts",
+  "@rightSide": {},
+
+  "_SPLASH_SCREEN": "=== STARTBILDSCHIRM ===",
+  "loadingTakingLonger": "Das Laden dauert länger als erwartet...\nBitte warten Sie oder starten Sie die App neu.",
+  "@loadingTakingLonger": {},
+
+  "_EMPTY_SAVE_PAGE": "=== LEERE SEITE ===",
+  "oops": "Hoppla!",
+  "@oops": {},
+  "noProductInWishlist": "Entschuldigung, Sie haben kein Produkt auf Ihrer Wunschliste",
+  "@noProductInWishlist": {},
+  "startAddingButton": "Hinzufügen beginnen",
+  "@startAddingButton": {},
+
+  "_SEARCH_FILTER_SCREEN": "=== SUCHFILTER-BILDSCHIRM ===",
+  "filterByDateOrPeriod": "Nach Datum oder Zeitraum filtern",
+  "@filterByDateOrPeriod": {},
+  "chooseSingleDate": "Ein einzelnes Datum wählen",
+  "@chooseSingleDate": {},
+  "chooseAPeriod": "Einen Zeitraum wählen",
+  "@chooseAPeriod": {},
+  "resetTheFilter": "Filter zurücksetzen",
+  "@resetTheFilter": {}
 }

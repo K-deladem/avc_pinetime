@@ -194,7 +194,7 @@
   "@about": {},
   "contactSupport": "Contact Support",
   "@contactSupport": {},
-  "supportEmail": "support@monapp.com",
+  "supportEmail": "kdetou@etu.uqac.ca",
   "@supportEmail": {},
   "shareMyData": "Share My Data",
   "@shareMyData": {},
@@ -469,9 +469,1284 @@
   "newName": "New Name",
   "@newName": {},
 
-  "_EMPTY_STATE": "=== ÉTATS VIDES ===",
+  "_TIME_PREFERENCES": "=== TIME PREFERENCES ===",
+  "syncSettings": "Synchronization Settings",
+  "@syncSettings": {},
+  "format24Hours": "24-hour format",
+  "@format24Hours": {},
+  "phoneTimezone": "Phone timezone",
+  "@phoneTimezone": {},
+  "customTimezone": "Custom timezone",
+  "@customTimezone": {},
+  "selectTimezone": "Select timezone",
+  "@selectTimezone": {},
+  "timeSynchronization": "Time synchronization",
+  "@timeSynchronization": {},
+  "timezoneFormatSync": "Timezone, time format and synchronization",
+  "@timezoneFormatSync": {},
+
+  "_GOAL_SETTINGS": "=== GOAL SETTINGS ===",
+  "goalConfiguration": "Goal Configuration",
+  "@goalConfiguration": {},
+  "checkFrequencyMinutes": "minutes",
+  "@checkFrequencyMinutes": {},
+  "fixedGoal": "Fixed Goal",
+  "@fixedGoal": {},
+  "fixedGoalDescription": "Set a fixed ratio to achieve",
+  "@fixedGoalDescription": {},
+  "dynamicGoal": "Dynamic Goal",
+  "@dynamicGoal": {},
+  "goalRatio": "Goal Ratio",
+  "@goalRatio": {},
+  "periodDays": "Number of days in period",
+  "@periodDays": {},
+  "periodDaysUnit": "days",
+  "@periodDaysUnit": {},
+  "dailyIncreasePercent": "Daily increase percentage",
+  "@dailyIncreasePercent": {},
+  "dailyIncrease": "Daily Increase",
+  "@dailyIncrease": {},
+
+  "_MOVEMENT_SAMPLING": "=== MOVEMENT SAMPLING ===",
+  "movementSampling": "Movement Sampling",
+  "@movementSampling": {},
+  "samplingMode": "Sampling mode",
+  "@samplingMode": {},
+  "interval": "Interval",
+  "@interval": {},
+  "intervalMs": "ms (seconds)",
+  "@intervalMs": {},
+  "intervalMsValue": "{value} ms",
+  "@intervalMsValue": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "changeThreshold": "Change threshold",
+  "@changeThreshold": {},
+  "thresholdUnit": "g",
+  "@thresholdUnit": {},
+  "maxSamplesPerFlush": "Max samples per flush",
+  "@maxSamplesPerFlush": {},
+  "samplesUnit": "samples",
+  "@samplesUnit": {},
+
+  "_BLUETOOTH_SETTINGS": "=== BLUETOOTH SETTINGS ===",
+  "scanDuration": "Scan duration",
+  "@scanDuration": {},
+  "scanDurationDescription": "Time to wait to find watches",
+  "@scanDurationDescription": {},
+  "connectionDelay": "Connection delay",
+  "@connectionDelay": {},
+  "connectionDelayDescription": "Maximum time to establish connection",
+  "@connectionDelayDescription": {},
+  "reconnectionAttempts": "Reconnection attempts",
+  "@reconnectionAttempts": {},
+  "reconnectionAttemptsDescription": "Number of retries on failure",
+  "@reconnectionAttemptsDescription": {},
+  "batteryRssiFrequency": "Battery/RSSI frequency",
+  "@batteryRssiFrequency": {},
+  "batteryRssiFrequencyDescription": "Recording interval for basic info",
+  "@batteryRssiFrequencyDescription": {},
+  "movementFrequency": "Movement frequency",
+  "@movementFrequency": {},
+  "movementFrequencyDescription": "Recording interval for movement data",
+  "@movementFrequencyDescription": {},
+
+  "_CHART_PREFERENCES_PAGE": "=== CHART PREFERENCES PAGE ===",
+  "asymmetryMagnitudeAxis": "Asymmetry (Magnitude & Axis)",
+  "@asymmetryMagnitudeAxis": {},
+  "asymmetryMagnitudeAxisDescription": "Merged gauge chart showing asymmetry - Always enabled",
+  "@asymmetryMagnitudeAxisDescription": {},
+  "batteryLevelDescription": "Battery level comparison of both watches",
+  "@batteryLevelDescription": {},
+  "balanceGoalDescription": "Magnitude/axis heatmap for balance tracking",
+  "@balanceGoalDescription": {},
+  "movementAsymmetry": "Movement Asymmetry",
+  "@movementAsymmetry": {},
+  "movementAsymmetryDescription": "Asymmetry ratio chart with Magnitude/Axis filter and goal",
+  "@movementAsymmetryDescription": {},
+  "stepCountDescription": "Step count comparison between both arms",
+  "@stepCountDescription": {},
+
+  "_CONTACT_SUPPORT": "=== CONTACT SUPPORT ===",
+  "contactSupportTitle": "Contact Support",
+  "@contactSupportTitle": {},
+  "supportEmailLabel": "Support Email",
+  "@supportEmailLabel": {},
+  "sendMessageToSupport": "Send a message to our support team:",
+  "@sendMessageToSupport": {},
+  "subject": "Subject",
+  "@subject": {},
+  "message": "Message",
+  "@message": {},
+  "pleaseEnterSubject": "Please enter a subject.",
+  "@pleaseEnterSubject": {},
+  "pleaseEnterMessage": "Please enter a message.",
+  "@pleaseEnterMessage": {},
+  "sendingInProgress": "Sending...",
+  "@sendingInProgress": {},
+  "sendMessage": "Send Message",
+  "@sendMessage": {},
+  "emailClientOpened": "Email client opened. Send your message.",
+  "@emailClientOpened": {},
+  "cannotOpenEmailClient": "Cannot open email client.",
+  "@cannotOpenEmailClient": {},
+  "contactUsAt": "Contact us at: {email}",
+  "@contactUsAt": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+
+  "_PDF_EXPORT": "=== PDF EXPORT ===",
+  "pdfGeneratedSuccessfully": "PDF generated successfully",
+  "@pdfGeneratedSuccessfully": {},
+  "preview": "Preview",
+  "@preview": {},
+  "share": "Share",
+  "@share": {},
+  "pdfGeneratedWithCharts": "PDF generated with {count} chart(s)",
+  "@pdfGeneratedWithCharts": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pdfGenerationError": "Error generating PDF: {error}",
+  "@pdfGenerationError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "_WATCHFACE_INSTALL": "=== WATCHFACE INSTALL ===",
+  "downloadingUpdateFile": "Downloading update file...",
+  "@downloadingUpdateFile": {},
+  "downloadInProgress": "Download in progress...",
+  "@downloadInProgress": {},
+
+  "_WATCH_CARD": "=== WATCH CARD ===",
+  "cancelDfu": "Cancel DFU",
+  "@cancelDfu": {},
+  "deleteWatch": "Delete Watch",
+  "@deleteWatch": {},
+
+  "_RESET_DIALOGS": "=== RESET DIALOGS ===",
+  "resetDataQuestion": "Reset data?",
+  "@resetDataQuestion": {},
+  "resetConfigurationsQuestion": "Reset configurations?",
+  "@resetConfigurationsQuestion": {},
+
+  "_EMPTY_STATE": "=== EMPTY STATE ===",
   "sorryNoProductWishlist": "Sorry, you have no product in your wishlist",
   "@sorryNoProductWishlist": {},
   "startAdding": "Start Adding",
-  "@startAdding": {}
+  "@startAdding": {},
+
+  "_CHART_PREFERENCES": "=== CHART PREFERENCES ===",
+  "chartPreferences": "Chart Preferences",
+  "@chartPreferences": {},
+  "selectChartsToDisplay": "Select charts to display",
+  "@selectChartsToDisplay": {},
+  "disabledChartsNotShown": "Disabled charts will not be shown on the main screen",
+  "@disabledChartsNotShown": {},
+  "chartsEnabledCount": "{count} chart(s) enabled",
+  "@chartsEnabledCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "_HOME_SCREEN": "=== HOME SCREEN ===",
+  "historicalData": "Historical Data",
+  "@historicalData": {},
+  "infiniTimeSensors": "InfiniTime Sensors",
+  "@infiniTimeSensors": {},
+  "sensorTrackingDescription": "Complete tracking of battery, heart rate, steps and other metrics collected from your PineTime watches.",
+  "@sensorTrackingDescription": {},
+  "learnMore": "Learn more",
+  "@learnMore": {},
+  "asymmetry": "Asymmetry",
+  "@asymmetry": {},
+  "asymmetryMagnitudeAndAxis": "Asymmetry Magnitude & Axis",
+  "@asymmetryMagnitudeAndAxis": {},
+  "asymmetryMovementRatio": "Movement Asymmetry (Ratio)",
+  "@asymmetryMovementRatio": {},
+  "balanceGoalHeatmap": "Balance Goal (Heatmap)",
+  "@balanceGoalHeatmap": {},
+  "leftWatchConnected": "Left watch connected",
+  "@leftWatchConnected": {},
+  "leftWatchDisconnected": "Left watch disconnected",
+  "@leftWatchDisconnected": {},
+  "rightWatchConnected": "Right watch connected",
+  "@rightWatchConnected": {},
+  "rightWatchDisconnected": "Right watch disconnected",
+  "@rightWatchDisconnected": {},
+  "connectionSuccessFor": "Connection successful for {side}",
+  "@connectionSuccessFor": {
+    "placeholders": {
+      "side": {
+        "type": "String"
+      }
+    }
+  },
+  "connectionError": "Connection error: {error}",
+  "@connectionError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "disconnectionOf": "Disconnection of {side}",
+  "@disconnectionOf": {
+    "placeholders": {
+      "side": {
+        "type": "String"
+      }
+    }
+  },
+  "reconnectionInProgressFor": "Reconnection in progress for {side}",
+  "@reconnectionInProgressFor": {
+    "placeholders": {
+      "side": {
+        "type": "String"
+      }
+    }
+  },
+  "forgetWatchQuestion": "Forget watch {side}?",
+  "@forgetWatchQuestion": {
+    "placeholders": {
+      "side": {
+        "type": "String"
+      }
+    }
+  },
+  "forgetWatchDescription": "This action will:\n• Disconnect the watch\n• Delete binding data\n• Clear connection history\n\nYou will need to reconnect it manually.",
+  "@forgetWatchDescription": {},
+  "forget": "Forget",
+  "@forget": {},
+  "deletingWatch": "Deleting watch {side}...",
+  "@deletingWatch": {
+    "placeholders": {
+      "side": {
+        "type": "String"
+      }
+    }
+  },
+  "watchForgottenSuccessfully": "Watch {side} forgotten successfully",
+  "@watchForgottenSuccessfully": {
+    "placeholders": {
+      "side": {
+        "type": "String"
+      }
+    }
+  },
+  "errorForgettingWatch": "Error forgetting watch {side}",
+  "@errorForgettingWatch": {
+    "placeholders": {
+      "side": {
+        "type": "String"
+      }
+    }
+  },
+  "updateWatch": "Update watch {side}",
+  "@updateWatch": {
+    "placeholders": {
+      "side": {
+        "type": "String"
+      }
+    }
+  },
+  "whatToUpdate": "What would you like to update?",
+  "@whatToUpdate": {},
+  "firmwareUpdateInProgress": "Firmware update in progress...",
+  "@firmwareUpdateInProgress": {},
+  "deviceInfoRequest": "Device info request for {side}",
+  "@deviceInfoRequest": {
+    "placeholders": {
+      "side": {
+        "type": "String"
+      }
+    }
+  },
+  "neverSynchronized": "Never synchronized",
+  "@neverSynchronized": {},
+  "agoSeconds": "{seconds}s ago",
+  "@agoSeconds": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "agoMinutes": "{minutes}min ago",
+  "@agoMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "agoHours": "{hours}h ago",
+  "@agoHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "agoDays": "{days}d ago",
+  "@agoDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "simulator": "Simulator",
+  "@simulator": {},
+  "dataSimulator": "Data Simulator",
+  "@dataSimulator": {},
+  "testModeOnly": "Test Mode Only\n\nGenerates fake data to test charts.",
+  "@testModeOnly": {},
+  "generateDays": "Generate {days} days",
+  "@generateDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "leftDominant": "Left Dominant ({percent}%)",
+  "@leftDominant": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "rightDominant": "Right Dominant ({percent}%)",
+  "@rightDominant": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "balanced": "Balanced (50/50)",
+  "@balanced": {},
+  "showStats": "Show Stats",
+  "@showStats": {},
+  "deleteAll": "Delete All",
+  "@deleteAll": {},
+  "confirmDeletion": "Confirm Deletion",
+  "@confirmDeletion": {},
+  "deleteAllDataWarning": "Are you sure you want to delete ALL data?\n\nThis action is irreversible.",
+  "@deleteAllDataWarning": {},
+  "delete": "Delete",
+  "@delete": {},
+  "generatingDaysData": "Generating {days} days of data...",
+  "@generatingDaysData": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "daysDataGenerated": "{days} days of data generated!",
+  "@daysDataGenerated": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "generatingAsymmetry": "Generating with asymmetry ({percent}% left)...",
+  "@generatingAsymmetry": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "asymmetricDataGenerated": "Asymmetric data generated!",
+  "@asymmetricDataGenerated": {},
+  "deletionInProgress": "Deletion in progress...",
+  "@deletionInProgress": {},
+  "allDataDeleted": "All data deleted",
+  "@allDataDeleted": {},
+  "statsDisplayedInConsole": "Stats displayed in console",
+  "@statsDisplayedInConsole": {},
+
+  "_HISTORY_SCREEN": "=== HISTORY SCREEN ===",
+  "history": "History",
+  "@history": {},
+  "exportData": "Export data",
+  "@exportData": {},
+  "all": "All",
+  "@all": {},
+  "left": "Left",
+  "@left": {},
+  "right": "Right",
+  "@right": {},
+  "today": "Today",
+  "@today": {},
+  "sevenDays": "7 days",
+  "@sevenDays": {},
+  "thirtyDays": "30 days",
+  "@thirtyDays": {},
+  "allData": "All",
+  "@allData": {},
+  "custom": "Custom",
+  "@custom": {},
+  "noDataAvailable": "No data available",
+  "@noDataAvailable": {},
+  "errorLabel": "Error: {error}",
+  "@errorLabel": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "yesterday": "Yesterday",
+  "@yesterday": {},
+  "eventsCount": "{count} events",
+  "@eventsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "battery": "Battery",
+  "@battery": {},
+  "steps": "Steps",
+  "@steps": {},
+  "connections": "Connections",
+  "@connections": {},
+  "movements": "Movements",
+  "@movements": {},
+  "events": "Events",
+  "@events": {},
+  "stepsUnit": "{count} steps",
+  "@stepsUnit": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "batteryLevelLabel": "Battery level",
+  "@batteryLevelLabel": {},
+  "batteryExcellent": "Excellent",
+  "@batteryExcellent": {},
+  "batteryGood": "Good",
+  "@batteryGood": {},
+  "batteryLow": "Low",
+  "@batteryLow": {},
+  "batteryCritical": "Critical",
+  "@batteryCritical": {},
+  "activityDetected": "Activity detected",
+  "@activityDetected": {},
+  "connected": "Connected",
+  "@connected": {},
+  "disconnected": "Disconnected",
+  "@disconnected": {},
+  "duration": "Duration: {duration}",
+  "@duration": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "batteryAt": "Battery: {level}%",
+  "@batteryAt": {
+    "placeholders": {
+      "level": {
+        "type": "int"
+      }
+    }
+  },
+  "movement": "Movement",
+  "@movement": {},
+  "intense": "Intense",
+  "@intense": {},
+  "moderate": "Moderate",
+  "@moderate": {},
+  "light": "Light",
+  "@light": {},
+  "rest": "Rest",
+  "@rest": {},
+  "active": "Active: {time}",
+  "@active": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "magnitudeValue": "Magnitude: {value}",
+  "@magnitudeValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "last7Days": "Last 7 days",
+  "@last7Days": {},
+  "last30Days": "Last 30 days",
+  "@last30Days": {},
+  "allDataLabel": "All data",
+  "@allDataLabel": {},
+  "customPeriod": "Custom period",
+  "@customPeriod": {},
+  "fromToDate": "From {start} to {end}",
+  "@fromToDate": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "selectDateRange": "Select a date range",
+  "@selectDateRange": {},
+  "startDate": "Start date",
+  "@startDate": {},
+  "endDate": "End date",
+  "@endDate": {},
+  "applyButton": "Apply",
+  "@applyButton": {},
+  "selectStartDate": "Select start date",
+  "@selectStartDate": {},
+  "selectEndDate": "Select end date",
+  "@selectEndDate": {},
+  "endDateMustBeAfterStart": "End date must be after start date",
+  "@endDateMustBeAfterStart": {},
+  "exportInDevelopment": "Export is under development...",
+  "@exportInDevelopment": {},
+
+  "_CHART_LABELS": "=== CHART LABELS ===",
+  "periodDay": "Day",
+  "@periodDay": {},
+  "periodWeek": "Week",
+  "@periodWeek": {},
+  "periodMonth": "Month",
+  "@periodMonth": {},
+  "periodLabel": "Period: {period}",
+  "@periodLabel": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "typeLabel": "Period: {period} • Type: {type}",
+  "@typeLabel": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      },
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "errorLoadingData": "Loading error",
+  "@errorLoadingData": {},
+  "balancedStatus": "Balanced",
+  "@balancedStatus": {},
+  "rightDominanceStatus": "Right dominance",
+  "@rightDominanceStatus": {},
+  "leftDominanceStatus": "Left dominance",
+  "@leftDominanceStatus": {},
+  "actualRatio": "Actual ratio",
+  "@actualRatio": {},
+  "goal": "Goal",
+  "@goal": {},
+  "averageLabel": "Avg: {value} {unit}",
+  "@averageLabel": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "noDataForDay": "No data available for this day",
+  "@noDataForDay": {},
+  "recordsCount": "{count} records",
+  "@recordsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ratioLabel": "Ratio:",
+  "@ratioLabel": {},
+  "goalOfTheDay": "Goal of the day:",
+  "@goalOfTheDay": {},
+  "goalReached": "Goal reached",
+  "@goalReached": {},
+  "goalNotReached": "Goal not reached (gap: {gap}%)",
+  "@goalNotReached": {
+    "placeholders": {
+      "gap": {
+        "type": "String"
+      }
+    }
+  },
+  "typeDisplay": "Type: {type}",
+  "@typeDisplay": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "noLegendData": "None",
+  "@noLegendData": {},
+  "unbalanced": "Unbalanced",
+  "@unbalanced": {},
+  "closeToGoal": "Close",
+  "@closeToGoal": {},
+  "weekdayMon": "Mon",
+  "@weekdayMon": {},
+  "weekdayTue": "Tue",
+  "@weekdayTue": {},
+  "weekdayWed": "Wed",
+  "@weekdayWed": {},
+  "weekdayThu": "Thu",
+  "@weekdayThu": {},
+  "weekdayFri": "Fri",
+  "@weekdayFri": {},
+  "weekdaySat": "Sat",
+  "@weekdaySat": {},
+  "weekdaySun": "Sun",
+  "@weekdaySun": {},
+
+  "_CONNECTION_ERRORS": "=== CONNECTION ERRORS ===",
+  "connectionErrorTimeout": "Connection timeout. Please make sure the device is nearby and try again.",
+  "@connectionErrorTimeout": {},
+  "connectionErrorGatt": "Bluetooth communication error. Please restart Bluetooth and try again.",
+  "@connectionErrorGatt": {},
+  "connectionErrorBluetooth": "Bluetooth error. Please check that Bluetooth is enabled.",
+  "@connectionErrorBluetooth": {},
+  "connectionErrorPermission": "Bluetooth permission required. Please grant permissions in settings.",
+  "@connectionErrorPermission": {},
+  "connectionErrorUnknown": "Connection failed. Please try again.",
+  "@connectionErrorUnknown": {},
+  "connectionRetrying": "Retrying... (attempt {current}/{max})",
+  "@connectionRetrying": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "connectionMaxRetriesReached": "Maximum connection attempts reached",
+  "@connectionMaxRetriesReached": {},
+
+  "_TIME_PREFERENCES_PAGE": "=== TIME PREFERENCES PAGE ===",
+  "timeConfiguration": "Time configuration",
+  "@timeConfiguration": {},
+  "timeConfigurationDescription": "Customize time synchronization settings with your watches",
+  "@timeConfigurationDescription": {},
+  "usePhoneTimezone": "Use phone timezone",
+  "@usePhoneTimezone": {},
+  "useCustomTimezone": "Use custom timezone",
+  "@useCustomTimezone": {},
+  "syncNow": "Sync now",
+  "@syncNow": {},
+  "syncing": "Syncing...",
+  "@syncing": {},
+  "noWatchConnected": "No watch connected.\nConnect at least one watch to sync time.",
+  "@noWatchConnected": {},
+  "timeSyncedFor": "Time synced for: {watches}\nTimezone: {timezone}",
+  "@timeSyncedFor": {
+    "placeholders": {
+      "watches": { "type": "String" },
+      "timezone": { "type": "String" }
+    }
+  },
+  "information": "Information",
+  "@information": {},
+  "timeSyncInfo": "Time is automatically synced on each watch connection. Use manual sync after traveling to a different timezone or during daylight saving time changes (summer/winter).",
+  "@timeSyncInfo": {},
+
+  "_GOAL_SETTINGS_PAGE": "=== GOAL SETTINGS PAGE ===",
+  "periodicCheckFrequency": "Periodic check frequency",
+  "@periodicCheckFrequency": {},
+  "periodicCheckFrequencyDescription": "Set how often the system checks if the goal is reached.",
+  "@periodicCheckFrequencyDescription": {},
+  "goalType": "Goal type",
+  "@goalType": {},
+  "fixedGoalConfig": "Fixed goal configuration",
+  "@fixedGoalConfig": {},
+  "fixedGoalConfigDescription": "Set the goal ratio to achieve directly.",
+  "@fixedGoalConfigDescription": {},
+  "dynamicGoalConfig": "Dynamic goal configuration",
+  "@dynamicGoalConfig": {},
+  "dynamicGoalConfigDescription": "The goal will be calculated based on the last X days with a daily increase of Y%.",
+  "@dynamicGoalConfigDescription": {},
+  "dynamicGoalInfo": "The goal will be automatically recalculated each day based on your progress.",
+  "@dynamicGoalInfo": {},
+  "frequencyLabel": "Frequency (minutes)",
+  "@frequencyLabel": {},
+  "enterValue": "Enter a value",
+  "@enterValue": {},
+  "ratioPercent": "Ratio (%)",
+  "@ratioPercent": {},
+  "enterValueBetween0And100": "Enter a value between 0 and 100",
+  "@enterValueBetween0And100": {},
+  "numberOfDays": "Number of days",
+  "@numberOfDays": {},
+  "percentageDecimal": "Percentage (%)",
+  "@percentageDecimal": {},
+  "enterDecimalValue": "Enter a decimal value",
+  "@enterDecimalValue": {},
+  "dynamicGoalDescription": "Calculated over last days with daily increase",
+  "@dynamicGoalDescription": {},
+
+  "_BLUETOOTH_SETTINGS_PAGE": "=== BLUETOOTH SETTINGS PAGE ===",
+  "adjustBluetoothSettings": "Adjust Bluetooth settings to optimize connection and battery consumption",
+  "@adjustBluetoothSettings": {},
+  "connection": "Connection",
+  "@connection": {},
+  "seconds": "seconds",
+  "@seconds": {},
+  "attempts": "attempts",
+  "@attempts": {},
+  "dataRecording": "Data recording",
+  "@dataRecording": {},
+  "minutes": "minutes",
+  "@minutes": {},
+  "presetProfiles": "Preset profiles",
+  "@presetProfiles": {},
+  "powerSaving": "Power Saving",
+  "@powerSaving": {},
+  "powerSavingDescription": "Spaced connections to preserve battery",
+  "@powerSavingDescription": {},
+  "balancedProfile": "Balanced",
+  "@balancedProfile": {},
+  "balancedProfileDescription": "Recommended default settings",
+  "@balancedProfileDescription": {},
+  "performanceProfile": "Performance",
+  "@performanceProfile": {},
+  "performanceProfileDescription": "Fast connections and frequent data",
+  "@performanceProfileDescription": {},
+  "applyProfileQuestion": "Apply profile?",
+  "@applyProfileQuestion": {},
+  "applyProfileDescription": "This will modify all your Bluetooth settings according to the selected profile.",
+  "@applyProfileDescription": {},
+
+  "_SETTINGS_SCREEN_EXTRA": "=== SETTINGS SCREEN EXTRA ===",
+  "appearance": "Appearance",
+  "@appearance": {},
+  "notificationsAndVibrations": "Notifications & Vibrations",
+  "@notificationsAndVibrations": {},
+  "therapyConfiguration": "Therapy Configuration",
+  "@therapyConfiguration": {},
+  "watches": "Watches",
+  "@watches": {},
+  "support": "Support",
+  "@support": {},
+  "localData": "Local data",
+  "@localData": {},
+  "resetAppAndSettings": "Reset app and settings",
+  "@resetAppAndSettings": {},
+  "goalSettings": "Goal Settings",
+  "@goalSettings": {},
+  "defineGoalsAndVerification": "Define goals and verification",
+  "@defineGoalsAndVerification": {},
+  "armToVibrate": "Arm to vibrate",
+  "@armToVibrate": {},
+  "vibrationType": "Vibration type",
+  "@vibrationType": {},
+  "affectedSide": "Affected side",
+  "@affectedSide": {},
+  "watchStatus": "Status: {status}",
+  "@watchStatus": {
+    "placeholders": {
+      "status": { "type": "String" }
+    }
+  },
+  "installFirmwareOnBothWatches": "Install firmware on both watches",
+  "@installFirmwareOnBothWatches": {},
+  "vibrationCount": "Vibration count",
+  "@vibrationCount": {},
+  "vibrationCountDescription": "The watch will vibrate this many times for each notification.",
+  "@vibrationCountDescription": {},
+  "customVibration": "Custom Vibration",
+  "@customVibration": {},
+  "fullName": "Full name",
+  "@fullName": {},
+  "allLocalDataWillBeDeleted": "All your local data will be deleted.\nThis action is **irreversible**.",
+  "@allLocalDataWillBeDeleted": {},
+  "allConfigurationsWillBeReset": "All your configurations will be reset.\nThis action is **irreversible**.",
+  "@allConfigurationsWillBeReset": {},
+  "enterCodeAbove": "Enter the code above",
+  "@enterCodeAbove": {},
+  "vibrationTestInProgress": "Vibration test in progress...",
+  "@vibrationTestInProgress": {},
+  "numberMustBeBetween1And10": "Number must be between 1 and 10",
+  "@numberMustBeBetween1And10": {},
+  "profilePhotoUpdated": "Profile photo updated!",
+  "@profilePhotoUpdated": {},
+  "resetError": "Reset error: {error}",
+  "@resetError": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "settingsNotLoaded": "Settings not loaded. Cannot export.",
+  "@settingsNotLoaded": {},
+  "dataExportedSuccessfully": "Data exported successfully ({size} bytes)",
+  "@dataExportedSuccessfully": {
+    "placeholders": {
+      "size": { "type": "int" }
+    }
+  },
+  "exportError": "Export error: {error}",
+  "@exportError": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "fileNotFound": "File not found",
+  "@fileNotFound": {},
+  "fileIsEmpty": "File is empty",
+  "@fileIsEmpty": {},
+  "settingsImportedSuccessfully": "Settings imported successfully!",
+  "@settingsImportedSuccessfully": {},
+  "invalidFileFormat": "Invalid file format: {error}",
+  "@invalidFileFormat": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "importError": "Import error: {error}",
+  "@importError": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+
+  "_LANGUAGE_SETTINGS_PAGE": "=== LANGUAGE SETTINGS PAGE ===",
+  "appLanguageTitle": "App Language",
+  "@appLanguageTitle": {},
+  "languageChangedToName": "Language changed to {name}",
+  "@languageChangedToName": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+
+  "_MOVEMENT_SAMPLING_PAGE": "=== MOVEMENT SAMPLING PAGE ===",
+  "movementSamplingTitle": "Movement Sampling",
+  "@movementSamplingTitle": {},
+  "recordingFrequency": "Recording frequency",
+  "@recordingFrequency": {},
+  "recordingFrequencyDescription": "Reduce the volume of stored movement data. Less frequent sampling saves storage space.",
+  "@recordingFrequencyDescription": {},
+  "currentMode": "Current mode: {mode}",
+  "@currentMode": {
+    "placeholders": {
+      "mode": { "type": "String" }
+    }
+  },
+  "presets": "Presets",
+  "@presets": {},
+  "perTimeUnit": "Per time unit",
+  "@perTimeUnit": {},
+  "perTimeUnitDescription": "Define the number of records per hour/minute/second",
+  "@perTimeUnitDescription": {},
+  "numberOfRecords": "Number of records",
+  "@numberOfRecords": {},
+  "per": "Per",
+  "@per": {},
+  "selectThisMode": "Select this mode",
+  "@selectThisMode": {},
+  "classicModes": "Classic modes",
+  "@classicModes": {},
+  "economyMax": "Max Economy",
+  "@economyMax": {},
+  "economyMaxDescription": "1 sample / 5s (~12/min)",
+  "@economyMaxDescription": {},
+  "economy": "Economy",
+  "@economy": {},
+  "economyDescription": "1 sample / 2s (~30/min)",
+  "@economyDescription": {},
+  "normal": "Normal",
+  "@normal": {},
+  "normalDescription": "1 sample / second (~60/min)",
+  "@normalDescription": {},
+  "precise": "Precise",
+  "@precise": {},
+  "preciseDescription": "2 samples / second (~120/min)",
+  "@preciseDescription": {},
+  "maximum": "Maximum",
+  "@maximum": {},
+  "maximumDescription": "Record everything (~600/min)",
+  "@maximumDescription": {},
+  "advancedSettings": "Advanced settings",
+  "@advancedSettings": {},
+  "samplingModeLabel": "Sampling mode",
+  "@samplingModeLabel": {},
+  "intervalLabel": "Interval",
+  "@intervalLabel": {},
+  "changeThresholdLabel": "Change threshold",
+  "@changeThresholdLabel": {},
+  "maxSamplesPerFlushLabel": "Max samples per flush",
+  "@maxSamplesPerFlushLabel": {},
+  "samplesPerFlushUnit": "{count} samples",
+  "@samplesPerFlushUnit": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "modeAll": "All",
+  "@modeAll": {},
+  "modeInterval": "Interval",
+  "@modeInterval": {},
+  "modeThreshold": "Threshold",
+  "@modeThreshold": {},
+  "modeAggregate": "Average",
+  "@modeAggregate": {},
+  "modePerUnit": "Per unit",
+  "@modePerUnit": {},
+  "modeAllDescription": "Records all received data",
+  "@modeAllDescription": {},
+  "modeIntervalDescription": "Keeps one sample per time interval",
+  "@modeIntervalDescription": {},
+  "modeThresholdDescription": "Records only during significant changes",
+  "@modeThresholdDescription": {},
+  "modeAggregateDescription": "Calculates average over interval",
+  "@modeAggregateDescription": {},
+  "modePerUnitDescription": "Number of records per hour/minute/second",
+  "@modePerUnitDescription": {},
+  "timeUnitSecond": "Second",
+  "@timeUnitSecond": {},
+  "timeUnitMinute": "Minute",
+  "@timeUnitMinute": {},
+  "timeUnitHour": "Hour",
+  "@timeUnitHour": {},
+  "storageEstimate": "Storage estimate",
+  "@storageEstimate": {},
+  "samplesPerHour": "~{count} samples/hour",
+  "@samplesPerHour": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "mbPerDay": "~{value} MB/day (8h usage, 2 watches)",
+  "@mbPerDay": {
+    "placeholders": {
+      "value": { "type": "String" }
+    }
+  },
+  "samplesPerMinutePerWatch": "About {count} samples/min per watch",
+  "@samplesPerMinutePerWatch": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "samplesPerHourPerWatch": "{count} samples/hour per watch",
+  "@samplesPerHourPerWatch": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+
+  "_PRIVACY_POLICY_PAGE": "=== PRIVACY POLICY PAGE ===",
+  "privacyPolicyTitle": "Privacy Policy",
+  "@privacyPolicyTitle": {},
+  "lastUpdated": "Last updated: {date}",
+  "@lastUpdated": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "introductionTitle": "1. Introduction",
+  "@introductionTitle": {},
+  "introductionContent": "We are committed to protecting your privacy. This policy explains what data we collect, why, and how it is used within our application.",
+  "@introductionContent": {},
+  "dataCollectedTitle": "2. Data Collected",
+  "@dataCollectedTitle": {},
+  "dataCollectedContent": "We collect data related to your activity in the application, including your name, preferences, rehabilitation goals, and data from connected watches. This information is only used to improve your experience and provide personalized tracking.",
+  "@dataCollectedContent": {},
+  "dataUsageTitle": "3. Data Usage",
+  "@dataUsageTitle": {},
+  "dataUsageContent": "Data is used to display your progress, notify you when you reach your goals, and personalize app features. No data is shared with third parties without your consent.",
+  "@dataUsageContent": {},
+  "securityTitle": "4. Security",
+  "@securityTitle": {},
+  "securityContent": "Your data is stored locally on your device. We do not transmit any information to remote servers without your explicit authorization.",
+  "@securityContent": {},
+  "yourRightsTitle": "5. Your Rights",
+  "@yourRightsTitle": {},
+  "yourRightsContent": "You can view, modify, or delete your data at any time from the application. For any specific request, you can contact our support.",
+  "@yourRightsContent": {},
+  "contactTitle": "6. Contact",
+  "@contactTitle": {},
+  "contactPolicyContent": "For any questions regarding this policy, please contact: {email}.",
+  "@contactPolicyContent": {
+    "placeholders": {
+      "email": { "type": "String" }
+    }
+  },
+  "thankYouForUsing": "Thank you for using our application!",
+  "@thankYouForUsing": {},
+
+  "_PROFILE_HEADER": "=== PROFILE HEADER ===",
+  "hello": "Hello! ",
+  "@hello": {},
+  "defaultUserName": "User",
+  "@defaultUserName": {},
+  "readyForRehabilitation": "Ready to take the next steps in your rehabilitation?",
+  "@readyForRehabilitation": {},
+  "everyDayCounts": "Every day counts!",
+  "@everyDayCounts": {},
+
+  "_THEME_SETTINGS_PAGE": "=== THEME SETTINGS PAGE ===",
+  "appThemeTitle": "App Theme",
+  "@appThemeTitle": {},
+  "themeUpdated": "Theme updated.",
+  "@themeUpdated": {},
+  "themeGoldLight": "Gold (Light)",
+  "@themeGoldLight": {},
+  "themeGoldLightDescription": "Elegant light theme with gold accents",
+  "@themeGoldLightDescription": {},
+  "themeMintLight": "Mint (Light)",
+  "@themeMintLight": {},
+  "themeMintLightDescription": "Light theme with a mint green tint",
+  "@themeMintLightDescription": {},
+  "themeGoldDark": "Gold (Dark)",
+  "@themeGoldDark": {},
+  "themeGoldDarkDescription": "Elegant dark theme with gold accents",
+  "@themeGoldDarkDescription": {},
+  "themeMintDark": "Mint (Dark)",
+  "@themeMintDark": {},
+  "themeMintDarkDescription": "Dark theme with a mint tint",
+  "@themeMintDarkDescription": {},
+  "themeSystem": "Follow System",
+  "@themeSystem": {},
+  "themeSystemDescription": "Automatically adapts theme to device settings",
+  "@themeSystemDescription": {},
+  "themeExperimental": "Experimental",
+  "@themeExperimental": {},
+  "themeExperimentalDescription": "Advanced visual mode for testing",
+  "@themeExperimentalDescription": {},
+
+  "_ABOUT_PAGE": "=== ABOUT PAGE ===",
+  "versionBuild": "Version {version} (build {buildNumber})",
+  "@versionBuild": {
+    "placeholders": {
+      "version": { "type": "String" },
+      "buildNumber": { "type": "String" }
+    }
+  },
+  "privacyPolicyMenuItem": "Privacy Policy",
+  "@privacyPolicyMenuItem": {},
+  "privacyPolicyWillBeAdded": "The privacy policy will be added here.",
+  "@privacyPolicyWillBeAdded": {},
+  "termsOfUse": "Terms of Use",
+  "@termsOfUse": {},
+  "termsOfUseWillBeAdded": "The terms of use will be added here.",
+  "@termsOfUseWillBeAdded": {},
+  "credits": "Credits",
+  "@credits": {},
+  "developedBy": "Developed by Health & Tech Team – 2025",
+  "@developedBy": {},
+
+  "_PROFILE_SETTINGS_PAGE": "=== PROFILE SETTINGS PAGE ===",
+  "profileTitle": "Profile",
+  "@profileTitle": {},
+  "imageSelectionErrorMessage": "Error selecting image: {error}",
+  "@imageSelectionErrorMessage": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "nameCannotBeEmpty": "Name cannot be empty",
+  "@nameCannotBeEmpty": {},
+  "profileUpdatedSuccessfully": "Profile updated successfully",
+  "@profileUpdatedSuccessfully": {},
+  "tapToChangePhoto": "Tap to change photo",
+  "@tapToChangePhoto": {},
+  "userName": "Username",
+  "@userName": {},
+  "enterYourName": "Enter your name",
+  "@enterYourName": {},
+  "deletePhoto": "Delete photo",
+  "@deletePhoto": {},
+
+  "_WATCH_MANAGEMENT_PAGE": "=== WATCH MANAGEMENT PAGE ===",
+  "watchSide": "Watch {side}",
+  "@watchSide": {
+    "placeholders": {
+      "side": { "type": "String" }
+    }
+  },
+  "renameWatch": "Rename watch",
+  "@renameWatch": {},
+  "newName": "New name",
+  "@newName": {},
+  "watchConnected": "Connected",
+  "@watchConnected": {},
+  "watchNotConnected": "Not connected",
+  "@watchNotConnected": {},
+  "batteryLevel": "Battery level",
+  "@batteryLevel": {},
+  "syncedAgo": "{minutes} minutes ago",
+  "@syncedAgo": {
+    "placeholders": {
+      "minutes": { "type": "int" }
+    }
+  },
+  "neverSynced": "Never synced",
+  "@neverSynced": {},
+  "testVibration": "Test vibration",
+  "@testVibration": {},
+  "vibrationTestedSuccessfully": "Vibration tested successfully",
+  "@vibrationTestedSuccessfully": {},
+  "syncedJustNow": "Synced just now",
+  "@syncedJustNow": {},
+  "watchSynced": "Watch synced",
+  "@watchSynced": {},
+  "firmwareUpdate": "Firmware update",
+  "@firmwareUpdate": {},
+  "checkingFirmware": "Checking firmware...",
+  "@checkingFirmware": {},
+  "firmwareUpToDate": "Firmware is up to date.",
+  "@firmwareUpToDate": {},
+  "deleteWatch": "Delete watch",
+  "@deleteWatch": {},
+  "deleteWatchQuestion": "Delete the watch?",
+  "@deleteWatchQuestion": {},
+  "thisActionIsPermanent": "This action is permanent.",
+  "@thisActionIsPermanent": {},
+  "watchDeleted": "Watch deleted.",
+  "@watchDeleted": {},
+
+  "_WATCHFACE_INSTALL_SHEET": "=== WATCHFACE INSTALL SHEET ===",
+  "watchfaceInstallation": "Watchface Installation",
+  "@watchfaceInstallation": {},
+  "watchesWillBeUpdated": "{count} watch(es) connected will be updated with the new watchface.",
+  "@watchesWillBeUpdated": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "downloadingInProgress": "Downloading...",
+  "@downloadingInProgress": {},
+  "deviceProgress": "Device {current}/{total} - {percent}%",
+  "@deviceProgress": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" },
+      "percent": { "type": "int" }
+    }
+  },
+  "speedKbps": "Speed: {speed} KB/s",
+  "@speedKbps": {
+    "placeholders": {
+      "speed": { "type": "String" }
+    }
+  },
+  "cancelInstallation": "Cancel",
+  "@cancelInstallation": {},
+  "installationCancelledByUser": "Installation cancelled by user.",
+  "@installationCancelledByUser": {},
+  "installOnWatch": "Install on watch",
+  "@installOnWatch": {},
+  "installOnWatches": "Install on {count} watches",
+  "@installOnWatches": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "downloadingUpdateFile": "Downloading update file...",
+  "@downloadingUpdateFile": {},
+  "installingOnDevice": "Installing on device {current}/{total}...",
+  "@installingOnDevice": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+
+  "_ONBOARDING_SCREEN": "=== ONBOARDING SCREEN ===",
+  "welcomeTitle": "Welcome!",
+  "@welcomeTitle": {},
+  "letsConfigureProfile": "Let's configure your profile",
+  "@letsConfigureProfile": {},
+  "backButton": "Back",
+  "@backButton": {},
+  "nextButton": "Next",
+  "@nextButton": {},
+  "startButton": "Start",
+  "@startButton": {},
+  "whatIsYourName": "What is your name?",
+  "@whatIsYourName": {},
+  "yourFirstName": "Your first name",
+  "@yourFirstName": {},
+  "firstNameExample": "Ex: Marie",
+  "@firstNameExample": {},
+  "pleaseEnterFirstName": "Please enter your first name",
+  "@pleaseEnterFirstName": {},
+  "firstNameMinLength": "First name must be at least 2 characters",
+  "@firstNameMinLength": {},
+  "whichSideAffected": "Which is your affected side?",
+  "@whichSideAffected": {},
+  "sideInfoDescription": "This information will help us personalize your rehabilitation tracking",
+  "@sideInfoDescription": {},
+  "leftSide": "Left",
+  "@leftSide": {},
+  "rightSide": "Right",
+  "@rightSide": {},
+
+  "_SPLASH_SCREEN": "=== SPLASH SCREEN ===",
+  "loadingTakingLonger": "Loading is taking longer than expected...\nPlease wait or restart the app.",
+  "@loadingTakingLonger": {},
+
+  "_EMPTY_SAVE_PAGE": "=== EMPTY SAVE PAGE ===",
+  "oops": "Oops!",
+  "@oops": {},
+  "noProductInWishlist": "Sorry, you have no product in your wishlist",
+  "@noProductInWishlist": {},
+  "startAddingButton": "Start Adding",
+  "@startAddingButton": {},
+
+  "_SEARCH_FILTER_SCREEN": "=== SEARCH FILTER SCREEN ===",
+  "filterByDateOrPeriod": "Filter by date or period",
+  "@filterByDateOrPeriod": {},
+  "chooseSingleDate": "Choose a single date",
+  "@chooseSingleDate": {},
+  "chooseAPeriod": "Choose a period",
+  "@chooseAPeriod": {},
+  "resetTheFilter": "Reset the filter",
+  "@resetTheFilter": {}
 }

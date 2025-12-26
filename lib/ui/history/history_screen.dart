@@ -3,7 +3,7 @@ import 'package:flutter_bloc_app_template/generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_bloc_app_template/app/app_database.dart';
-import 'package:flutter_bloc_app_template/bloc/infinitime/dual_infinitime_bloc.dart';
+import 'package:flutter_bloc_app_template/bloc/device/device.dart';
 import 'package:flutter_bloc_app_template/models/arm_side.dart';
 import 'package:flutter_bloc_app_template/models/device_info_data.dart';
 import 'package:flutter_bloc_app_template/models/connection_event.dart';
@@ -24,51 +24,25 @@ class _HistoryScreenState extends State<HistoryScreen> {
   ArmSide? _selectedArm; // null = tous les bras
   DateTime? _customStartDate;
   DateTime? _customEndDate;
+  late Future<Map<String, List<dynamic>>> _dataFuture;
+  late var theme = Theme.of(context);
 
-  // Cache intelligent pour éviter les rechargements inutiles
-  Future<Map<String, List<dynamic>>>? _cachedFuture;
-  String? _lastCacheKey;
 
   @override
   void initState() {
     super.initState();
-    // Le chargement initial se fait via _getDataFuture() dans le FutureBuilder
-  }
-
-  /// Invalide le cache et force un rechargement
-  void _invalidateCache() {
-    setState(() {
-      _cachedFuture = null;
-      _lastCacheKey = null;
-    });
-  }
-
-  /// Génère une clé unique basée sur les paramètres de filtre actuels
-  String _generateCacheKey() {
-    return '$_selectedPeriod-${_selectedArm?.name ?? "all"}-'
-        '${_customStartDate?.toIso8601String() ?? "null"}-'
-        '${_customEndDate?.toIso8601String() ?? "null"}';
-  }
-
-  /// Retourne le Future en cache ou en crée un nouveau si nécessaire
-  Future<Map<String, List<dynamic>>> _getDataFuture() {
-    final currentKey = _generateCacheKey();
-    if (_cachedFuture != null && _lastCacheKey == currentKey) {
-      return _cachedFuture!;
-    }
-    _lastCacheKey = currentKey;
-    _cachedFuture = _fetchAllData();
-    return _cachedFuture!;
+    _loadData();
   }
 
   void _loadData() {
-    _invalidateCache();
+    setState(() {
+      _dataFuture = _fetchAllData();
+    });
   }
 
   Future<Map<String, List<dynamic>>> _fetchAllData() async {
     final db = AppDatabase.instance;
     final (startDate, endDate) = _getPeriodDates(_selectedPeriod);
-    final bloc = context.read<DualInfiniTimeBloc>();
 
     List<DeviceInfoData> batteryData = [];
     List<DeviceInfoData> stepsData = [];
@@ -76,41 +50,97 @@ class _HistoryScreenState extends State<HistoryScreen> {
     List<Map<String, dynamic>> movementData = [];
 
     if (_selectedArm == null) {
-      // Charger les données de tous les bras EN PARALLÈLE pour éviter ANR
-      final results = await Future.wait([
-        // Battery data
-        db.getDeviceInfo('left', 'battery', startDate: startDate, endDate: endDate, limit: 1000),
-        db.getDeviceInfo('right', 'battery', startDate: startDate, endDate: endDate, limit: 1000),
-        // Steps data
-        db.getDeviceInfo('left', 'steps', startDate: startDate, endDate: endDate, limit: 1000),
-        db.getDeviceInfo('right', 'steps', startDate: startDate, endDate: endDate, limit: 1000),
-        // Connection history
-        bloc.getConnectionHistory(ArmSide.left, period: _getPeriodDuration(_selectedPeriod)),
-        bloc.getConnectionHistory(ArmSide.right, period: _getPeriodDuration(_selectedPeriod)),
-        // Movement data
-        db.getMovementData('left', startDate: startDate, endDate: endDate, limit: 1000),
-        db.getMovementData('right', startDate: startDate, endDate: endDate, limit: 1000),
-      ]);
+      // Charger les données de tous les bras
+      final leftBattery = await db.getDeviceInfo(
+        'left',
+        'battery',
+        startDate: startDate,
+        endDate: endDate,
+        limit: 1000,
+      );
+      final rightBattery = await db.getDeviceInfo(
+        'right',
+        'battery',
+        startDate: startDate,
+        endDate: endDate,
+        limit: 1000,
+      );
+      batteryData = [...leftBattery, ...rightBattery];
 
-      batteryData = [...results[0] as List<DeviceInfoData>, ...results[1] as List<DeviceInfoData>];
-      stepsData = [...results[2] as List<DeviceInfoData>, ...results[3] as List<DeviceInfoData>];
-      connectionData = [...results[4] as List<ConnectionEvent>, ...results[5] as List<ConnectionEvent>];
-      movementData = [...results[6] as List<Map<String, dynamic>>, ...results[7] as List<Map<String, dynamic>>];
+      final leftSteps = await db.getDeviceInfo(
+        'left',
+        'steps',
+        startDate: startDate,
+        endDate: endDate,
+        limit: 1000,
+      );
+      final rightSteps = await db.getDeviceInfo(
+        'right',
+        'steps',
+        startDate: startDate,
+        endDate: endDate,
+        limit: 1000,
+      );
+      stepsData = [...leftSteps, ...rightSteps];
+
+      final bloc = context.read<DeviceBloc>();
+      final leftConn = await bloc.getConnectionHistory(
+        ArmSide.left,
+        period: _getPeriodDuration(_selectedPeriod),
+      );
+      final rightConn = await bloc.getConnectionHistory(
+        ArmSide.right,
+        period: _getPeriodDuration(_selectedPeriod),
+      );
+      connectionData = [...leftConn, ...rightConn];
+
+      // Charger les données de mouvement
+      final leftMovement = await db.getMovementData(
+        'left',
+        startDate: startDate,
+        endDate: endDate,
+        limit: 1000,
+      );
+      final rightMovement = await db.getMovementData(
+        'right',
+        startDate: startDate,
+        endDate: endDate,
+        limit: 1000,
+      );
+      movementData = [...leftMovement, ...rightMovement];
     } else {
-      // Charger les données d'un bras spécifique EN PARALLÈLE
+      // Charger les données d'un bras spécifique
       final armSideName = _selectedArm!.technicalName;
 
-      final results = await Future.wait([
-        db.getDeviceInfo(armSideName, 'battery', startDate: startDate, endDate: endDate, limit: 1000),
-        db.getDeviceInfo(armSideName, 'steps', startDate: startDate, endDate: endDate, limit: 1000),
-        bloc.getConnectionHistory(_selectedArm!, period: _getPeriodDuration(_selectedPeriod)),
-        db.getMovementData(armSideName, startDate: startDate, endDate: endDate, limit: 1000),
-      ]);
+      batteryData = await db.getDeviceInfo(
+        armSideName,
+        'battery',
+        startDate: startDate,
+        endDate: endDate,
+        limit: 1000,
+      );
 
-      batteryData = results[0] as List<DeviceInfoData>;
-      stepsData = results[1] as List<DeviceInfoData>;
-      connectionData = results[2] as List<ConnectionEvent>;
-      movementData = results[3] as List<Map<String, dynamic>>;
+      stepsData = await db.getDeviceInfo(
+        armSideName,
+        'steps',
+        startDate: startDate,
+        endDate: endDate,
+        limit: 1000,
+      );
+
+      final bloc = context.read<DeviceBloc>();
+      connectionData = await bloc.getConnectionHistory(
+        _selectedArm!,
+        period: _getPeriodDuration(_selectedPeriod),
+      );
+
+      // Charger les données de mouvement
+      movementData = await db.getMovementData(
+        armSideName,
+        startDate: startDate,
+        endDate: endDate,
+        limit: 1000,
+      );
     }
 
     return {
@@ -123,12 +153,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = S.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Historique'),
+        title: Text(l10n.history),
         elevation: 0,
         automaticallyImplyLeading: false,
-        actions: [],
       ),
       body: Column(
         children: [
@@ -143,21 +173,21 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   children: [
                     Expanded(
                       child: SegmentedButton<ArmSide?>(
-                        segments: const [
+                        segments: [
                           ButtonSegment(
                             value: null,
-                            label: Text('Tous'),
-                            icon: Icon(Icons.watch),
+                            label: Text(l10n.all),
+                            icon: const Icon(Icons.watch),
                           ),
                           ButtonSegment(
                             value: ArmSide.left,
-                            label: Text('Gauche'),
-                            icon: Icon(Icons.watch),
+                            label: Text(l10n.left),
+                            icon: const Icon(Icons.watch),
                           ),
                           ButtonSegment(
                             value: ArmSide.right,
-                            label: Text('Droite'),
-                            icon: Icon(Icons.watch),
+                            label: Text(l10n.right),
+                            icon: const Icon(Icons.watch),
                           ),
                         ],
                         selected: {_selectedArm},
@@ -178,11 +208,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      _buildPeriodChip('Aujourd\'hui', TimePeriod.today),
-                      _buildPeriodChip('7 jours', TimePeriod.week),
-                      _buildPeriodChip('30 jours', TimePeriod.month),
-                      _buildPeriodChip('Tout', TimePeriod.all),
-                      _buildPeriodChip('Personnalisé', TimePeriod.custom),
+                      _buildPeriodChip(l10n.today, TimePeriod.today),
+                      _buildPeriodChip(l10n.sevenDays, TimePeriod.week),
+                      _buildPeriodChip(l10n.thirtyDays, TimePeriod.month),
+                      _buildPeriodChip(l10n.allData, TimePeriod.all),
+                      _buildPeriodChip(l10n.custom, TimePeriod.custom),
                     ],
                   ),
                 ),
@@ -200,7 +230,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           // Contenu principal
           Expanded(
             child: FutureBuilder<Map<String, List<dynamic>>>(
-              future: _getDataFuture(),
+              future: _dataFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -213,7 +243,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       children: [
                         const Icon(Icons.error_outline, size: 48, color: Colors.red),
                         const SizedBox(height: 16),
-                        Text('Erreur: ${snapshot.error}'),
+                        Text(l10n.errorLabel(snapshot.error.toString())),
                       ],
                     ),
                   );
@@ -232,7 +262,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       children: [
                         Icon(Icons.inbox, size: 64, color: Colors.grey[400]),
                         const SizedBox(height: 16),
-                        const Text('Aucune donnée disponible'),
+                        Text(l10n.noDataAvailable),
                         const SizedBox(height: 8),
                         Text(
                           _getPeriodLabel(_selectedPeriod),
@@ -287,6 +317,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     List<ConnectionEvent> connectionData,
     List<Map<String, dynamic>> movementData,
   ) {
+    final l10n = S.of(context);
     // Organiser les données par jour
     final Map<String, List<Map<String, dynamic>>> dataByDay = {};
 
@@ -324,7 +355,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       ..sort((a, b) => b.compareTo(a));
 
     if (sortedDays.isEmpty) {
-      return const Center(child: Text('Aucune donnée disponible'));
+      return Center(child: Text(l10n.noDataAvailable));
     }
 
     return ListView.builder(
@@ -368,6 +399,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     String dateKey,
     List<Map<String, dynamic>> dayData,
   ) {
+    final l10n = S.of(context);
     final date = DateTime.parse(dateKey);
     final isToday = DateFormat('yyyy-MM-dd').format(DateTime.now()) == dateKey;
     final isYesterday = DateFormat('yyyy-MM-dd')
@@ -376,9 +408,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     String dateLabel;
     if (isToday) {
-      dateLabel = 'Aujourd\'hui';
+      dateLabel = l10n.today;
     } else if (isYesterday) {
-      dateLabel = 'Hier';
+      dateLabel = l10n.yesterday;
     } else {
       dateLabel = DateFormat('EEEE d MMMM yyyy', 'fr_FR').format(date);
     }
@@ -435,7 +467,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      '${dayData.length} événements',
+                      l10n.eventsCount(dayData.length),
                       style: TextStyle(
                         fontSize: 11,
                         color: Theme.of(context).colorScheme.onPrimaryContainer,
@@ -457,7 +489,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       context,
                       Icons.battery_charging_full,
                       '${batteryItems.last.value.round()}%',
-                      'Batterie',
+                      l10n.battery,
                       _getBatteryColor(batteryItems.last.value.round()),
                     ),
                   if (stepsItems.isNotEmpty)
@@ -465,7 +497,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       context,
                       Icons.directions_walk,
                       '${stepsItems.fold<int>(0, (sum, item) => sum + item.value.round())}',
-                      'Pas',
+                      l10n.steps,
                       Theme.of(context).colorScheme.primary,
                     ),
                   if (connectionItems.isNotEmpty)
@@ -473,7 +505,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       context,
                       Icons.bluetooth_connected,
                       '${connectionItems.where((e) => e.type == ConnectionEventType.connected).length}',
-                      'Connexions',
+                      l10n.connections,
                       Colors.blue,
                     ),
                   if (movementItems.isNotEmpty)
@@ -481,14 +513,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       context,
                       Icons.vibration,
                       '${movementItems.length}',
-                      'Mouvements',
+                      l10n.movements,
                       Colors.deepOrange,
                     ),
                   _buildDaySummaryCard(
                     context,
                     Icons.event,
                     '${dayData.length}',
-                    'Événements',
+                    l10n.events,
                     Colors.grey,
                   ),
                 ],
@@ -575,30 +607,29 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final armColor = armSide == ArmSide.left ? Colors.blue : Colors.purple;
 
     return Container(
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.3),
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
       margin: const EdgeInsets.only(bottom: 8, left: 8),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Timeline indicator
-          Column(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(_getBatteryIcon(level), size: 16, color: color),
-              ),
-              Container(
-                width: 2,
-                height: 40,
-                color: Colors.grey[300],
-              ),
-            ],
+          Container(
+            width: 32,
+            height: 32,
+            margin: const EdgeInsets.only(left: 12),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+
+      child: Icon(_getBatteryIcon(level), size: 16, color: color),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 2),
 
           // Card content
           Expanded(
@@ -670,7 +701,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Niveau de batterie',
+                      S.of(context).batteryLevelLabel,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
@@ -692,30 +723,28 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final armColor = armSide == ArmSide.left ? Colors.blue : Colors.purple;
 
     return Container(
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.3),
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
       margin: const EdgeInsets.only(bottom: 8, left: 8),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Timeline indicator
-          Column(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: primaryColor.withOpacity(0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.directions_walk, size: 16, color: primaryColor),
-              ),
-              Container(
-                width: 2,
-                height: 40,
-                color: Colors.grey[300],
-              ),
-            ],
+          Container(
+            width: 32,
+            height: 32,
+            margin: const EdgeInsets.only(left: 12),
+            decoration: BoxDecoration(
+              color: primaryColor.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.directions_walk, size: 16, color: primaryColor),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 2),
 
           // Card content
           Expanded(
@@ -767,7 +796,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Activité détectée',
+                      S.of(context).activityDetected,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
@@ -781,40 +810,39 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Widget _buildConnectionEventCard(BuildContext context, ConnectionEvent item) {
+    final l10n = S.of(context);
     final time = DateFormat('HH:mm').format(item.timestamp);
     final isConnected = item.type == ConnectionEventType.connected;
     final color = isConnected ? Colors.green : Colors.orange;
     final icon = isConnected ? Icons.bluetooth_connected : Icons.bluetooth_disabled;
-    final label = isConnected ? 'Connecté' : 'Déconnecté';
+    final label = isConnected ? l10n.connected : l10n.disconnected;
     final armSide = ArmSideExtension.fromTechnicalName(item.armSide);
     final armSideLabel = armSide.shortLabel;
     final armColor = armSide == ArmSide.left ? Colors.blue : Colors.purple;
 
     return Container(
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.3),
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
       margin: const EdgeInsets.only(bottom: 8, left: 8),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Timeline indicator
-          Column(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, size: 16, color: color),
-              ),
-              Container(
-                width: 2,
-                height: 40,
-                color: Colors.grey[300],
-              ),
-            ],
+          Container(
+            width: 32,
+            height: 32,
+            margin: const EdgeInsets.only(left: 12),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 16, color: color),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 2),
 
           // Card content
           Expanded(
@@ -867,14 +895,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     if (item.durationSeconds != null && item.durationSeconds! > 0) ...[
                       const SizedBox(height: 4),
                       Text(
-                        'Durée: ${_formatDuration(item.durationSeconds!)}',
+                        l10n.duration(_formatDuration(item.durationSeconds!)),
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],
                     if (item.batteryAtConnection != null) ...[
                       const SizedBox(height: 2),
                       Text(
-                        'Batterie: ${item.batteryAtConnection}%',
+                        l10n.batteryAt(item.batteryAtConnection!),
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],
@@ -889,6 +917,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Widget _buildMovementEventCard(BuildContext context, Map<String, dynamic> item) {
+    final l10n = S.of(context);
     final timestamp = DateTime.parse(item['timestamp'] as String);
     final time = DateFormat('HH:mm').format(timestamp);
     final armSideStr = item['armSide'] as String;
@@ -911,46 +940,46 @@ class _HistoryScreenState extends State<HistoryScreen> {
     if (activityLevel >= 3) {
       activityColor = Colors.red;
       activityIcon = Icons.trending_up;
-      activityLabel = 'Intense';
+      activityLabel = l10n.intense;
     } else if (activityLevel >= 2) {
       activityColor = Colors.orange;
       activityIcon = Icons.show_chart;
-      activityLabel = 'Modéré';
+      activityLabel = l10n.moderate;
     } else if (activityLevel >= 1) {
       activityColor = Colors.green;
       activityIcon = Icons.trending_flat;
-      activityLabel = 'Léger';
+      activityLabel = l10n.light;
     } else {
       activityColor = Colors.grey;
       activityIcon = Icons.trending_down;
-      activityLabel = 'Repos';
+      activityLabel = l10n.rest;
     }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8, left: 8),
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.3),
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.max,
         children: [
           // Timeline indicator
-          Column(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: activityColor.withOpacity(0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(activityIcon, size: 16, color: activityColor),
-              ),
-              Container(
-                width: 2,
-                height: 40,
-                color: Colors.grey[300],
-              ),
-            ],
+          Container(
+            width: 32,
+            height: 32,
+            margin: const EdgeInsets.only(left: 12),
+            decoration: BoxDecoration(
+              color: activityColor.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(activityIcon, size: 16, color: activityColor),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 2),
 
           // Card content
           Expanded(
@@ -967,7 +996,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           child: Row(
                             children: [
                               Text(
-                                'Mouvement',
+                                l10n.movement,
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -1035,7 +1064,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                     Icon(Icons.timer, size: 12, color: Colors.grey[600]),
                                     const SizedBox(width: 4),
                                     Text(
-                                      'Actif: ${_formatTimeMs(magnitudeActiveTime)}',
+                                      l10n.active(_formatTimeMs(magnitudeActiveTime)),
                                       style: TextStyle(
                                         fontSize: 11,
                                         color: Colors.grey[700],
@@ -1050,7 +1079,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                   Icon(Icons.waves, size: 12, color: Colors.grey[600]),
                                   const SizedBox(width: 4),
                                   Text(
-                                    'Magnitude: ${magnitude.toStringAsFixed(2)}',
+                                    l10n.magnitudeValue(magnitude.toStringAsFixed(2)),
                                     style: TextStyle(
                                       fontSize: 11,
                                       color: Colors.grey[700],
@@ -1085,9 +1114,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   String _formatDuration(int seconds) {
-    if (seconds < 60) return '${seconds}s';
-    if (seconds < 3600) return '${(seconds / 60).toStringAsFixed(1)}min';
-    return '${(seconds / 3600).toStringAsFixed(1)}h';
+    if (seconds <= 0) return '00:00:00';
+
+    final hours = seconds ~/ 3600;
+    final remainingMinutes = (seconds % 3600) ~/ 60;
+    final secs = seconds % 60;
+
+    // Format: 00:00:00 (heures:minutes:secondes)
+    final hoursStr = hours.toString().padLeft(2, '0');
+    final minutesStr = remainingMinutes.toString().padLeft(2, '0');
+    final secondsStr = secs.toString().padLeft(2, '0');
+
+    return '$hoursStr:$minutesStr:$secondsStr';
   }
 
   Color _getBatteryColor(int level) {
@@ -1105,10 +1143,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   String _getBatteryStatusText(int level) {
-    if (level > 80) return 'Excellent';
-    if (level > 50) return 'Bon';
-    if (level > 20) return 'Faible';
-    return 'Critique';
+    final l10n = S.of(context);
+    if (level > 80) return l10n.batteryExcellent;
+    if (level > 50) return l10n.batteryGood;
+    if (level > 20) return l10n.batteryLow;
+    return l10n.batteryCritical;
   }
 
   (DateTime, DateTime) _getPeriodDates(TimePeriod period) {
@@ -1150,26 +1189,28 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   String _getPeriodLabel(TimePeriod period) {
+    final l10n = S.of(context);
     switch (period) {
       case TimePeriod.today:
-        return 'Aujourd\'hui';
+        return l10n.today;
       case TimePeriod.week:
-        return '7 derniers jours';
+        return l10n.last7Days;
       case TimePeriod.month:
-        return '30 derniers jours';
+        return l10n.last30Days;
       case TimePeriod.all:
-        return 'Toutes les données';
+        return l10n.allDataLabel;
       case TimePeriod.custom:
         if (_customStartDate != null && _customEndDate != null) {
           final start = DateFormat('dd/MM/yyyy').format(_customStartDate!);
           final end = DateFormat('dd/MM/yyyy').format(_customEndDate!);
-          return 'Du $start au $end';
+          return l10n.fromToDate(start, end);
         }
-        return 'Période personnalisée';
+        return l10n.customPeriod;
     }
   }
 
   Widget _buildCustomDateRange() {
+    final l10n = S.of(context);
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -1180,7 +1221,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Sélectionner une plage de dates',
+            l10n.selectDateRange,
             style: Theme.of(context).textTheme.titleSmall,
           ),
           const SizedBox(height: 12),
@@ -1193,7 +1234,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   label: Text(
                     _customStartDate != null
                         ? DateFormat('dd/MM/yyyy').format(_customStartDate!)
-                        : 'Date début',
+                        : l10n.startDate,
                     style: const TextStyle(fontSize: 12),
                   ),
                 ),
@@ -1209,7 +1250,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   label: Text(
                     _customEndDate != null
                         ? DateFormat('dd/MM/yyyy').format(_customEndDate!)
-                        : 'Date fin',
+                        : l10n.endDate,
                     style: const TextStyle(fontSize: 12),
                   ),
                 ),
@@ -1222,7 +1263,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               child: FilledButton.icon(
                 onPressed: _loadData,
                 icon: const Icon(Icons.check, size: 16),
-                label: const Text('Appliquer'),
+                label: Text(l10n.applyButton),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 ),
@@ -1235,6 +1276,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Future<void> _selectDate(bool isStartDate) async {
+    final l10n = S.of(context);
     final now = DateTime.now();
     final initialDate = isStartDate
         ? (_customStartDate ?? now.subtract(const Duration(days: 7)))
@@ -1246,8 +1288,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
       firstDate: DateTime(2020),
       lastDate: now,
       locale: const Locale('fr', 'FR'),
-      helpText: isStartDate ? 'Sélectionner la date de début' : 'Sélectionner la date de fin',
-      cancelText: S.of(context).cancel,
+      helpText: isStartDate ? l10n.selectStartDate : l10n.selectEndDate,
+      cancelText: l10n.cancel,
       confirmText: 'OK',
     );
 
@@ -1264,9 +1306,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
           if (_customStartDate == null || picked.isBefore(_customStartDate!)) {
             _customEndDate = null;
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('La date de fin doit être après la date de début'),
-                duration: Duration(seconds: 2),
+              SnackBar(
+                content: Text(l10n.endDateMustBeAfterStart),
+                duration: const Duration(seconds: 2),
               ),
             );
           } else {
@@ -1276,5 +1318,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
       });
     }
   }
+
 
 }

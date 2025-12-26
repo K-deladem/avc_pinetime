@@ -1,8 +1,9 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_bloc_app_template/bloc/settings/settings_event.dart';
-import 'package:flutter_bloc_app_template/bloc/settings/settings_repository.dart';
 import 'package:flutter_bloc_app_template/bloc/settings/settings_states.dart';
+import 'package:flutter_bloc_app_template/domain/repositories/settings_repository.dart';
 import 'package:flutter_bloc_app_template/service/goal_check_service.dart';
+import 'package:flutter_bloc_app_template/utils/app_logger.dart';
 
 class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   final SettingsRepository repository;
@@ -22,30 +23,31 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       if (settings != null) {
         emit(SettingsLoaded(settings));
       } else {
-        // Ne devrait jamais arriver car le repository retourne defaultSettings
-        // mais on gère le cas par sécurité
-        print('ATTENTION: repository.fetchSettings() a retourné null');
+        AppLogger.warning('repository.fetchSettings() returned null');
         emit(SettingsError("Aucun paramètre trouvé dans la base de données."));
       }
-    } catch (e) {
-      print('Erreur dans SettingsBloc._onLoad: $e');
+    } catch (e, stackTrace) {
+      AppLogger.error('Error in SettingsBloc._onLoad', e, stackTrace);
       emit(SettingsError("Erreur lors du chargement : $e"));
     }
   }
 
   // Gestion de la mise à jour des paramètres
   Future<void> _onUpdate(UpdateSettings event, Emitter<SettingsState> emit) async {
-    await repository.saveSettings(event.settings);
-    final updated = await repository.fetchSettings();
-    if (updated != null) {
-      emit(SettingsLoaded(updated));
+    try {
+      await repository.saveSettings(event.settings);
+      final updated = await repository.fetchSettings();
+      if (updated != null) {
+        emit(SettingsLoaded(updated));
 
-      // Mettre à jour GoalCheckService avec les nouveaux paramètres
-      // pour que les notifications/vibrations utilisent les bons settings
-      await GoalCheckService().updateConfiguration(updated);
-    } else {
-      emit(SettingsError('Impossible de recharger les paramètres après mise à jour'));
+        // Mettre à jour GoalCheckService avec les nouveaux paramètres
+        await GoalCheckService().updateConfiguration(updated);
+      } else {
+        emit(SettingsError('Impossible de recharger les paramètres après mise à jour'));
+      }
+    } catch (e, stackTrace) {
+      AppLogger.error('Error in SettingsBloc._onUpdate', e, stackTrace);
+      emit(SettingsError("Erreur lors de la sauvegarde : $e"));
     }
   }
-
 }

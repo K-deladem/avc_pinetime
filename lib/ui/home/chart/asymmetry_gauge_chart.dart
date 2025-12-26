@@ -3,6 +3,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc_app_template/generated/l10n.dart';
 import 'package:flutter_bloc_app_template/models/arm_side.dart';
 import 'package:flutter_bloc_app_template/service/chart_data_adapter.dart';
 import 'package:flutter_bloc_app_template/service/chart_refresh_notifier.dart';
@@ -146,15 +147,18 @@ class _AsymmetryGaugeChartState extends State<AsymmetryGaugeChart> {
               }
 
               if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return const SizedBox(
+                return SizedBox(
                   height: 220,
-                  child: Center(child: Text('Aucune donnée disponible')),
+                  child: Center(child: Text(S.of(context).noDataAvailable)),
                 );
               }
 
-              // Calculer la moyenne d'asymétrie sur la période
-              final avgAsymmetry = _calculateAverageAsymmetry(snapshot.data!);
-              final latestPoint = snapshot.data!.last;
+              // Les méthodes ForGauge retournent un seul point avec les valeurs
+              // déjà calculées correctement (MAX - MIN des temps cumulés)
+              final dataPoint = snapshot.data!.first;
+              final totalLeft = dataPoint.leftValue;
+              final totalRight = dataPoint.rightValue;
+              final avgAsymmetry = dataPoint.asymmetryRatio;
 
               return Column(
                 children: [
@@ -162,15 +166,15 @@ class _AsymmetryGaugeChartState extends State<AsymmetryGaugeChart> {
                     height: 220,
                     child: _GaugeWidget(
                       value: avgAsymmetry,
-                      leftValue: latestPoint.leftValue,
-                      rightValue: latestPoint.rightValue,
+                      leftValue: totalLeft,
+                      rightValue: totalRight,
                       unit: widget.unit,
                       affectedSide: widget.affectedSide,
                       goalValue: widget.goalValue,
                     ),
                   ),
                   const SizedBox(height: 12),
-                  _buildStats(latestPoint, avgAsymmetry),
+                  _buildStats(dataPoint, avgAsymmetry),
                 ],
               );
             },
@@ -207,7 +211,7 @@ class _AsymmetryGaugeChartState extends State<AsymmetryGaugeChart> {
                 maxLines: 1,
               ),
               Text(
-                'Période: $_selectedPeriod',
+                S.of(context).periodLabel(_getPeriodLabel(context)),
                 style: const TextStyle(fontSize: 8),
               ),
             ],
@@ -356,18 +360,18 @@ class _AsymmetryGaugeChartState extends State<AsymmetryGaugeChart> {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _StatItem(
-            label: 'Gauche',
+            label: S.of(context).left,
             value: _formatDuration(point.leftValue),
             color: Colors.blueAccent,
           ),
           _StatItem(
-            label: 'Droite',
+            label: S.of(context).right,
             value: _formatDuration(point.rightValue),
             color: Colors.green,
           ),
           _StatItem(
-            label: 'Équilibre',
-            value: point.asymmetryCategory.label,
+            label: S.of(context).balancedStatus,
+            value: _getAsymmetryCategoryLabel(context, point.asymmetryCategory),
             color: point.asymmetryCategory.color,
           ),
         ],
@@ -375,34 +379,47 @@ class _AsymmetryGaugeChartState extends State<AsymmetryGaugeChart> {
     );
   }
 
-  double _calculateAverageAsymmetry(List<AsymmetryDataPoint> data) {
-    if (data.isEmpty) return 50.0;
-    final sum = data.fold<double>(0.0, (sum, point) => sum + point.asymmetryRatio);
-    return sum / data.length;
+  String _getPeriodLabel(BuildContext context) {
+    switch (_selectedPeriod) {
+      case 'Jour':
+        return S.of(context).periodDay;
+      case 'Semaine':
+        return S.of(context).periodWeek;
+      case 'Mois':
+        return S.of(context).periodMonth;
+      default:
+        return _selectedPeriod;
+    }
   }
 
-  /// Formate une durée en minutes vers heures/minutes/secondes lisibles
+  String _getAsymmetryCategoryLabel(BuildContext context, AsymmetryCategory category) {
+    switch (category) {
+      case AsymmetryCategory.balanced:
+        return S.of(context).balancedStatus;
+      case AsymmetryCategory.leftModerate:
+      case AsymmetryCategory.leftStrong:
+        return S.of(context).leftDominanceStatus;
+      case AsymmetryCategory.rightModerate:
+      case AsymmetryCategory.rightStrong:
+        return S.of(context).rightDominanceStatus;
+    }
+  }
+
+  /// Formate une durée en minutes vers le format 00:00:00
   String _formatDuration(double minutes) {
-    if (minutes <= 0) return '0s';
+    if (minutes <= 0) return '00:00:00';
 
     final totalSeconds = (minutes * 60).round();
     final hours = totalSeconds ~/ 3600;
     final remainingMinutes = (totalSeconds % 3600) ~/ 60;
     final seconds = totalSeconds % 60;
 
-    if (hours > 0) {
-      if (remainingMinutes > 0) {
-        return '${hours}h ${remainingMinutes}m';
-      }
-      return '${hours}h';
-    } else if (remainingMinutes > 0) {
-      if (seconds > 0) {
-        return '${remainingMinutes}m ${seconds}s';
-      }
-      return '${remainingMinutes}m';
-    } else {
-      return '${seconds}s';
-    }
+    // Format: 00:00:00 (heures:minutes:secondes)
+    final hoursStr = hours.toString().padLeft(2, '0');
+    final minutesStr = remainingMinutes.toString().padLeft(2, '0');
+    final secondsStr = seconds.toString().padLeft(2, '0');
+
+    return '$hoursStr:$minutesStr:$secondsStr';
   }
 }
 
@@ -496,7 +513,7 @@ class _GaugeWidget extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          _getAsymmetryLabel(value),
+          _getAsymmetryLabel(context, value),
           style: TextStyle(
             fontSize: 11,
             color: _getAsymmetryColor(value),
@@ -507,10 +524,10 @@ class _GaugeWidget extends StatelessWidget {
     );
   }
 
-  String _getAsymmetryLabel(double ratio) {
-    if (ratio >= 45 && ratio <= 55) return 'Équilibré';
-    if (ratio > 55) return 'Dominance droite';
-    if (ratio < 45) return 'Dominance gauche';
+  String _getAsymmetryLabel(BuildContext context, double ratio) {
+    if (ratio >= 45 && ratio <= 55) return S.of(context).balancedStatus;
+    if (ratio > 55) return S.of(context).rightDominanceStatus;
+    if (ratio < 45) return S.of(context).leftDominanceStatus;
     return '';
   }
 

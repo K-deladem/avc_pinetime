@@ -324,7 +324,7 @@ class ConnectionCoordinator {
     AppLogger.d('Collecte données pour $side ($deviceId)...');
 
     try {
-      // Note: La collecte se fait via le DualInfiniTimeBloc qui maintient
+      // Note: La collecte se fait via le DeviceBloc qui maintient
       // les connexions. Ici on déclenche juste une lecture si connecté.
 
       // Vérifier si déjà connecté via le statut

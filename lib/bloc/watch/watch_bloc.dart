@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_bloc_app_template/bloc/watch/watch_repository.dart';
+import 'package:flutter_bloc_app_template/domain/repositories/watch_repository.dart';
+import 'package:flutter_bloc_app_template/utils/app_logger.dart';
 
 import 'watch_event.dart';
 import 'watch_state.dart';
@@ -20,7 +21,8 @@ class WatchBloc extends Bloc<WatchEvent, WatchState> {
     try {
       final devices = await repository.getAllDevices();
       emit(WatchLoaded(devices));
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('Error loading watch devices', e, stackTrace);
       emit(WatchError(e.toString()));
     }
   }
@@ -29,7 +31,8 @@ class WatchBloc extends Bloc<WatchEvent, WatchState> {
     try {
       await repository.addWatchDevice(event.device);
       add(LoadWatchDevices());
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('Error adding watch device', e, stackTrace);
       emit(WatchError('Failed to add device: ${e.toString()}'));
     }
   }
@@ -38,7 +41,8 @@ class WatchBloc extends Bloc<WatchEvent, WatchState> {
     try {
       await repository.updateWatchDevice(event.device);
       add(LoadWatchDevices());
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('Error updating watch device', e, stackTrace);
       emit(WatchError('Failed to update device: ${e.toString()}'));
     }
   }
@@ -47,7 +51,8 @@ class WatchBloc extends Bloc<WatchEvent, WatchState> {
     try {
       await repository.deleteDevice(event.id);
       add(LoadWatchDevices());
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('Error deleting watch device', e, stackTrace);
       emit(WatchError('Failed to delete device: ${e.toString()}'));
     }
   }
@@ -56,7 +61,8 @@ class WatchBloc extends Bloc<WatchEvent, WatchState> {
     try {
       await repository.saveOrUpdateDevice(event.device);
       add(LoadWatchDevices());
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('Error saving watch device', e, stackTrace);
       emit(WatchError('Failed to save device: ${e.toString()}'));
     }
   }

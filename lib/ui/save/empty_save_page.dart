@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc_app_template/constants/dimens.dart';
+import 'package:flutter_bloc_app_template/generated/l10n.dart';
 import 'package:flutter_bloc_app_template/widgets/network_image_with_loader/network_image_with_loader.dart';
 
 class EmptySavePage extends StatelessWidget {
@@ -25,14 +26,14 @@ class EmptySavePage extends StatelessWidget {
             ),
           ),
           Text(
-            'Oppss!',
+            S.of(context).oops,
             style: Theme.of(context)
                 .textTheme
                 .titleLarge
                 ?.copyWith(fontWeight: FontWeight.bold, color: Colors.black),
           ),
           const SizedBox(height: 8),
-          const Text('Sorry, you have no product in your wishlist'),
+          Text(S.of(context).noProductInWishlist),
           const Spacer(),
           SizedBox(
             width: double.infinity,
@@ -40,7 +41,7 @@ class EmptySavePage extends StatelessWidget {
               padding: const EdgeInsets.all(AppDefaults.padding * 2),
               child: ElevatedButton(
                 onPressed: () {},
-                child: const Text('Start Adding'),
+                child: Text(S.of(context).startAddingButton),
               ),
             ),
           ),

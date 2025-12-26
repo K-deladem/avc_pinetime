@@ -4,6 +4,7 @@ import 'dart:async';
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc_app_template/generated/l10n.dart';
 import 'package:flutter_bloc_app_template/models/arm_side.dart';
 import 'package:flutter_bloc_app_template/service/chart_refresh_notifier.dart';
 import 'package:intl/intl.dart';
@@ -168,9 +169,9 @@ class _ReusableComparisonChartState extends State<ReusableComparisonChart> {
                 }
 
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const SizedBox(
+                  return SizedBox(
                     height: 270,
-                    child: Center(child: Text('Aucune donnée disponible')),
+                    child: Center(child: Text(S.of(context).noDataAvailable)),
                   );
                 }
 
@@ -223,7 +224,7 @@ class _ReusableComparisonChartState extends State<ReusableComparisonChart> {
                 maxLines: 1,
               ),
               Text(
-                'Période: $_selectedPeriod',
+                S.of(context).periodLabel(_getPeriodLabel(context)),
                 style: const TextStyle(fontSize: 11),
               ),
             ],
@@ -327,7 +328,7 @@ class _ReusableComparisonChartState extends State<ReusableComparisonChart> {
 
   Widget _buildBarChart(List<ChartDataPoint> data, double chartWidth) {
     if (data.isEmpty) {
-      return const Center(child: Text('Aucune donnée disponible'));
+      return Center(child: Text(S.of(context).noDataAvailable));
     }
 
     final barGroups = <BarChartGroupData>[];
@@ -457,7 +458,7 @@ class _ReusableComparisonChartState extends State<ReusableComparisonChart> {
             getTooltipColor: (group) => Colors.black87,
             tooltipBorderRadius: BorderRadius.circular(8),
             getTooltipItem: (group, groupIndex, rod, rodIndex) {
-              final side = rodIndex == 0 ? 'Gauche' : 'Droite';
+              final side = rodIndex == 0 ? S.of(context).left : S.of(context).right;
               return BarTooltipItem(
                 '$side\n${rod.toY.toStringAsFixed(1)} ${widget.unit}',
                 TextStyle(
@@ -475,7 +476,7 @@ class _ReusableComparisonChartState extends State<ReusableComparisonChart> {
 
   Widget _buildLineChart(List<ChartDataPoint> data, double chartWidth) {
     if (data.isEmpty) {
-      return const Center(child: Text('Aucune donnée disponible'));
+      return Center(child: Text(S.of(context).noDataAvailable));
     }
 
     final leftSpots = <FlSpot>[];
@@ -749,13 +750,26 @@ class _ReusableComparisonChartState extends State<ReusableComparisonChart> {
             runSpacing: 5,
             alignment: WrapAlignment.center,
             children: [
-              _buildLegendItem('Gauche', widget.leftColor),
-              _buildLegendItem('Droite', widget.rightColor),
+              _buildLegendItem(S.of(context).left, widget.leftColor),
+              _buildLegendItem(S.of(context).right, widget.rightColor),
             ],
           ),
         );
       },
     );
+  }
+
+  String _getPeriodLabel(BuildContext context) {
+    switch (_selectedPeriod) {
+      case 'Jour':
+        return S.of(context).periodDay;
+      case 'Semaine':
+        return S.of(context).periodWeek;
+      case 'Mois':
+        return S.of(context).periodMonth;
+      default:
+        return _selectedPeriod;
+    }
   }
 
   Widget _buildLegendItem(String label, Color color) {

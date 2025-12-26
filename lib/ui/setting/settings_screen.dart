@@ -118,7 +118,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     if (state is SettingsError) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Erreur')),
+        appBar: AppBar(title: Text(S.of(context).error)),
         body: Center(child: Text(state.message)),
       );
     }
@@ -241,7 +241,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             color: theme.colorScheme.primary.withValues(alpha: 0.6),
           ),
           label: Text(
-            'Modifier le nom',
+            S.of(context).editName,
             style: TextStyle(
               color: theme.colorScheme.primary.withValues(alpha: 0.6),
             ),
@@ -255,7 +255,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Apparence'),
+        _buildSectionTitle(S.of(context).appearance),
         _buildLanguageNavigation(),
         _buildThemeNavigation(),
         _buildChartPreferencesNavigation(),
@@ -267,7 +267,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Notifications & Vibrations'),
+        _buildSectionTitle(S.of(context).notificationsAndVibrations),
         _buildNotificationSwitch(),
         _buildVibrationTypeDropdown(),
         _buildVibrationArmDropdown(),
@@ -280,7 +280,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Configuration Thérapie'),
+        _buildSectionTitle(S.of(context).therapyConfiguration),
         _buildAffectedSideSelector(),
         _buildGoalSettingsNavigation(),
         _buildBluetoothNavigation(),
@@ -309,7 +309,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Montres'),
+        _buildSectionTitle(S.of(context).watches),
         _buildSyncTile(),
         if (leftWatch != null) _buildLeftWatchTile(leftWatch),
         if (rightWatch != null) _buildRightWatchTile(rightWatch),
@@ -365,7 +365,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Support'),
+        _buildSectionTitle(S.of(context).support),
         _buildPrivacyTile(),
         _buildAboutTile(),
         _buildContactTile(),
@@ -377,7 +377,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Données locales'),
+        _buildSectionTitle(S.of(context).localData),
         _buildMovementSamplingTile(),
         _buildShareDataTile(),
         _buildImportDataTile(),
@@ -390,7 +390,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle("Réinitialiser l'application et les paramètres"),
+        _buildSectionTitle(S.of(context).resetAppAndSettings),
         _buildResetConfigTile(),
         _buildResetDataTile(),
       ],
@@ -437,7 +437,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ),
       subtitle: Text(
-        'Recevoir des rappels quotidiens',
+        S.of(context).receiveDailyReminders,
         style: TextStyle(
           color: theme.colorScheme.onSurfaceVariant,
           fontSize: 13,
@@ -493,7 +493,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildNotificationSwitch() {
     return _buildSwitchTile(
       Icons.notifications_active_outlined,
-      'Notifications',
+      S.of(context).notifications,
       notificationsEnabled,
       (v) {
         //   PURE BLOC: Mise à jour directe puis BLoC
@@ -506,7 +506,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildLanguageNavigation() {
     return _buildNavTile(
       Icons.language,
-      'Langue',
+      S.of(context).language,
       language.displayName,
       () async {
         final selected = await Navigator.pushNamed(context, AppRoutes.language);
@@ -522,7 +522,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildThemeNavigation() {
     return _buildNavTile(
       Icons.dark_mode_outlined,
-      'Thème',
+      S.of(context).theme,
       themeMode.label,
       () async {
         final selected =
@@ -539,8 +539,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildBluetoothNavigation() {
     return _buildNavTile(
       Icons.bluetooth_outlined,
-      'Paramètres Bluetooth',
-      'Connexion et enregistrement des données',
+      S.of(context).bluetoothSettings,
+      S.of(context).connectionAndDataRecording,
       () async {
         await Navigator.pushNamed(context, AppRoutes.bluetoothSettings);
         // Recharger les paramètres après modification
@@ -553,8 +553,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildChartPreferencesNavigation() {
     return _buildNavTile(
       Icons.assessment_outlined,
-      'Graphiques affichés',
-      'Choisir les graphiques à afficher',
+      S.of(context).displayedCharts,
+      S.of(context).chooseChartsToDisplay,
       () async {
         await Navigator.pushNamed(context, AppRoutes.chartPreferences);
         // Recharger les paramètres après modification
@@ -567,8 +567,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildGoalSettingsNavigation() {
     return _buildNavTile(
       Icons.flag_outlined,
-      'Configuration des objectifs',
-      'Définir les objectifs et la vérification',
+      S.of(context).goalSettings,
+      S.of(context).defineGoalsAndVerification,
       () async {
         await Navigator.pushNamed(context, AppRoutes.goalSettings);
         // Recharger les paramètres après modification
@@ -581,7 +581,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildVibrationArmDropdown() {
     return _buildDropdownTile(
       Icons.back_hand_outlined,
-      'Bras à faire vibrer',
+      S.of(context).armToVibrate,
       vibrationTargetArm.label,
       VibrationArm.values.map((e) => e.label).toList(),
       (v) {
@@ -600,11 +600,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: ElevatedButton.icon(
         onPressed: () async {
-          _showSuccessSnackBar('Test de vibration en cours...');
+          _showSuccessSnackBar(S.of(context).vibrationTestInProgress);
           await GoalCheckService().testVibration();
         },
         icon: const Icon(Icons.vibration),
-        label: const Text('Tester la vibration'),
+        label: Text(S.of(context).testVibration),
         style: ElevatedButton.styleFrom(
           backgroundColor: theme.colorScheme.primaryContainer,
           foregroundColor: theme.colorScheme.onPrimaryContainer,
@@ -621,7 +621,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     return _buildDropdownTile(
       Icons.vibration,
-      'Type de vibration',
+      S.of(context).vibrationType,
       vibrationMode.label,
       availableLabels,
       (v) {
@@ -751,7 +751,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(width: 8),
               Text(
-                'Côté atteint',
+                S.of(context).affectedSide,
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
@@ -778,14 +778,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               DropdownMenuItem(
                 value: ArmSide.left,
                 child: Text(
-                  'Gauche',
+                  S.of(context).left,
                   style: TextStyle(color: theme.colorScheme.onSurface),
                 ),
               ),
               DropdownMenuItem(
                 value: ArmSide.right,
                 child: Text(
-                  'Droit',
+                  S.of(context).right,
                   style: TextStyle(color: theme.colorScheme.onSurface),
                 ),
               ),
@@ -803,8 +803,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildLeftWatchTile(WatchDevice leftWatch) {
     return _buildNavTile(
       Icons.watch,
-      'Montre gauche',
-      'Statut : ${leftWatch.isLastConnected ? "Connectée" : "Déconnectée"}',
+      S.of(context).leftWatch,
+      S.of(context).watchStatus(leftWatch.isLastConnected ? S.of(context).connected : S.of(context).disconnected),
       () => Navigator.pushNamed(
         context,
         AppRoutes.watchLeft,
@@ -816,8 +816,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildRightWatchTile(WatchDevice rightWatch) {
     return _buildNavTile(
       Icons.watch_outlined,
-      'Montre droite',
-      'Statut : ${rightWatch.isLastConnected ? "Connectée" : "Déconnectée"}',
+      S.of(context).rightWatch,
+      S.of(context).watchStatus(rightWatch.isLastConnected ? S.of(context).connected : S.of(context).disconnected),
       () => Navigator.pushNamed(
         context,
         AppRoutes.watchRight,
@@ -829,8 +829,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildUpdateWatchesTile() {
     return _buildNavTile(
       Icons.system_update,
-      'Mettre à jour les montres',
-      'Installer le firmware sur les deux montres',
+      S.of(context).updateWatches,
+      S.of(context).installFirmwareOnBothWatches,
       () => showModalBottomSheet(
         context: context,
         isScrollControlled: true,
@@ -848,8 +848,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildSyncTile() {
     return _buildNavTile(
       Icons.sync_outlined,
-      'Synchronisation de l\'heure',
-      'Fuseau horaire, format d\'heure et synchronisation',
+      S.of(context).timeSynchronization,
+      S.of(context).timezoneFormatSync,
       () => Navigator.pushNamed(context, AppRoutes.timePreferences),
     );
   }
@@ -857,7 +857,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildPrivacyTile() {
     return _buildNavTile(
       Icons.privacy_tip_outlined,
-      'Politique de confidentialité',
+      S.of(context).privacyPolicy,
       '',
       () => Navigator.pushNamed(context, AppRoutes.privacy),
     );
@@ -866,7 +866,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildAboutTile() {
     return _buildNavTile(
       Icons.info_outline,
-      'À propos',
+      S.of(context).about,
       '',
       () => Navigator.pushNamed(context, AppRoutes.about),
     );
@@ -875,7 +875,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildContactTile() {
     return _buildNavTile(
       Icons.email_outlined,
-      'Contacter le support',
+      S.of(context).contactSupport,
       AppConfig.supportEmail,
       () => Navigator.pushNamed(context, AppRoutes.contact),
     );
@@ -890,7 +890,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     return _buildNavTile(
       Icons.speed,
-      'Échantillonnage mouvement',
+      S.of(context).movementSampling,
       samplingDescription,
       () => Navigator.push(
         context,
@@ -902,7 +902,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildShareDataTile() {
     return _buildNavTile(
       Icons.share_outlined,
-      'Partager mes données',
+      S.of(context).shareMyData,
       '',
       _shareLocalData,
     );
@@ -911,7 +911,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildImportDataTile() {
     return _buildNavTile(
       Icons.download_outlined,
-      'Importer des données',
+      S.of(context).importData,
       '',
       _importLocalData,
     );
@@ -920,8 +920,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildExportDataTile() {
     return _buildNavTile(
       Icons.upload_file,
-      'Exporter mes données',
-      'Sauvegarder dans un fichier',
+      S.of(context).exportMyData,
+      S.of(context).saveToFile,
       _shareLocalData,
     );
   }
@@ -929,11 +929,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildResetConfigTile() {
     return ListTile(
       leading: const Icon(Icons.settings_backup_restore, color: Colors.orange),
-      title: const Text(
-        'Réinitialiser les paramètres',
-        style: TextStyle(color: Colors.orange),
+      title: Text(
+        S.of(context).resetSettings,
+        style: const TextStyle(color: Colors.orange),
       ),
-      subtitle: const Text('Réinitialiser toutes les configurations'),
+      subtitle: Text(S.of(context).resetAllConfigurations),
       onTap: _resetConfig,
     );
   }
@@ -941,11 +941,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildResetDataTile() {
     return ListTile(
       leading: const Icon(Icons.data_saver_off_sharp, color: Colors.red),
-      title: const Text(
-        'Réinitialiser les données',
-        style: TextStyle(color: Colors.red),
+      title: Text(
+        S.of(context).resetData,
+        style: const TextStyle(color: Colors.red),
       ),
-      subtitle: const Text('Supprimer toutes les données locales'),
+      subtitle: Text(S.of(context).deleteAllLocalData),
       onTap: _resetData,
     );
   }
@@ -1077,10 +1077,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildCustomVibrationHeader(),
                 const SizedBox(height: 24),
                 _buildCustomField(
-                    'Nombre de vibrations', repCtrl, Icons.repeat),
+                    S.of(context).vibrationCount, repCtrl, Icons.repeat),
                 const SizedBox(height: 8),
                 Text(
-                  'La montre vibrera ce nombre de fois pour chaque notification.',
+                  S.of(context).vibrationCountDescription,
                   style: TextStyle(
                     color: theme.colorScheme.onSurfaceVariant,
                     fontSize: 13,
@@ -1105,7 +1105,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Icon(Icons.vibration, size: 24, color: theme.colorScheme.primary),
           const SizedBox(width: 8),
           Text(
-            'Vibration personnalisée',
+            S.of(context).customVibration,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
             ),
@@ -1171,7 +1171,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               } else {
                 // Fermer le bottom sheet d'abord, puis afficher l'erreur
                 Navigator.pop(ctx);
-                _showErrorSnackBar('Le nombre doit être entre 1 et 10');
+                _showErrorSnackBar(S.of(context).numberMustBeBetween1And10);
               }
             },
             icon: const Icon(Icons.check),
@@ -1195,11 +1195,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Modifier le nom'),
+        title: Text(S.of(context).editNameTitle),
         content: TextField(
           controller: ctrl,
           decoration: InputDecoration(
-            labelText: 'Nom complet',
+            labelText: S.of(context).fullName,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
@@ -1229,18 +1229,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _resetData() {
     _showResetDialog(
-      title: 'Réinitialiser les données ?',
-      content: 'Toutes vos données locales seront supprimées.\n'
-          'Cette action est **irréversible**.',
+      title: S.of(context).resetDataQuestion,
+      content: S.of(context).allLocalDataWillBeDeleted,
       onConfirm: _performDataReset,
     );
   }
 
   void _resetConfig() {
     _showResetDialog(
-      title: 'Réinitialiser les configurations ?',
-      content: 'Toutes vos configurations locales seront supprimées.\n'
-          'Cette action est **irréversible**.',
+      title: S.of(context).resetConfigurationsQuestion,
+      content: S.of(context).allConfigurationsWillBeReset,
       onConfirm: _performConfigReset,
     );
   }
@@ -1271,7 +1269,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const SizedBox(height: 16),
                   Text.rich(
                     TextSpan(
-                      text: 'Veuillez saisir ce code pour confirmer : ',
+                      text: '${S.of(context).enterCodeToConfirm} ',
                       children: [
                         TextSpan(
                           text: confirmationCode,
@@ -1288,7 +1286,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     controller: confirmController,
                     onChanged: (_) => setDialogState(() {}),
                     decoration: InputDecoration(
-                      labelText: 'Saisir le code ci-dessus',
+                      labelText: S.of(context).enterCodeAbove,
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
@@ -1309,10 +1307,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ? () {
                           Navigator.pop(ctx);
                           onConfirm();
-                          _showSuccessSnackBar('Données réinitialisées.');
+                          _showSuccessSnackBar(S.of(context).dataReset);
                         }
                       : null,
-                  child: const Text('Confirmer'),
+                  child: Text(S.of(context).confirm),
                 ),
               ],
             );
@@ -1327,7 +1325,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await _resetAppData(context);
     } catch (e) {
       if (!mounted) return;
-      _showErrorSnackBar('Erreur lors de la réinitialisation : $e');
+      _showErrorSnackBar(S.of(context).resetError(e.toString()));
     }
   }
 
@@ -1398,10 +1396,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _imageTimestamp = DateTime.now().millisecondsSinceEpoch;
       _saveSettings();
 
-      _showSuccessSnackBar('Photo de profil mise à jour !');
+      _showSuccessSnackBar(S.of(context).profilePhotoUpdated);
     } catch (e) {
       if (!mounted) return;
-      _showErrorSnackBar('Erreur lors de la sélection de l\'image : $e');
+      _showErrorSnackBar(S.of(context).imageSelectionError(e.toString()));
     }
   }
 
@@ -1465,7 +1463,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final state = bloc.state;
 
       if (state is! SettingsLoaded) {
-        _showErrorSnackBar('Paramètres non chargés. Impossible d\'exporter.');
+        _showErrorSnackBar(S.of(context).settingsNotLoaded);
         return;
       }
 
@@ -1508,10 +1506,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       if (!mounted) return;
 
-      _showSuccessSnackBar('Données exportées avec succès ($fileSize octets)');
+      _showSuccessSnackBar(S.of(context).dataExportedSuccessfully(fileSize));
     } catch (e) {
       if (!mounted) return;
-      _showErrorSnackBar('Erreur lors de l\'exportation : ${e.toString()}');
+      _showErrorSnackBar(S.of(context).exportError(e.toString()));
     }
   }
 
@@ -1562,7 +1560,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       if (!await file.exists()) {
         if (!mounted) return;
-        _showErrorSnackBar('Fichier introuvable');
+        _showErrorSnackBar(S.of(context).fileNotFound);
         return;
       }
 
@@ -1570,7 +1568,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       if (jsonStr.isEmpty) {
         if (!mounted) return;
-        _showErrorSnackBar('Le fichier est vide');
+        _showErrorSnackBar(S.of(context).fileIsEmpty);
         return;
       }
 
@@ -1595,13 +1593,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       context.read<SettingsBloc>().add(LoadSettings());
 
-      _showSuccessSnackBar('Paramètres importés avec succès !');
+      _showSuccessSnackBar(S.of(context).settingsImportedSuccessfully);
     } on FormatException catch (e) {
       if (!mounted) return;
-      _showErrorSnackBar('Format de fichier invalide : ${e.message}');
+      _showErrorSnackBar(S.of(context).invalidFileFormat(e.message));
     } catch (e) {
       if (!mounted) return;
-      _showErrorSnackBar('Erreur lors de l\'importation : ${e.toString()}');
+      _showErrorSnackBar(S.of(context).importError(e.toString()));
     }
   }
 

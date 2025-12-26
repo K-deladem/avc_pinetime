@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_bloc_app_template/bloc/settings/settings_bloc.dart';
 import 'package:flutter_bloc_app_template/bloc/settings/settings_event.dart';
 import 'package:flutter_bloc_app_template/bloc/settings/settings_states.dart';
+import 'package:flutter_bloc_app_template/generated/l10n.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
@@ -52,7 +53,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur lors de la sélection de l\'image: $e')),
+          SnackBar(content: Text(S.of(context).imageSelectionErrorMessage(e.toString()))),
         );
       }
     }
@@ -66,7 +67,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
 
     if (newName.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Le nom ne peut pas être vide')),
+        SnackBar(content: Text(S.of(context).nameCannotBeEmpty)),
       );
       return;
     }
@@ -79,7 +80,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
     context.read<SettingsBloc>().add(UpdateSettings(updated));
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Profil mis à jour avec succès')),
+      SnackBar(content: Text(S.of(context).profileUpdatedSuccessfully)),
     );
 
     Navigator.pop(context);
@@ -89,7 +90,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profil'),
+        title: Text(S.of(context).profileTitle),
         elevation: 0,
         scrolledUnderElevation: 3,
         backgroundColor: Theme.of(context).colorScheme.surface,
@@ -181,7 +182,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
 
                 const SizedBox(height: 12),
                 Text(
-                  'Appuyez pour changer la photo',
+                  S.of(context).tapToChangePhoto,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context)
                             .textTheme
@@ -197,8 +198,8 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                 TextField(
                   controller: _nameController,
                   decoration: InputDecoration(
-                    labelText: 'Nom d\'utilisateur',
-                    hintText: 'Entrez votre nom',
+                    labelText: S.of(context).userName,
+                    hintText: S.of(context).enterYourName,
                     prefixIcon: const Icon(Icons.person_outline),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -221,7 +222,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                       context.read<SettingsBloc>().add(UpdateSettings(updated));
                     },
                     icon: const Icon(Icons.delete_outline),
-                    label: const Text('Supprimer la photo'),
+                    label: Text(S.of(context).deletePhoto),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.red,
                       side: const BorderSide(color: Colors.red),

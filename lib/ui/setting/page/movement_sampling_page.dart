@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_bloc_app_template/bloc/settings/settings_bloc.dart';
 import 'package:flutter_bloc_app_template/bloc/settings/settings_event.dart';
 import 'package:flutter_bloc_app_template/bloc/settings/settings_states.dart';
+import 'package:flutter_bloc_app_template/generated/l10n.dart';
 import 'package:flutter_bloc_app_template/models/movement_sampling_settings.dart';
 
 class MovementSamplingPage extends StatefulWidget {
@@ -48,7 +49,7 @@ class _MovementSamplingPageState extends State<MovementSamplingPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Échantillonnage Mouvement'),
+        title: Text(S.of(context).movementSamplingTitle),
         backgroundColor: theme.colorScheme.surface,
         elevation: 0,
       ),
@@ -72,7 +73,7 @@ class _MovementSamplingPageState extends State<MovementSamplingPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Fréquence d\'enregistrement',
+          S.of(context).recordingFrequency,
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.bold,
             color: theme.colorScheme.primary,
@@ -80,8 +81,7 @@ class _MovementSamplingPageState extends State<MovementSamplingPage> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Réduisez le volume de données de mouvement stockées. '
-          'Un échantillonnage moins fréquent économise de l\'espace de stockage.',
+          S.of(context).recordingFrequencyDescription,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
@@ -105,7 +105,7 @@ class _MovementSamplingPageState extends State<MovementSamplingPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Mode actuel: ${_settings.presetName}',
+                      S.of(context).currentMode(_settings.presetName),
                       style: theme.textTheme.titleSmall?.copyWith(
                         color: theme.colorScheme.onPrimaryContainer,
                         fontWeight: FontWeight.bold,
@@ -132,7 +132,7 @@ class _MovementSamplingPageState extends State<MovementSamplingPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Préréglages',
+          S.of(context).presets,
           style: theme.textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.bold,
           ),
@@ -142,7 +142,7 @@ class _MovementSamplingPageState extends State<MovementSamplingPage> {
         _buildRecordsPerTimeUnitSection(theme),
         const Divider(height: 24),
         Text(
-          'Modes classiques',
+          S.of(context).classicModes,
           style: theme.textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.bold,
           ),
@@ -150,36 +150,36 @@ class _MovementSamplingPageState extends State<MovementSamplingPage> {
         const SizedBox(height: 8),
         _buildPresetTile(
           theme,
-          'Économie Max',
-          '1 échantillon / 5s (~12/min)',
+          S.of(context).economyMax,
+          S.of(context).economyMaxDescription,
           Icons.battery_saver,
           MovementSamplingSettings.economyMax,
         ),
         _buildPresetTile(
           theme,
-          'Économie',
-          '1 échantillon / 2s (~30/min)',
+          S.of(context).economy,
+          S.of(context).economyDescription,
           Icons.eco,
           MovementSamplingSettings.economy,
         ),
         _buildPresetTile(
           theme,
-          'Normal',
-          '1 échantillon / seconde (~60/min)',
+          S.of(context).normal,
+          S.of(context).normalDescription,
           Icons.speed,
           MovementSamplingSettings.normal,
         ),
         _buildPresetTile(
           theme,
-          'Précis',
-          '2 échantillons / seconde (~120/min)',
+          S.of(context).precise,
+          S.of(context).preciseDescription,
           Icons.precision_manufacturing,
           MovementSamplingSettings.precise,
         ),
         _buildPresetTile(
           theme,
-          'Maximum',
-          'Tout enregistrer (~600/min)',
+          S.of(context).maximum,
+          S.of(context).maximumDescription,
           Icons.all_inclusive,
           MovementSamplingSettings.all,
         ),
@@ -219,7 +219,7 @@ class _MovementSamplingPageState extends State<MovementSamplingPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Par unité de temps',
+                        S.of(context).perTimeUnit,
                         style: TextStyle(
                           fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                           fontSize: 16,
@@ -229,7 +229,7 @@ class _MovementSamplingPageState extends State<MovementSamplingPage> {
                         ),
                       ),
                       Text(
-                        'Définir le nombre d\'enregistrements par heure/minute/seconde',
+                        S.of(context).perTimeUnitDescription,
                         style: TextStyle(
                           fontSize: 12,
                           color: isSelected
@@ -256,7 +256,7 @@ class _MovementSamplingPageState extends State<MovementSamplingPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Nombre d\'enregistrements',
+                          S.of(context).numberOfRecords,
                           style: TextStyle(
                             fontSize: 12,
                             color: theme.colorScheme.onPrimaryContainer,
@@ -314,7 +314,7 @@ class _MovementSamplingPageState extends State<MovementSamplingPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Par',
+                          S.of(context).per,
                           style: TextStyle(
                             fontSize: 12,
                             color: theme.colorScheme.onPrimaryContainer,
@@ -402,7 +402,7 @@ class _MovementSamplingPageState extends State<MovementSamplingPage> {
                   style: OutlinedButton.styleFrom(
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
-                  child: const Text('Sélectionner ce mode'),
+                  child: Text(S.of(context).selectThisMode),
                 ),
               ),
             ],
@@ -415,11 +415,11 @@ class _MovementSamplingPageState extends State<MovementSamplingPage> {
   String _getTimeUnitName(SamplingTimeUnit unit) {
     switch (unit) {
       case SamplingTimeUnit.second:
-        return 'Seconde';
+        return S.of(context).timeUnitSecond;
       case SamplingTimeUnit.minute:
-        return 'Minute';
+        return S.of(context).timeUnitMinute;
       case SamplingTimeUnit.hour:
-        return 'Heure';
+        return S.of(context).timeUnitHour;
     }
   }
 
@@ -476,7 +476,7 @@ class _MovementSamplingPageState extends State<MovementSamplingPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Paramètres avancés',
+          S.of(context).advancedSettings,
           style: theme.textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.bold,
           ),
@@ -489,7 +489,7 @@ class _MovementSamplingPageState extends State<MovementSamplingPage> {
             Icons.tune,
             color: theme.colorScheme.primary,
           ),
-          title: const Text('Mode d\'échantillonnage'),
+          title: Text(S.of(context).samplingModeLabel),
           subtitle: Text(_getModeDescription(_settings.mode)),
           trailing: DropdownButton<MovementSamplingMode>(
             value: _settings.mode,
@@ -518,7 +518,7 @@ class _MovementSamplingPageState extends State<MovementSamplingPage> {
                   Icons.timer,
                   color: theme.colorScheme.primary,
                 ),
-                title: const Text('Intervalle'),
+                title: Text(S.of(context).intervalLabel),
                 subtitle: Text('${_settings.intervalMs}ms (${(_settings.intervalMs / 1000).toStringAsFixed(1)}s)'),
               ),
               Slider(
@@ -543,7 +543,7 @@ class _MovementSamplingPageState extends State<MovementSamplingPage> {
                   Icons.change_history,
                   color: theme.colorScheme.primary,
                 ),
-                title: const Text('Seuil de changement'),
+                title: Text(S.of(context).changeThresholdLabel),
                 subtitle: Text('${_settings.changeThreshold.toStringAsFixed(2)} g'),
               ),
               Slider(
@@ -565,8 +565,8 @@ class _MovementSamplingPageState extends State<MovementSamplingPage> {
             Icons.storage,
             color: theme.colorScheme.primary,
           ),
-          title: const Text('Échantillons max par flush'),
-          subtitle: Text('${_settings.maxSamplesPerFlush} échantillons'),
+          title: Text(S.of(context).maxSamplesPerFlushLabel),
+          subtitle: Text(S.of(context).samplesPerFlushUnit(_settings.maxSamplesPerFlush)),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -609,7 +609,7 @@ class _MovementSamplingPageState extends State<MovementSamplingPage> {
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  'Estimation du stockage',
+                  S.of(context).storageEstimate,
                   style: theme.textTheme.titleSmall?.copyWith(
                     color: theme.colorScheme.onTertiaryContainer,
                     fontWeight: FontWeight.bold,
@@ -633,30 +633,30 @@ class _MovementSamplingPageState extends State<MovementSamplingPage> {
   String _getModeName(MovementSamplingMode mode) {
     switch (mode) {
       case MovementSamplingMode.all:
-        return 'Tout';
+        return S.of(context).modeAll;
       case MovementSamplingMode.interval:
-        return 'Intervalle';
+        return S.of(context).modeInterval;
       case MovementSamplingMode.threshold:
-        return 'Seuil';
+        return S.of(context).modeThreshold;
       case MovementSamplingMode.aggregate:
-        return 'Moyenne';
+        return S.of(context).modeAggregate;
       case MovementSamplingMode.recordsPerTimeUnit:
-        return 'Par unité';
+        return S.of(context).modePerUnit;
     }
   }
 
   String _getModeDescription(MovementSamplingMode mode) {
     switch (mode) {
       case MovementSamplingMode.all:
-        return 'Enregistre toutes les données reçues';
+        return S.of(context).modeAllDescription;
       case MovementSamplingMode.interval:
-        return 'Garde un échantillon par intervalle de temps';
+        return S.of(context).modeIntervalDescription;
       case MovementSamplingMode.threshold:
-        return 'Enregistre uniquement lors de changements significatifs';
+        return S.of(context).modeThresholdDescription;
       case MovementSamplingMode.aggregate:
-        return 'Calcule une moyenne sur l\'intervalle';
+        return S.of(context).modeAggregateDescription;
       case MovementSamplingMode.recordsPerTimeUnit:
-        return 'Nombre d\'enregistrements par heure/minute/seconde';
+        return S.of(context).modePerUnitDescription;
     }
   }
 
@@ -702,13 +702,13 @@ class _MovementSamplingPageState extends State<MovementSamplingPage> {
     String samplesText;
     if (_settings.mode == MovementSamplingMode.recordsPerTimeUnit &&
         _settings.timeUnit == SamplingTimeUnit.hour) {
-      samplesText = '${_settings.recordsCount} échantillons/heure par montre';
+      samplesText = S.of(context).samplesPerHourPerWatch(_settings.recordsCount);
     } else {
-      samplesText = 'Environ $samplesPerMinute échantillons/min par montre';
+      samplesText = S.of(context).samplesPerMinutePerWatch(samplesPerMinute);
     }
 
     return '$samplesText\n'
-        '~${perHour.toString()} échantillons/heure\n'
-        '~${mbPerDay.toStringAsFixed(1)} Mo/jour (8h d\'utilisation, 2 montres)';
+        '${S.of(context).samplesPerHour(perHour)}\n'
+        '${S.of(context).mbPerDay(mbPerDay.toStringAsFixed(1))}';
   }
 }

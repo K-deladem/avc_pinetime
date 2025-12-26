@@ -54,7 +54,7 @@ class _AboutPageState extends State<AboutPage> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  "Version $version (build $buildNumber)",
+                  S.of(context).versionBuild(version, buildNumber),
                   style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey),
                 ),
               ],
@@ -64,14 +64,14 @@ class _AboutPageState extends State<AboutPage> {
           const Divider(),
           ListTile(
             leading: const Icon(Icons.privacy_tip_outlined),
-            title: const Text("Politique de confidentialité"),
+            title: Text(S.of(context).privacyPolicyMenuItem),
             onTap: () {
               // Naviguer ou afficher un lien
               showDialog(
                 context: context,
                 builder: (_) => AlertDialog(
-                  title: const Text("Politique de confidentialité"),
-                  content: const Text("La politique de confidentialité sera ajoutée ici."),
+                  title: Text(S.of(context).privacyPolicyMenuItem),
+                  content: Text(S.of(context).privacyPolicyWillBeAdded),
                   actions: [
                     TextButton(onPressed: () => Navigator.pop(context), child: Text(S.of(context).close)),
                   ],
@@ -81,14 +81,14 @@ class _AboutPageState extends State<AboutPage> {
           ),
           ListTile(
             leading: const Icon(Icons.article_outlined),
-            title: const Text("Conditions d’utilisation"),
+            title: Text(S.of(context).termsOfUse),
             onTap: () {
               // Naviguer ou afficher un lien
               showDialog(
                 context: context,
                 builder: (_) => AlertDialog(
-                  title: const Text("Conditions d’utilisation"),
-                  content: const Text("Les conditions d'utilisation seront ajoutées ici."),
+                  title: Text(S.of(context).termsOfUse),
+                  content: Text(S.of(context).termsOfUseWillBeAdded),
                   actions: [
                     TextButton(onPressed: () => Navigator.pop(context), child: Text(S.of(context).close)),
                   ],
@@ -96,10 +96,10 @@ class _AboutPageState extends State<AboutPage> {
               );
             },
           ),
-          const ListTile(
-            leading: Icon(Icons.info_outline),
-            title: Text("Crédits"),
-            subtitle: Text("Développé par l’équipe Santé & Tech – 2025"),
+          ListTile(
+            leading: const Icon(Icons.info_outline),
+            title: Text(S.of(context).credits),
+            subtitle: Text(S.of(context).developedBy),
           ),
         ],
       ),

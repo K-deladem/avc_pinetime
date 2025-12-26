@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc_app_template/generated/l10n.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_bloc_app_template/bloc/infinitime/dual_infinitime_state.dart';
+import 'package:flutter_bloc_app_template/bloc/device/device.dart';
 import 'package:flutter_bloc_app_template/models/arm_side.dart';
 import 'package:flutter_bloc_app_template/ui/home/widget/firmware_update_dialog.dart';
-import '../../../bloc/infinitime/dual_infinitime_bloc.dart';
 
 /// Dialog pour sélectionner et installer un firmware
 class FirmwareSelectionDialogScreen extends StatefulWidget {
@@ -54,12 +53,12 @@ class _FirmwareSelectionDialogScreenState
             child: Column(
               children: [
                 // ÉTAPE 4: Listener pour suivre progression, erreurs, succès
-                BlocListener<DualInfiniTimeBloc, DualInfiniTimeState>(
+                BlocListener<DeviceBloc, DeviceState>(
                   listener: _handleBlocListener,
                   // Le child est la liste des firmwares
                   child: Expanded(
                     // ÉTAPE 2: Builder pour afficher la liste des firmwares
-                    child: BlocBuilder<DualInfiniTimeBloc, DualInfiniTimeState>(
+                    child: BlocBuilder<DeviceBloc, DeviceState>(
                       builder: _buildFirmwareListUI,
                     ),
                   ),
@@ -77,11 +76,11 @@ class _FirmwareSelectionDialogScreenState
 
   /// ================== ÉTAPE 1: CHARGER LA LISTE ==================
   void _loadFirmwares() {
-    context.read<DualInfiniTimeBloc>().loadAvailableFirmwares();
+    context.read<DeviceBloc>().loadAvailableFirmwares();
   }
 
   /// ================== ÉTAPE 4: LISTENER POUR PROGRESSION ==================
-  void _handleBlocListener(BuildContext context, DualInfiniTimeState state) {
+  void _handleBlocListener(BuildContext context, DeviceState state) {
     final arm = widget.side == ArmSide.left ? state.left : state.right;
 
     // EN COURS DE MISE À JOUR (DFU running)
@@ -93,7 +92,7 @@ class _FirmwareSelectionDialogScreenState
       _logFirmwareUpdating(
         side: widget.side.name,
         percent: arm.dfuPercent,
-        phase: arm.dfuPhase,
+        phase: arm.dfuPhase ?? '',
       );
 
       // Afficher le dialog une seule fois
@@ -135,7 +134,7 @@ class _FirmwareSelectionDialogScreenState
   }
 
   /// ================== ÉTAPE 2: AFFICHER LA LISTE ==================
-  Widget _buildFirmwareListUI(BuildContext context, DualInfiniTimeState state) {
+  Widget _buildFirmwareListUI(BuildContext context, DeviceState state) {
     final availableFirmwares = state.availableFirmwares;
 
     // Chargement
@@ -226,7 +225,7 @@ class _FirmwareSelectionDialogScreenState
   void _startFirmwareUpdate(String firmwarePath) {
     debugPrint('Démarrage mise à jour: $firmwarePath');
 
-    context.read<DualInfiniTimeBloc>().updateSystemFirmware(
+    context.read<DeviceBloc>().updateSystemFirmware(
       widget.side,
       firmwarePath,
     );
@@ -242,16 +241,16 @@ class _FirmwareSelectionDialogScreenState
       builder: (dialogContext) {
         return PopScope(
           canPop: false, // Empêcher fermeture avec back
-          child: BlocBuilder<DualInfiniTimeBloc, DualInfiniTimeState>(
+          child: BlocBuilder<DeviceBloc, DeviceState>(
             builder: (context, state) {
               final arm = widget.side == ArmSide.left ? state.left : state.right;
 
               return FirmwareUpdateDialog(
                 percent: arm.dfuPercent,
-                status: arm.dfuPhase,
+                status: arm.dfuPhase ?? '',
                 onCancel: () {
                   // Annuler la mise à jour
-                  context.read<DualInfiniTimeBloc>().abortSystemFirmwareUpdate(
+                  context.read<DeviceBloc>().abortSystemFirmwareUpdate(
                     widget.side,
                   );
                   setState(() {

@@ -3,9 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_bloc_app_template/bloc/infinitime/dual_infinitime_bloc.dart';
-import 'package:flutter_bloc_app_template/bloc/infinitime/dual_infinitime_event.dart';
-import 'package:flutter_bloc_app_template/bloc/infinitime/dual_infinitime_state.dart';
+import 'package:flutter_bloc_app_template/bloc/device/device.dart';
 import 'package:flutter_bloc_app_template/models/arm_side.dart';
 import 'package:flutter_bloc_app_template/models/device_history_entry.dart';
 import 'package:flutter_bloc_app_template/models/pinetime_device.dart';
@@ -27,7 +25,7 @@ class _ImprovedBluetoothScanPageState extends State<ImprovedBluetoothScanPage>
     with TickerProviderStateMixin {
   PineTimeDevice? _connectingDevice;
   bool _hasPopped = false;
-  DualInfiniTimeBloc? _dualBloc;
+  DeviceBloc? _deviceBloc;
 
   // Protection contre clics multiples
   bool _isConnecting = false;
@@ -56,7 +54,7 @@ class _ImprovedBluetoothScanPageState extends State<ImprovedBluetoothScanPage>
   void initState() {
     super.initState();
     _initializeAnimations();
-    _dualBloc = context.read<DualInfiniTimeBloc>();
+    _deviceBloc = context.read<DeviceBloc>();
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkPermissionsAndStart());
   }
 
@@ -74,7 +72,7 @@ class _ImprovedBluetoothScanPageState extends State<ImprovedBluetoothScanPage>
   void _startConnectTimeout() {
     _connectTimeout?.cancel();
 
-    _connectTimeout = Timer(Duration(seconds: _dualBloc?.connectionTimeoutSeconds ?? 30), () {
+    _connectTimeout = Timer(Duration(seconds: _deviceBloc?.connectionTimeoutSeconds ?? 30), () {
       if (!mounted) return;
 
       _resetConnectionState();
@@ -128,7 +126,7 @@ class _ImprovedBluetoothScanPageState extends State<ImprovedBluetoothScanPage>
 
       if (ok) {
         // Charger les bindings existants
-        _dualBloc?.add(DualLoadBindingsRequested());
+        _deviceBloc?.add(const LoadBindings());
         await _checkAutoConnect();
         _startScan();
       } else {
@@ -217,7 +215,7 @@ class _ImprovedBluetoothScanPageState extends State<ImprovedBluetoothScanPage>
     _scanAnimationController.dispose();
     _connectionAnimationController.dispose();
     _searchController.dispose();
-    _dualBloc?.add(DualScanStopRequested());
+    _deviceBloc?.add(const StopScan());
 
     // NOUVEAU : Nettoyer les nouveaux états
     _isConnecting = false;
@@ -255,7 +253,7 @@ class _ImprovedBluetoothScanPageState extends State<ImprovedBluetoothScanPage>
             ],
           ),
           // Utiliser la durée max de reconnexion du Bloc
-          duration: Duration(seconds: _dualBloc?.maxReconnectDelaySeconds ?? 30),
+          duration: Duration(seconds: 30),
           action: SnackBarAction(
             label: "Annuler",
             onPressed: () => _autoConnectTimer?.cancel(),
@@ -265,15 +263,15 @@ class _ImprovedBluetoothScanPageState extends State<ImprovedBluetoothScanPage>
 
       // Utiliser l'intervalle de throttle du Bloc
       _autoConnectTimer = Timer.periodic(
-          Duration(milliseconds: _dualBloc?.scanThrottleMs ?? 500),
+          Duration(milliseconds: 500),
               (timer) {
             if (!mounted) {
               timer.cancel();
               return;
             }
 
-            final scan = _dualBloc?.state.lastScan ?? <String, DiscoveredDevice>{};
-            final match = scan[last.id];
+            final scan = _deviceBloc?.state.discoveredDevices ?? <DiscoveredDevice>[];
+            final match = scan.where((d) => d.id == last.id).firstOrNull;
 
             if (match != null) {
               timer.cancel();
@@ -286,7 +284,7 @@ class _ImprovedBluetoothScanPageState extends State<ImprovedBluetoothScanPage>
       );
 
       // Utiliser la durée max de reconnexion du Bloc pour arrêter l'auto-connexion
-      Timer(Duration(seconds: _dualBloc?.maxReconnectDelaySeconds ?? 30), () {
+      Timer(Duration(seconds: 30), () {
         _autoConnectTimer?.cancel();
         if (mounted) {
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -299,13 +297,13 @@ class _ImprovedBluetoothScanPageState extends State<ImprovedBluetoothScanPage>
 
   void _startScan() {
     if (!mounted) return;
-    _dualBloc?.add(DualScanRequested());
+    _deviceBloc?.add(const StartScan());
     _scanAnimationController.repeat();
   }
 
   void _stopScan() {
     if (!mounted) return;
-    _dualBloc?.add(DualScanStopRequested());
+    _deviceBloc?.add(const StopScan());
     if (_scanAnimationController.isAnimating) {
       _scanAnimationController.stop();
     }
@@ -381,15 +379,15 @@ class _ImprovedBluetoothScanPageState extends State<ImprovedBluetoothScanPage>
             ),
           ],
         ),
-        duration: Duration(seconds: (_dualBloc?.connectionTimeoutSeconds ?? 30) - 5),
+        duration: Duration(seconds: (_deviceBloc?.connectionTimeoutSeconds ?? 30) - 5),
         backgroundColor: Colors.blue,
       ),
     );
 
     // Un seul appel qui combine bind + connect atomiquement
-    final bloc = _dualBloc;
+    final bloc = _deviceBloc;
     if (bloc != null) {
-      bloc.add(DualBindAndConnectArmRequested(
+      bloc.add(BindAndConnect(
           widget.position,
           device.id,
           name: device.name
@@ -430,14 +428,14 @@ class _ImprovedBluetoothScanPageState extends State<ImprovedBluetoothScanPage>
     );
   }
 
-  List<PineTimeDevice> _getFilteredDevices(DualInfiniTimeState state) {
+  List<PineTimeDevice> _getFilteredDevices(DeviceState state) {
     // Créer un hash du scan pour éviter les recalculs inutiles
-    final scanHash = state.lastScan.keys.join(',');
+    final scanHash = state.discoveredDevices.map((d) => d.id).join(',');
     if (scanHash == _lastScanHash && _cachedDevices.isNotEmpty) {
       return _cachedDevices;
     }
 
-    var devices = state.lastScan.values
+    var devices = state.discoveredDevices
         .where((d) => _isPineTimeName(d.name))
         .map(_toPineTimeDevice)
         .toList();
@@ -478,9 +476,10 @@ class _ImprovedBluetoothScanPageState extends State<ImprovedBluetoothScanPage>
     return s.length >= 8 ? s.substring(0, 8) : s;
   }
 
+  @override
   Widget build(BuildContext context) {
-    return BlocListener<DualInfiniTimeBloc, DualInfiniTimeState>(
-      bloc: _dualBloc,
+    return BlocListener<DeviceBloc, DeviceState>(
+      bloc: _deviceBloc,
       listenWhen: (prev, curr) {
         final p = widget.position == ArmSide.left ? prev.left : prev.right;
         final c = widget.position == ArmSide.left ? curr.left : curr.right;
@@ -519,7 +518,7 @@ class _ImprovedBluetoothScanPageState extends State<ImprovedBluetoothScanPage>
             ),
           );
 
-          Future.delayed(Duration(milliseconds: _dualBloc?.stableConnectionDelayMs ?? 3000), () {
+          Future.delayed(Duration(milliseconds: 3000), () {
             if (mounted) {
               Navigator.pop(context, {
                 "position": widget.position,
@@ -573,7 +572,7 @@ class _ImprovedBluetoothScanPageState extends State<ImprovedBluetoothScanPage>
                 ),
               ],
             ),
-            BlocBuilder<DualInfiniTimeBloc, DualInfiniTimeState>(
+            BlocBuilder<DeviceBloc, DeviceState>(
               builder: (context, state) {
                 final isScanning = state.scanning;
                 return IconButton(
@@ -585,7 +584,7 @@ class _ImprovedBluetoothScanPageState extends State<ImprovedBluetoothScanPage>
             ),
           ],
         ),
-        body: BlocBuilder<DualInfiniTimeBloc, DualInfiniTimeState>(
+        body: BlocBuilder<DeviceBloc, DeviceState>(
           builder: (context, state) => _buildBody(state),
         ),
       ),
@@ -595,7 +594,7 @@ class _ImprovedBluetoothScanPageState extends State<ImprovedBluetoothScanPage>
   // [Le reste des méthodes _buildBody, _buildMainContent, etc. restent identiques...]
   // Je les omets ici pour la lisibilité, mais elles ne changent pas
 
-  Widget _buildBody(DualInfiniTimeState state) {
+  Widget _buildBody(DeviceState state) {
     final devices = _getFilteredDevices(state);
 
     return Column(
@@ -610,7 +609,7 @@ class _ImprovedBluetoothScanPageState extends State<ImprovedBluetoothScanPage>
     );
   }
 
-  Widget _buildMainContent(DualInfiniTimeState state, List<PineTimeDevice> devices) {
+  Widget _buildMainContent(DeviceState state, List<PineTimeDevice> devices) {
     if (state.scanning) {
       return _buildScanningIndicator();
     }
@@ -619,7 +618,7 @@ class _ImprovedBluetoothScanPageState extends State<ImprovedBluetoothScanPage>
       return _buildDevicesList(devices, state);
     }
 
-    if (!state.scanning && state.lastScan.isEmpty) {
+    if (!state.scanning && state.discoveredDevices.isEmpty) {
       return _buildInitialState();
     }
 
@@ -1045,7 +1044,7 @@ class _ImprovedBluetoothScanPageState extends State<ImprovedBluetoothScanPage>
     );
   }
 
-  Widget _buildDevicesList(List<PineTimeDevice> devices, DualInfiniTimeState state) {
+  Widget _buildDevicesList(List<PineTimeDevice> devices, DeviceState state) {
     return ListView.builder(
       padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: devices.length + 1, // +1 pour le header
@@ -1096,7 +1095,7 @@ class _ImprovedBluetoothScanPageState extends State<ImprovedBluetoothScanPage>
     );
   }
 
-  Widget _buildDeviceCard(PineTimeDevice device, DualInfiniTimeState state) {
+  Widget _buildDeviceCard(PineTimeDevice device, DeviceState state) {
     final name = device.name.isNotEmpty ? device.name : "Appareil Bluetooth";
     final isConnecting = _connectingDevice?.id == device.id;
     final isPineTime = _isPineTimeName(name);

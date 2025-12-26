@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc_app_template/generated/l10n.dart';
 import 'package:intl/intl.dart';
 
 class SearchFiltreScreen extends StatelessWidget {
@@ -33,7 +34,7 @@ class SearchFiltreScreen extends StatelessWidget {
             controller: TextEditingController(text: _getLabel()),
             readOnly: true,
             decoration: InputDecoration(
-              labelText: "Filtrer par date ou période",
+              labelText: S.of(context).filterByDateOrPeriod,
               prefixIcon: const Icon(Icons.search),
               suffixIcon: IconButton(icon: const Icon(Icons.close_rounded), onPressed: () { },)  ,//const Icon(Icons.date_range_outlined),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -57,7 +58,7 @@ class SearchFiltreScreen extends StatelessWidget {
           children: [
             ListTile(
               leading: const Icon(Icons.calendar_today),
-              title: const Text("Choisir une date unique"),
+              title: Text(S.of(context).chooseSingleDate),
               onTap: () async {
                 final selected = await showDatePicker(
                   context: context,
@@ -76,7 +77,7 @@ class SearchFiltreScreen extends StatelessWidget {
             ),
             ListTile(
               leading: const Icon(Icons.date_range),
-              title: const Text("Choisir une période"),
+              title: Text(S.of(context).chooseAPeriod),
               onTap: () async {
                 final picked = await showDateRangePicker(
                   context: context,
@@ -99,7 +100,7 @@ class SearchFiltreScreen extends StatelessWidget {
                   Navigator.pop(ctx);
                 },
                 icon: const Icon(Icons.clear),
-                label: const Text("Réinitialiser le filtre"),
+                label: Text(S.of(context).resetTheFilter),
               ),
           ],
         ),

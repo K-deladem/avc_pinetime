@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc_app_template/constants/app_constants.dart';
+import 'package:flutter_bloc_app_template/generated/l10n.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ContactSupportPage extends StatefulWidget {
@@ -37,7 +38,7 @@ class _ContactSupportPageState extends State<ContactSupportPage> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text("Client email ouvert. Envoyez votre message."),
+              content: Text(S.of(context).emailClientOpened),
               backgroundColor: Theme.of(context).colorScheme.primary,
             ),
           );
@@ -50,8 +51,8 @@ class _ContactSupportPageState extends State<ContactSupportPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                "Impossible d'ouvrir le client email.\n"
-                "Contactez-nous à: ${AppConfig.supportEmail}"
+                "${S.of(context).cannotOpenEmailClient}\n"
+                "${S.of(context).contactUsAt(AppConfig.supportEmail)}"
               ),
               backgroundColor: Theme.of(context).colorScheme.error,
               duration: const Duration(seconds: 5),
@@ -80,7 +81,7 @@ class _ContactSupportPageState extends State<ContactSupportPage> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Contacter le support'), elevation: 0,
+      appBar: AppBar(title: Text(S.of(context).contactSupportTitle), elevation: 0,
           scrolledUnderElevation: 3,
           backgroundColor: Theme.of(context).colorScheme.surface,
           foregroundColor: Theme.of(context).colorScheme.onSurface, centerTitle: true),
@@ -109,7 +110,7 @@ class _ContactSupportPageState extends State<ContactSupportPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "Email du support",
+                            S.of(context).supportEmailLabel,
                             style: theme.textTheme.labelMedium?.copyWith(
                               color: theme.colorScheme.onPrimaryContainer,
                             ),
@@ -129,26 +130,26 @@ class _ContactSupportPageState extends State<ContactSupportPage> {
                 ),
               ),
               const SizedBox(height: 24),
-              Text("Envoyez un message à notre équipe d'assistance :", style: theme.textTheme.bodyLarge),
+              Text(S.of(context).sendMessageToSupport, style: theme.textTheme.bodyLarge),
               const SizedBox(height: 20),
               TextFormField(
                 controller: _subjectController,
-                decoration: const InputDecoration(
-                  labelText: 'Sujet',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: S.of(context).subject,
+                  border: const OutlineInputBorder(),
                 ),
-                validator: (value) => value == null || value.isEmpty ? 'Veuillez entrer un sujet.' : null,
+                validator: (value) => value == null || value.isEmpty ? S.of(context).pleaseEnterSubject : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _messageController,
                 maxLines: 6,
-                decoration: const InputDecoration(
-                  labelText: 'Message',
+                decoration: InputDecoration(
+                  labelText: S.of(context).message,
                   alignLabelWithHint: true,
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
                 ),
-                validator: (value) => value == null || value.isEmpty ? 'Veuillez entrer un message.' : null,
+                validator: (value) => value == null || value.isEmpty ? S.of(context).pleaseEnterMessage : null,
               ),
               const SizedBox(height: 24),
 
@@ -180,7 +181,7 @@ class _ContactSupportPageState extends State<ContactSupportPage> {
                   label: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 200),
                     child: Text(
-                      _isSending ? 'Envoi en cours...' : 'Envoyer le message',
+                      _isSending ? S.of(context).sendingInProgress : S.of(context).sendMessage,
                       key: ValueKey(_isSending ? 'sending' : 'send'),
                       style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                     ),

@@ -31,7 +31,7 @@ class _ThemeSettingsPageState extends State<ThemeSettingsPage> {
       bloc.add(UpdateSettings(updated));
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Thème mis à jour.")),
+        SnackBar(content: Text(S.of(context).themeUpdated)),
       );
     }
   }
@@ -50,7 +50,7 @@ class _ThemeSettingsPageState extends State<ThemeSettingsPage> {
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text("Thème de l'application"),
+            title: Text(S.of(context).appThemeTitle),
             centerTitle: true,
             elevation: 0,
             backgroundColor: Theme.of(context).colorScheme.surface,
@@ -58,12 +58,12 @@ class _ThemeSettingsPageState extends State<ThemeSettingsPage> {
           ),
           body: ListView(
             children: [
-              _buildThemeTile(context, "Or (Clair)", AppTheme.lightGold, "Thème clair élégant avec du doré", Icons.wb_sunny, currentTheme),
-              _buildThemeTile(context, "Menthe (Clair)", AppTheme.lightMint, "Thème clair avec une teinte verte menthe", Icons.eco, currentTheme),
-              _buildThemeTile(context, "Or (Sombre)", AppTheme.darkGold, "Thème sombre élégant avec du doré", Icons.nights_stay, currentTheme),
-              _buildThemeTile(context, "Menthe (Sombre)", AppTheme.darkMint, "Thème sombre avec une teinte menthe", Icons.forest, currentTheme),
-              _buildThemeTile(context, "Suivre le système", AppTheme.system, "Adapte automatiquement le thème à l'appareil", Icons.phone_android, currentTheme),
-              _buildThemeTile(context, "Expérimental", AppTheme.experimental, "Mode visuel avancé pour tests", Icons.science, currentTheme),
+              _buildThemeTile(context, S.of(context).themeGoldLight, AppTheme.lightGold, S.of(context).themeGoldLightDescription, Icons.wb_sunny, currentTheme),
+              _buildThemeTile(context, S.of(context).themeMintLight, AppTheme.lightMint, S.of(context).themeMintLightDescription, Icons.eco, currentTheme),
+              _buildThemeTile(context, S.of(context).themeGoldDark, AppTheme.darkGold, S.of(context).themeGoldDarkDescription, Icons.nights_stay, currentTheme),
+              _buildThemeTile(context, S.of(context).themeMintDark, AppTheme.darkMint, S.of(context).themeMintDarkDescription, Icons.forest, currentTheme),
+              _buildThemeTile(context, S.of(context).themeSystem, AppTheme.system, S.of(context).themeSystemDescription, Icons.phone_android, currentTheme),
+              _buildThemeTile(context, S.of(context).themeExperimental, AppTheme.experimental, S.of(context).themeExperimentalDescription, Icons.science, currentTheme),
             ],
           ),
         );

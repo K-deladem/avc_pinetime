@@ -4,6 +4,7 @@ import 'package:flutter_bloc_app_template/bloc/settings/settings_bloc.dart';
 import 'package:flutter_bloc_app_template/bloc/settings/settings_event.dart';
 import 'package:flutter_bloc_app_template/bloc/settings/settings_states.dart';
 import 'package:flutter_bloc_app_template/models/goal_config.dart';
+import 'package:flutter_bloc_app_template/generated/l10n.dart';
 
 class GoalSettingsPage extends StatefulWidget {
   const GoalSettingsPage({super.key});
@@ -26,7 +27,7 @@ class _GoalSettingsPageState extends State<GoalSettingsPage> {
 
           return Scaffold(
             appBar: AppBar(
-              title: const Text('Configuration des objectifs'),
+              title: Text(S.of(context).goalConfiguration),
               elevation: 0,
               scrolledUnderElevation: 3,
               backgroundColor: Theme.of(context).colorScheme.surface,
@@ -60,8 +61,10 @@ class _GoalSettingsPageState extends State<GoalSettingsPage> {
     final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.3),
+        ),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -75,24 +78,26 @@ class _GoalSettingsPageState extends State<GoalSettingsPage> {
                   color: theme.colorScheme.primary,
                 ),
                 const SizedBox(width: 12),
-                Text(
-                  'Fréquence de vérification périodique',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Text(
+                    S.of(context).periodicCheckFrequency,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 8),
             Text(
-              'Définir la fréquence à laquelle le système vérifiera si l\'objectif est atteint.',
+              S.of(context).periodicCheckFrequencyDescription,
               style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13),
             ),
             const SizedBox(height: 16),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Fréquence de vérification'),
-              subtitle: Text('$checkRatioFrequencyMin minutes'),
+              title: Text(S.of(context).checkFrequency),
+              subtitle: Text('$checkRatioFrequencyMin ${S.of(context).minutes}'),
               trailing: const Icon(Icons.edit),
               onTap: () => _editCheckFrequency(),
             ),
@@ -106,8 +111,10 @@ class _GoalSettingsPageState extends State<GoalSettingsPage> {
     final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.3),
+        ),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -122,7 +129,7 @@ class _GoalSettingsPageState extends State<GoalSettingsPage> {
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  'Type d\'objectif',
+                  S.of(context).goalType,
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -132,17 +139,16 @@ class _GoalSettingsPageState extends State<GoalSettingsPage> {
             const SizedBox(height: 16),
             RadioListTile<GoalType>(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Objectif fixe'),
-              subtitle: const Text('Définir un ratio fixe à atteindre'),
+              title: Text(S.of(context).fixedGoal),
+              subtitle: Text(S.of(context).fixedGoalDescription),
               value: GoalType.fixed,
               groupValue: goalConfig.type,
               onChanged: (value) => _changeGoalType(value!),
             ),
             RadioListTile<GoalType>(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Objectif dynamique'),
-              subtitle: const Text(
-                  'Calculé sur les derniers jours avec augmentation quotidienne'),
+              title: Text(S.of(context).dynamicGoal),
+              subtitle: Text(S.of(context).dynamicGoalDescription),
               value: GoalType.dynamic,
               groupValue: goalConfig.type,
               onChanged: (value) => _changeGoalType(value!),
@@ -157,8 +163,10 @@ class _GoalSettingsPageState extends State<GoalSettingsPage> {
     final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.3),
+        ),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -172,23 +180,25 @@ class _GoalSettingsPageState extends State<GoalSettingsPage> {
                   color: theme.colorScheme.primary,
                 ),
                 const SizedBox(width: 12),
-                Text(
-                  'Configuration objectif fixe',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Text(
+                    S.of(context).fixedGoalConfig,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 8),
             Text(
-              'Définir directement le ratio de l\'objectif à atteindre.',
+              S.of(context).fixedGoalConfigDescription,
               style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13),
             ),
             const SizedBox(height: 16),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Ratio de l\'objectif'),
+              title: Text(S.of(context).goalRatio),
               subtitle: Text('${goalConfig.fixedRatio ?? 80}%'),
               trailing: const Icon(Icons.edit),
               onTap: () => _editFixedRatio(),
@@ -218,31 +228,33 @@ class _GoalSettingsPageState extends State<GoalSettingsPage> {
                   color: theme.colorScheme.primary,
                 ),
                 const SizedBox(width: 12),
-                Text(
-                  'Configuration objectif dynamique',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Text(
+                    S.of(context).dynamicGoalConfig,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 8),
             Text(
-              'L\'objectif sera calculé sur la base des X derniers jours avec une augmentation quotidienne de Y%.',
+              S.of(context).dynamicGoalConfigDescription,
               style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13),
             ),
             const SizedBox(height: 16),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Nombre de jours de la période'),
-              subtitle: Text('${goalConfig.periodDays ?? 7} jours'),
+              title: Text(S.of(context).periodDays),
+              subtitle: Text('${goalConfig.periodDays ?? 7} ${S.of(context).periodDaysUnit}'),
               trailing: const Icon(Icons.edit),
               onTap: () => _editPeriodDays(),
             ),
             const Divider(),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Pourcentage d\'augmentation journalière'),
+              title: Text(S.of(context).dailyIncreasePercent),
               subtitle: Text('${goalConfig.dailyIncreasePercentage ?? 1.0}%'),
               trailing: const Icon(Icons.edit),
               onTap: () => _editDailyIncrease(),
@@ -264,7 +276,7 @@ class _GoalSettingsPageState extends State<GoalSettingsPage> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'L\'objectif sera automatiquement recalculé chaque jour en fonction de votre progression.',
+                      S.of(context).dynamicGoalInfo,
                       style: TextStyle(
                         fontSize: 12,
                         color: theme.colorScheme.onPrimaryContainer,
@@ -300,20 +312,20 @@ class _GoalSettingsPageState extends State<GoalSettingsPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Fréquence de vérification'),
+        title: Text(S.of(context).checkFrequency),
         content: TextField(
           controller: controller,
           keyboardType: TextInputType.number,
           decoration: InputDecoration(
-            labelText: 'Fréquence (minutes)',
-            hintText: 'Entrer une valeur',
+            labelText: S.of(context).frequencyLabel,
+            hintText: S.of(context).enterValue,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Annuler'),
+            child: Text(S.of(context).cancel),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -328,7 +340,7 @@ class _GoalSettingsPageState extends State<GoalSettingsPage> {
                 _saveSettings(newCheckFrequency: value);
               }
             },
-            child: const Text('OK'),
+            child: Text(S.of(context).ok),
           ),
         ],
       ),
@@ -344,20 +356,20 @@ class _GoalSettingsPageState extends State<GoalSettingsPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Ratio de l\'objectif'),
+        title: Text(S.of(context).goalRatio),
         content: TextField(
           controller: controller,
           keyboardType: TextInputType.number,
           decoration: InputDecoration(
-            labelText: 'Ratio (%)',
-            hintText: 'Entrer une valeur entre 0 et 100',
+            labelText: S.of(context).ratioPercent,
+            hintText: S.of(context).enterValueBetween0And100,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Annuler'),
+            child: Text(S.of(context).cancel),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -374,7 +386,7 @@ class _GoalSettingsPageState extends State<GoalSettingsPage> {
                 );
               }
             },
-            child: const Text('OK'),
+            child: Text(S.of(context).ok),
           ),
         ],
       ),
@@ -390,20 +402,20 @@ class _GoalSettingsPageState extends State<GoalSettingsPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Nombre de jours de la période'),
+        title: Text(S.of(context).periodDays),
         content: TextField(
           controller: controller,
           keyboardType: TextInputType.number,
           decoration: InputDecoration(
-            labelText: 'Nombre de jours',
-            hintText: 'Entrer une valeur',
+            labelText: S.of(context).numberOfDays,
+            hintText: S.of(context).enterValue,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Annuler'),
+            child: Text(S.of(context).cancel),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -424,7 +436,7 @@ class _GoalSettingsPageState extends State<GoalSettingsPage> {
                 );
               }
             },
-            child: const Text('OK'),
+            child: Text(S.of(context).ok),
           ),
         ],
       ),
@@ -440,20 +452,20 @@ class _GoalSettingsPageState extends State<GoalSettingsPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Augmentation journalière'),
+        title: Text(S.of(context).dailyIncrease),
         content: TextField(
           controller: controller,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: InputDecoration(
-            labelText: 'Pourcentage (%)',
-            hintText: 'Entrer une valeur décimale',
+            labelText: S.of(context).percentageDecimal,
+            hintText: S.of(context).enterDecimalValue,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Annuler'),
+            child: Text(S.of(context).cancel),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -473,7 +485,7 @@ class _GoalSettingsPageState extends State<GoalSettingsPage> {
                 );
               }
             },
-            child: const Text('OK'),
+            child: Text(S.of(context).ok),
           ),
         ],
       ),

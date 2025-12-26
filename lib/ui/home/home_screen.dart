@@ -8,9 +8,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_bloc_app_template/bloc/infinitime/dual_infinitime_bloc.dart';
-import 'package:flutter_bloc_app_template/bloc/infinitime/dual_infinitime_event.dart';
-import 'package:flutter_bloc_app_template/bloc/infinitime/dual_infinitime_state.dart';
+import 'package:flutter_bloc_app_template/bloc/device/device.dart';
 import 'package:flutter_bloc_app_template/bloc/settings/settings_bloc.dart';
 import 'package:flutter_bloc_app_template/bloc/settings/settings_states.dart';
 import 'package:flutter_bloc_app_template/bloc/watch/watch_bloc.dart';
@@ -21,7 +19,6 @@ import 'package:flutter_bloc_app_template/models/arm_side.dart';
 import 'package:flutter_bloc_app_template/models/chart_preferences.dart';
 import 'package:flutter_bloc_app_template/models/watch_device.dart';
 import 'package:flutter_bloc_app_template/service/chart_data_adapter.dart';
-import 'package:flutter_bloc_app_template/service/chart_refresh_notifier.dart';
 import 'package:flutter_bloc_app_template/service/goal_calculator_service.dart';
 import 'package:flutter_bloc_app_template/ui/home/chart/asymmetry_gauge_chart.dart';
 import 'package:flutter_bloc_app_template/ui/home/page/new/bluetooth_scan_page_improved.dart';
@@ -102,15 +99,15 @@ class _HomeScreenState extends State<HomeScreen> {
     _startTimeRefreshTimer();
 
     // Initialiser les états précédents
-    final currentState = context.read<DualInfiniTimeBloc>().state;
+    final currentState = context.read<DeviceBloc>().state;
     _previousLeftConnected = currentState.left.connected;
     _previousRightConnected = currentState.right.connected;
   }
 
   void _loadInitialData() {
     // Charger les liaisons sauvegardées
-    context.read<DualInfiniTimeBloc>().add(DualLoadBindingsRequested());
-    context.read<DualInfiniTimeBloc>().loadAvailableFirmwares();
+    context.read<DeviceBloc>().add(const LoadBindings());
+    context.read<DeviceBloc>().loadAvailableFirmwares();
   }
 
   // =================== TIMERS ===================
@@ -130,26 +127,26 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _refreshBatteryLevels() {
-    final bloc = context.read<DualInfiniTimeBloc>();
+    final bloc = context.read<DeviceBloc>();
     final state = bloc.state;
 
     if (state.left.connected) {
-      bloc.add(DualReadBatteryRequested(ArmSide.left));
+      bloc.add(const ReadBattery(ArmSide.left));
     }
     if (state.right.connected) {
-      bloc.add(DualReadBatteryRequested(ArmSide.right));
+      bloc.add(const ReadBattery(ArmSide.right));
     }
   }
 
   void _syncWatchTime() {
-    final bloc = context.read<DualInfiniTimeBloc>();
+    final bloc = context.read<DeviceBloc>();
     final state = bloc.state;
 
     if (state.left.connected) {
-      bloc.add(DualSyncTimeRequested(ArmSide.left));
+      bloc.add(const SyncTime(ArmSide.left));
     }
     if (state.right.connected) {
-      bloc.add(DualSyncTimeRequested(ArmSide.right));
+      bloc.add(const SyncTime(ArmSide.right));
     }
   }
 
@@ -203,9 +200,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // =================== LISTENERS ===================
 
-  BlocListener<DualInfiniTimeBloc, DualInfiniTimeState>
+  BlocListener<DeviceBloc, DeviceState>
       _buildConnectionListener() {
-    return BlocListener<DualInfiniTimeBloc, DualInfiniTimeState>(
+    return BlocListener<DeviceBloc, DeviceState>(
       listenWhen: (previous, current) =>
           previous.left.connected != current.left.connected ||
           previous.right.connected != current.right.connected,
@@ -215,8 +212,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  BlocListener<DualInfiniTimeBloc, DualInfiniTimeState> _buildUnbindListener() {
-    return BlocListener<DualInfiniTimeBloc, DualInfiniTimeState>(
+  BlocListener<DeviceBloc, DeviceState> _buildUnbindListener() {
+    return BlocListener<DeviceBloc, DeviceState>(
       listenWhen: (previous, current) =>
           (previous.left.deviceId != null && current.left.deviceId == null) ||
           (previous.right.deviceId != null && current.right.deviceId == null),
@@ -232,9 +229,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  BlocListener<DualInfiniTimeBloc, DualInfiniTimeState>
+  BlocListener<DeviceBloc, DeviceState>
       _buildDataSyncListener() {
-    return BlocListener<DualInfiniTimeBloc, DualInfiniTimeState>(
+    return BlocListener<DeviceBloc, DeviceState>(
       listenWhen: (previous, current) =>
           previous.left.battery != current.left.battery ||
           previous.left.steps != current.left.steps ||
@@ -246,19 +243,21 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _handleConnectionChanges(DualInfiniTimeState state) {
+  void _handleConnectionChanges(DeviceState state) {
+    final l10n = S.of(context);
+
     // Bras gauche
     if (state.left.connected && !_previousLeftConnected) {
-      _showSuccessMessage("Montre gauche connectée");
+      _showSuccessMessage(l10n.leftWatchConnected);
     } else if (!state.left.connected && _previousLeftConnected) {
-      _showErrorMessage("Montre gauche déconnectée");
+      _showErrorMessage(l10n.leftWatchDisconnected);
     }
 
     // Bras droit
     if (state.right.connected && !_previousRightConnected) {
-      _showSuccessMessage("Montre droite connectée");
+      _showSuccessMessage(l10n.rightWatchConnected);
     } else if (!state.right.connected && _previousRightConnected) {
-      _showErrorMessage("Montre droite déconnectée");
+      _showErrorMessage(l10n.rightWatchDisconnected);
     }
 
     _previousLeftConnected = state.left.connected;
@@ -296,15 +295,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildInfoCard(BuildContext context) {
-    return BlocBuilder<DualInfiniTimeBloc, DualInfiniTimeState>(
+    return BlocBuilder<DeviceBloc, DeviceState>(
       // Optimisation: ne rebuild les graphiques que lors de changements significatifs
       buildWhen: (previous, current) {
         // Ne pas rebuild pour chaque petit changement
         // Les graphiques chargeront leurs propres données de la BD
         return false; // Les graphiques gèrent leurs propres mises à jour via FutureBuilder
       },
-      builder: (context, dualState) {
-        return _buildChartsFromCombinedData(context, dualState);
+      builder: (context, deviceState) {
+        return _buildChartsFromCombinedData(context, deviceState);
       },
     );
   }
@@ -312,7 +311,7 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Construire les graphiques à partir des données combinées de tous les capteurs
   Widget _buildChartsFromCombinedData(
     BuildContext context,
-    DualInfiniTimeState dualState,
+    DeviceState deviceState,
   ) {
     return BlocBuilder<SettingsBloc, SettingsState>(
       // Optimisation: rebuild si affectedSide, chartPreferences ou goalConfig changent
@@ -356,15 +355,15 @@ class _HomeScreenState extends State<HomeScreen> {
             // Réinitialiser les keys avant de reconstruire
             _resetChartKeys();
 
+            final l10n = S.of(context);
+
             return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
           child: InfoCard(
-            title: "Données Historiques",
-            subtitle: "Capteurs InfiniTime",
-            description:
-                "Suivi complet de la batterie, fréquence cardiaque, pas et autres métriques "
-                "collectées depuis vos montres PineTime.",
-            buttonText: "En savoir plus",
+            title: l10n.historicalData,
+            subtitle: l10n.infiniTimeSensors,
+            description: l10n.sensorTrackingDescription,
+            buttonText: l10n.learnMore,
             icon: Icons.assessment_outlined,
             onButtonPressed: () => debugPrint("En savoir plus cliqué"),
             onClosePressed: () => debugPrint("Carte fermée"),
@@ -374,7 +373,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 if (chartPrefs.showAsymmetryGauge)
                   _wrapChartForPdf(
                     AsymmetryGaugeChart(
-                      title: 'Asymétrie',
+                      title: l10n.asymmetry,
                       icon: Icons.assessment_outlined,
                       magnitudeDataProvider: adapter.getMagnitudeAsymmetryForGauge,
                       axisDataProvider: adapter.getAxisAsymmetryForGauge,
@@ -382,14 +381,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       affectedSide: affectedSide,
                       goalValue: goalValue, // Passe l'objectif au graphique
                     ),
-                    'Asymétrie Magnitude & Axe',
+                    l10n.asymmetryMagnitudeAndAxis,
                   ),
 
                 // ========== GRAPHIQUE 4: COMPARAISON BATTERIE ==========
                 if (chartPrefs.showBatteryComparison)
                   _wrapChartForPdf(
                     reusable.ReusableComparisonChart(
-                      title: 'Niveau de Batterie',
+                      title: l10n.batteryLevel,
                       icon: Icons.battery_charging_full_outlined,
                       dataProvider: adapter.getBatteryData,
                       unit: '%',
@@ -402,19 +401,19 @@ class _HomeScreenState extends State<HomeScreen> {
                       affectedSide:
                           affectedSide, // Membre atteint depuis settings
                     ),
-                    'Niveau de Batterie',
+                    l10n.batteryLevel,
                   ),
 
                 // ========== GRAPHIQUE 5: ASYMÉTRIE DE MOUVEMENT (RATIO) ==========
                 if (chartPrefs.showAsymmetryRatioChart)
                   _wrapChartForPdf(
                     AsymmetryRatioChart(
-                      title: 'Asymétrie de Mouvement',
+                      title: l10n.movementAsymmetry,
                       icon: Icons.balance_outlined,
                       affectedSide: affectedSide,
                       goalConfig: settings?.goalConfig,
                     ),
-                    'Asymétrie de Mouvement (Ratio)',
+                    l10n.asymmetryMovementRatio,
                   ),
 
                 // ========== GRAPHIQUE 6: HEATMAP MAGNITUDE/AXIS ==========
@@ -423,7 +422,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     SizedBox(
                       height: 400,
                       child: AsymmetryHeatMapCard(
-                        title: 'Objectif Équilibre',
+                        title: l10n.balanceGoal,
                         icon: Icons.calendar_month_outlined,
                         targetRatio: goalValue ?? 50.0,
                         goalConfig: settings?.goalConfig, // Passe la config pour objectif quotidien
@@ -432,24 +431,24 @@ class _HomeScreenState extends State<HomeScreen> {
                             affectedSide, // Membre atteint depuis settings
                       ),
                     ),
-                    'Objectif Équilibre (Heatmap)',
+                    l10n.balanceGoalHeatmap,
                   ),
 
                 // ========== GRAPHIQUES BONUS: COMPARAISON PAS ==========
                 if (chartPrefs.showStepsComparison)
                   _wrapChartForPdf(
                     reusable.ReusableComparisonChart(
-                      title: 'Nombre de Pas',
+                      title: l10n.stepCount,
                       icon: Icons.directions_walk_outlined,
                       dataProvider: adapter.getStepsData,
-                      unit: 'pas',
+                      unit: l10n.steps,
                       leftColor: Colors.blueAccent,
                       rightColor: Colors.greenAccent,
                       defaultMode: reusable.ChartMode.bar,
                       affectedSide:
                           affectedSide, // Membre atteint depuis settings
                     ),
-                    'Nombre de Pas',
+                    l10n.stepCount,
                   ),
               ],
               infoIcon: Icons.assessment_outlined,
@@ -480,18 +479,18 @@ class _HomeScreenState extends State<HomeScreen> {
         Expanded(
           child: Padding(
             padding: const EdgeInsets.only(left: 10, top: 10),
-            child: BlocBuilder<DualInfiniTimeBloc, DualInfiniTimeState>(
+            child: BlocBuilder<DeviceBloc, DeviceState>(
               buildWhen: (previous, current) => _shouldRebuildWatchButton(
                 previous.left,
                 current.left,
               ),
-              builder: (context, dualState) {
+              builder: (context, deviceState) {
                 return _buildWatchButton(
                   context,
                   settings.leftWatchName,
                   ArmSide.left,
                   leftWatch,
-                  dualState,
+                  deviceState,
                 );
               },
             ),
@@ -500,18 +499,18 @@ class _HomeScreenState extends State<HomeScreen> {
         Expanded(
           child: Padding(
             padding: const EdgeInsets.only(right: 10, top: 10),
-            child: BlocBuilder<DualInfiniTimeBloc, DualInfiniTimeState>(
+            child: BlocBuilder<DeviceBloc, DeviceState>(
               buildWhen: (previous, current) => _shouldRebuildWatchButton(
                 previous.right,
                 current.right,
               ),
-              builder: (context, dualState) {
+              builder: (context, deviceState) {
                 return _buildWatchButton(
                   context,
                   settings.rightWatchName,
                   ArmSide.right,
                   rightWatch,
-                  dualState,
+                  deviceState,
                 );
               },
             ),
@@ -522,8 +521,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   bool _shouldRebuildWatchButton(
-    ArmDeviceState previous,
-    ArmDeviceState current,
+    ArmState previous,
+    ArmState current,
   ) {
     return previous.deviceId != current.deviceId ||
         previous.connected != current.connected ||
@@ -532,6 +531,7 @@ class _HomeScreenState extends State<HomeScreen> {
         previous.rssi != current.rssi ||
         previous.lastSync != current.lastSync ||
         previous.log != current.log ||
+        previous.deviceInfo != current.deviceInfo ||
         previous.dfuPercent != current.dfuPercent ||
         previous.dfuPhase != current.dfuPhase ||
         previous.dfuRunning != current.dfuRunning ||
@@ -543,9 +543,9 @@ class _HomeScreenState extends State<HomeScreen> {
     String label,
     ArmSide side,
     WatchDevice? watch,
-    DualInfiniTimeState dualState,
+    DeviceState deviceState,
   ) {
-    final arm = side == ArmSide.left ? dualState.left : dualState.right;
+    final arm = side == ArmSide.left ? deviceState.left : deviceState.right;
 
     return WatchButtonCardPlus(
       icon: Icons.watch,
@@ -583,43 +583,38 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (result != null && result['verified'] == true) {
         if (kDebugMode) print('Connection successful for $position');
-        _showSuccessMessage("Connexion réussie pour ${position.name}");
+        _showSuccessMessage(S.of(context).connectionSuccessFor(position.name));
       }
     } catch (e) {
       if (kDebugMode) print('Error in connecting to watch: $e');
       if (!mounted) return;
-      _showErrorMessage("Erreur de connexion: $e");
+      _showErrorMessage(S.of(context).connectionError(e.toString()));
     }
   }
 
   void _disconnectWatch(ArmSide position, WatchDevice? _) {
     context
-        .read<DualInfiniTimeBloc>()
-        .add(DualDisconnectArmRequested(position));
-    _showSuccessMessage("Déconnexion de ${position.name}");
+        .read<DeviceBloc>()
+        .add(DisconnectDevice(position));
+    _showSuccessMessage(S.of(context).disconnectionOf(position.name));
   }
 
   void _reconnectWatch(ArmSide position, WatchDevice? _) {
-    context.read<DualInfiniTimeBloc>().add(DualConnectArmRequested(position));
-    _showSuccessMessage("Reconnexion en cours pour ${position.name}");
+    context.read<DeviceBloc>().add(ConnectDevice(position));
+    _showSuccessMessage(S.of(context).reconnectionInProgressFor(position.name));
   }
 
   void _forgetWatch(ArmSide position, WatchDevice? watch) {
+    final l10n = S.of(context);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("Oublier la montre ${position.name} ?"),
-        content: const Text(
-          "Cette action va :\n"
-          "• Déconnecter la montre\n"
-          "• Supprimer les données de liaison\n"
-          "• Effacer l'historique de connexion\n\n"
-          "Vous devrez la reconnecter manuellement.",
-        ),
+        title: Text(l10n.forgetWatchQuestion(position.name)),
+        content: Text(l10n.forgetWatchDescription),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(S.of(context).cancel),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () {
@@ -627,11 +622,10 @@ class _HomeScreenState extends State<HomeScreen> {
               _performForgetWatch(position, watch);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-              foregroundColor: Theme.of(context).colorScheme.onError,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
             ),
-            child: const Text("Oublier"),
+            child: Text(l10n.forget),
           ),
         ],
       ),
@@ -639,6 +633,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _performForgetWatch(ArmSide position, WatchDevice? watch) async {
+    final l10n = S.of(context);
     try {
       // Feedback immédiat
       ScaffoldMessenger.of(context).showSnackBar(
@@ -654,7 +649,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              Text("Suppression de la montre ${position.name}..."),
+              Text(l10n.deletingWatch(position.name)),
             ],
           ),
           duration: const Duration(seconds: 2),
@@ -663,7 +658,7 @@ class _HomeScreenState extends State<HomeScreen> {
       );
 
       // Debug
-      final currentState = context.read<DualInfiniTimeBloc>().state;
+      final currentState = context.read<DeviceBloc>().state;
       final currentArm =
           position == ArmSide.left ? currentState.left : currentState.right;
 
@@ -679,8 +674,8 @@ class _HomeScreenState extends State<HomeScreen> {
         context.read<WatchBloc>().add(DeleteWatchDevice(watch.id));
       }
 
-      // Unbind du DualInfiniTimeBloc
-      context.read<DualInfiniTimeBloc>().add(DualUnbindArmRequested(position));
+      // Unbind du DeviceBloc
+      context.read<DeviceBloc>().add(UnbindDevice(position));
 
       // Attendre la propagation
       await Future.delayed(const Duration(milliseconds: 500));
@@ -688,7 +683,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (!mounted) return;
 
       // Vérifier le résultat
-      final newState = context.read<DualInfiniTimeBloc>().state;
+      final newState = context.read<DeviceBloc>().state;
       final newArm = position == ArmSide.left ? newState.left : newState.right;
 
       if (kDebugMode) {
@@ -699,22 +694,25 @@ class _HomeScreenState extends State<HomeScreen> {
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
       if (newArm.deviceId == null) {
-        _showSuccessMessage("Montre ${position.name} oubliée avec succès");
-        // Le BlocBuilder se met à jour automatiquement via le state change
+        _showSuccessMessage(l10n.watchForgottenSuccessfully(position.name));
+
+        // Forcer un rebuild
+        if (mounted) {
+          setState(() {});
+        }
       } else {
-        _showErrorMessage(
-            "Erreur lors de l'oubli de la montre ${position.name}");
+        _showErrorMessage(l10n.errorForgettingWatch(position.name));
       }
     } catch (e) {
       if (kDebugMode) print("Erreur lors de l'oubli de la montre: $e");
       if (!mounted) return;
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      _showErrorMessage("Erreur lors de l'oubli: $e");
+      _showErrorMessage(S.of(context).errorLabel(e.toString()));
     }
   }
 
   void _showFirmwareOptions(ArmSide side) {
-    final bloc = context.read<DualInfiniTimeBloc>();
+    final bloc = context.read<DeviceBloc>();
 
     if (bloc.availableFirmwares.isEmpty && !bloc.isLoadingFirmwares) {
       bloc.loadAvailableFirmwares();
@@ -732,22 +730,23 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showWatchfaceUpdateDialog(ArmSide side) {
+    final l10n = S.of(context);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("Mettre à jour la montre ${side.name}"),
-        content: const Text("Que souhaitez-vous mettre à jour ?"),
+        title: Text(l10n.updateWatch(side.name)),
+        content: Text(l10n.whatToUpdate),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               _updateSystemFirmware(side);
             },
-            child: Text(S.of(context).firmware),
+            child: Text(l10n.firmware),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(S.of(context).cancel),
+            child: Text(l10n.cancel),
           ),
         ],
       ),
@@ -756,13 +755,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _updateSystemFirmware(ArmSide side) {
     const String firmware = "assets/watchfaces/infinitime-1.14.0.zip";
-    context.read<DualInfiniTimeBloc>().updateSystemFirmware(side, firmware);
-    _showSuccessMessage("Mise à jour du firmware en cours...");
+    context.read<DeviceBloc>().updateSystemFirmware(side, firmware);
+    _showSuccessMessage(S.of(context).firmwareUpdateInProgress);
   }
 
   void _requestDeviceInfo(ArmSide side) {
-    context.read<DualInfiniTimeBloc>().add(DualReadDeviceInfoRequested(side));
-    _showSuccessMessage("Demande d'informations device ${side.name}");
+    context.read<DeviceBloc>().add(ReadDeviceInfo(side));
+    _showSuccessMessage(S.of(context).deviceInfoRequest(side.name));
   }
 
   // =================== MESSAGES ===================
@@ -805,7 +804,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // =================== UTILITAIRES ===================
 
-  WatchConnectionState _resolveConnectionStateFromDual(ArmDeviceState arm) {
+  WatchConnectionState _resolveConnectionStateFromDual(ArmState arm) {
     if (arm.deviceId == null) {
       return WatchConnectionState.neverConnected;
     }
@@ -814,7 +813,13 @@ class _HomeScreenState extends State<HomeScreen> {
         : WatchConnectionState.disconnected;
   }
 
-  Map<String, String>? _extractDeviceInfo(ArmDeviceState arm) {
+  Map<String, String>? _extractDeviceInfo(ArmState arm) {
+    // Utiliser directement deviceInfo de l'état (lu depuis la montre)
+    if (arm.deviceInfo != null && arm.deviceInfo!.isNotEmpty) {
+      return arm.deviceInfo;
+    }
+
+    // Fallback: parser le log (ancien comportement)
     if (arm.log.isEmpty) return null;
 
     final info = <String, String>{};
@@ -836,15 +841,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   String _formatSyncTime(DateTime? time) {
-    if (time == null) return "Jamais synchronisée";
+    final l10n = S.of(context);
+    if (time == null) return l10n.neverSynchronized;
 
     final now = DateTime.now();
     final diff = now.difference(time);
 
-    if (diff.inSeconds < 60) return "Il y a ${diff.inSeconds} s";
-    if (diff.inMinutes < 60) return "Il y a ${diff.inMinutes} min";
-    if (diff.inHours < 24) return "Il y a ${diff.inHours} h";
-    return "Il y a ${diff.inDays} j";
+    if (diff.inSeconds < 60) return l10n.agoSeconds(diff.inSeconds);
+    if (diff.inMinutes < 60) return l10n.agoMinutes(diff.inMinutes);
+    if (diff.inHours < 24) return l10n.agoHours(diff.inHours);
+    return l10n.agoDays(diff.inDays);
   }
-
 }

@@ -39,6 +39,72 @@ class _CarouselWithChartState extends State<CarouselWithChart> {
   int activeIndex = 0;
   bool _isExporting = false;
 
+  // Lazy loading: garde trace des graphiques qui ont été chargés
+  final Set<int> _loadedIndices = {};
+
+  @override
+  void initState() {
+    super.initState();
+    // Charger le premier graphique immédiatement
+    _loadedIndices.add(0);
+    // Charger le graphique suivant après un délai pour éviter ANR
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted && widget.carouselItems.length > 1) {
+        setState(() {
+          _loadedIndices.add(1);
+        });
+      }
+    });
+  }
+
+  /// Construit un widget avec lazy loading
+  Widget _buildLazyItem(int index) {
+    // Si le graphique n'a pas encore été chargé, afficher un placeholder
+    if (!_loadedIndices.contains(index)) {
+      return const SizedBox(
+        height: 400,
+        child: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+    return widget.carouselItems[index];
+  }
+
+  /// Précharge les graphiques adjacents avec un délai pour éviter ANR
+  void _preloadAdjacentCharts(int currentIndex) {
+    // Charger le graphique courant s'il n'est pas déjà chargé
+    if (!_loadedIndices.contains(currentIndex)) {
+      setState(() {
+        _loadedIndices.add(currentIndex);
+      });
+    }
+
+    // Précharger le graphique suivant après un court délai
+    final nextIndex = currentIndex + 1;
+    if (nextIndex < widget.carouselItems.length && !_loadedIndices.contains(nextIndex)) {
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) {
+          setState(() {
+            _loadedIndices.add(nextIndex);
+          });
+        }
+      });
+    }
+
+    // Précharger le graphique précédent après un délai plus long
+    final prevIndex = currentIndex - 1;
+    if (prevIndex >= 0 && !_loadedIndices.contains(prevIndex)) {
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          setState(() {
+            _loadedIndices.add(prevIndex);
+          });
+        }
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -49,10 +115,11 @@ class _CarouselWithChartState extends State<CarouselWithChart> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        CarouselSlider(
-          items: [
-            ...widget.carouselItems,
-          ],
+        CarouselSlider.builder(
+          itemCount: widget.carouselItems.length,
+          itemBuilder: (context, index, realIndex) {
+            return _buildLazyItem(index);
+          },
           options: CarouselOptions(
             height: 400,
             enlargeCenterPage: true,
@@ -68,6 +135,8 @@ class _CarouselWithChartState extends State<CarouselWithChart> {
               setState(() {
                 activeIndex = index;
               });
+              // Lazy loading: charger le graphique courant et le suivant
+              _preloadAdjacentCharts(index);
             },
           ),
         ),

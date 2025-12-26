@@ -14,9 +14,10 @@ class ChartRefreshNotifier {
       StreamController<ChartRefreshEvent>.broadcast();
 
   // Throttling: éviter d'émettre trop d'événements
+  // Augmenté à 30 secondes pour éviter les ANR lors de connexions multiples
   DateTime? _lastMovementNotification;
   DateTime? _lastAllNotification;
-  static const Duration _minNotificationInterval = Duration(seconds: 10);
+  static const Duration _minNotificationInterval = Duration(seconds: 30);
 
   /// Stream pour écouter les événements de rafraîchissement
   Stream<ChartRefreshEvent> get stream => _controller.stream;

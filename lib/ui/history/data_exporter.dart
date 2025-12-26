@@ -1,7 +1,7 @@
 
 import 'package:csv/csv.dart';
 import 'package:flutter_bloc_app_template/app/app_database.dart';
-import 'package:flutter_bloc_app_template/bloc/infinitime/dual_infinitime_bloc.dart';
+import 'package:flutter_bloc_app_template/bloc/device/device.dart';
 import 'package:flutter_bloc_app_template/extension/arm_side_extensions.dart';
 import 'package:flutter_bloc_app_template/models/arm_side.dart';
 import 'package:flutter_bloc_app_template/models/battery_data.dart';
@@ -18,7 +18,7 @@ class DataExporter {
   static Future<String> exportSensorDataToCSV(
       ArmSide side,
       String sensorType,
-      DualInfiniTimeBloc bloc, {
+      DeviceBloc bloc, {
       Duration period = const Duration(days: 30),
       int chunkSize = 1000,
       void Function(int processed, int total)? onProgress,
@@ -126,7 +126,7 @@ class DataExporter {
 
   static Future<String> exportConnectionEventsToCSV(
       ArmSide side,
-      DualInfiniTimeBloc bloc,
+      DeviceBloc bloc,
       ) async {
     final events = await bloc.getConnectionHistory(
       side,

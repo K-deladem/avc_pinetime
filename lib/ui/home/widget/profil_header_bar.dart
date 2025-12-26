@@ -3,18 +3,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_bloc_app_template/bloc/settings/settings_bloc.dart';
 import 'package:flutter_bloc_app_template/bloc/settings/settings_states.dart';
+import 'package:flutter_bloc_app_template/generated/l10n.dart';
 
 class ProfileHeader extends StatelessWidget {
   final VoidCallback? onNotificationPressed;
-  final String titleText;
-  final String subtitleText;
+  final String? titleText;
+  final String? subtitleText;
   final VoidCallback? onSearchPressed;
 
   const ProfileHeader({
     super.key,
     this.onNotificationPressed,
-    this.titleText = "Prêt à franchir les prochaines étapes de votre réadaptation?",
-    this.subtitleText = "Chaque jour compte 😊 !",
+    this.titleText,
+    this.subtitleText,
     this.onSearchPressed,
   });
 
@@ -23,7 +24,7 @@ class ProfileHeader extends StatelessWidget {
     return BlocBuilder<SettingsBloc, SettingsState>(
       builder: (context, state) {
         // Valeurs par défaut
-        String userName = "Utilisateur";
+        String userName = S.of(context).defaultUserName;
         String? profileImagePath;
 
         if (state is SettingsLoaded) {
@@ -65,7 +66,7 @@ class ProfileHeader extends StatelessWidget {
                                 ),
                         children: [
                           TextSpan(
-                            text: "Bonjour! ",
+                            text: S.of(context).hello,
                             style: TextStyle(
                               color: Theme.of(context)
                                   .colorScheme
@@ -97,13 +98,13 @@ class ProfileHeader extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      titleText,
+                      titleText ?? S.of(context).readyForRehabilitation,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w500, fontSize: 12
                           ),
                     ),
                     Text(
-                      subtitleText,
+                      subtitleText ?? S.of(context).everyDayCounts,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             fontWeight: FontWeight.w500,
                             color: Theme.of(context)

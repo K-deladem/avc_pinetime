@@ -46,10 +46,11 @@ class _ChartPreferencesPageState extends State<ChartPreferencesPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = S.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Préférences des Graphiques'),
+        title: Text(l10n.chartPreferences),
         backgroundColor: theme.colorScheme.surface,
         elevation: 0,
       ),
@@ -57,7 +58,7 @@ class _ChartPreferencesPageState extends State<ChartPreferencesPage> {
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            'Sélectionnez les graphiques à afficher',
+            l10n.selectChartsToDisplay,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
               color: theme.colorScheme.primary,
@@ -65,7 +66,7 @@ class _ChartPreferencesPageState extends State<ChartPreferencesPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Les graphiques désactivés ne seront pas affichés dans l\'écran principal',
+            l10n.disabledChartsNotShown,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -73,15 +74,15 @@ class _ChartPreferencesPageState extends State<ChartPreferencesPage> {
           const SizedBox(height: 24),
           _buildLockedChartItem(
             theme,
-            title: 'Asymétrie (Magnitude & Axe)',
-            subtitle: 'Graphique gauge fusionné montrant l\'asymétrie - Toujours activé',
+            title: l10n.asymmetryMagnitudeAxis,
+            subtitle: l10n.asymmetryMagnitudeAxisDescription,
             icon: Icons.assessment_outlined,
           ),
           const Divider(),
           _buildChartSwitch(
             theme,
-            title: 'Niveau de Batterie',
-            subtitle: 'Comparaison du niveau de batterie des deux montres',
+            title: l10n.batteryLevel,
+            subtitle: l10n.batteryLevelDescription,
             icon: Icons.battery_charging_full_outlined,
             value: _preferences.showBatteryComparison,
             onChanged: (value) {
@@ -93,8 +94,8 @@ class _ChartPreferencesPageState extends State<ChartPreferencesPage> {
           const Divider(),
           _buildChartSwitch(
             theme,
-            title: 'Objectif Équilibre',
-            subtitle: 'Heatmap magnitude/axis pour le suivi de l\'équilibre',
+            title: l10n.balanceGoal,
+            subtitle: l10n.balanceGoalDescription,
             icon: Icons.calendar_month_outlined,
             value: _preferences.showAsymmetryHeatmap,
             onChanged: (value) {
@@ -106,8 +107,8 @@ class _ChartPreferencesPageState extends State<ChartPreferencesPage> {
           const Divider(),
           _buildChartSwitch(
             theme,
-            title: 'Asymétrie de Mouvement',
-            subtitle: 'Graphique ratio d\'asymétrie avec filtre Magnitude/Axe et objectif',
+            title: l10n.movementAsymmetry,
+            subtitle: l10n.movementAsymmetryDescription,
             icon: Icons.balance_outlined,
             value: _preferences.showAsymmetryRatioChart,
             onChanged: (value) {
@@ -119,8 +120,8 @@ class _ChartPreferencesPageState extends State<ChartPreferencesPage> {
           const Divider(),
           _buildChartSwitch(
             theme,
-            title: 'Nombre de Pas',
-            subtitle: 'Comparaison du nombre de pas entre les deux bras',
+            title: l10n.stepCount,
+            subtitle: l10n.stepCountDescription,
             icon: Icons.directions_walk_outlined,
             value: _preferences.showStepsComparison,
             onChanged: (value) {
@@ -130,11 +131,8 @@ class _ChartPreferencesPageState extends State<ChartPreferencesPage> {
             },
           ),
           const SizedBox(height: 32),
-          Container(
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(12),
-            ),
+          Card(
+            color: theme.colorScheme.primaryContainer,
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
@@ -146,7 +144,7 @@ class _ChartPreferencesPageState extends State<ChartPreferencesPage> {
                   const SizedBox(width: 16),
                   Expanded(
                     child: Text(
-                      '${_preferences.enabledCount} graphique(s) activé(s)',
+                      l10n.chartsEnabledCount(_preferences.enabledCount),
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onPrimaryContainer,
                         fontWeight: FontWeight.bold,

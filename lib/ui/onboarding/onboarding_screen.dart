@@ -89,7 +89,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
               // Header
               Text(
-                'Bienvenue!',
+                S.of(context).welcomeTitle,
                 style: theme.textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: theme.colorScheme.primary,
@@ -98,7 +98,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Configurons votre profil',
+                S.of(context).letsConfigureProfile,
                 style: theme.textTheme.bodyLarge?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -122,7 +122,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
                         onPressed: _previousStep,
                         icon: const Icon(Icons.arrow_back),
-                        label: const Text('Retour'),
+                        label: Text(S.of(context).backButton),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
@@ -135,7 +135,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       icon: Icon(_currentStep == 0
                           ? Icons.arrow_forward
                           : Icons.check),
-                      label: Text(_currentStep == 0 ? 'Suivant' : 'Commencer'),
+                      label: Text(_currentStep == 0 ? S.of(context).nextButton : S.of(context).startButton),
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         minimumSize: const Size.fromHeight(56),
@@ -185,7 +185,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ),
           const SizedBox(height: 32),
           Text(
-            'Comment vous appelez-vous?',
+            S.of(context).whatIsYourName,
             style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w600,
             ),
@@ -195,8 +195,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           TextFormField(
             controller: _nameController,
             decoration: InputDecoration(
-              labelText: 'Votre prénom',
-              hintText: 'Ex: Marie',
+              labelText: S.of(context).yourFirstName,
+              hintText: S.of(context).firstNameExample,
               prefixIcon: const Icon(Icons.badge_outlined),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -206,10 +206,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             textCapitalization: TextCapitalization.words,
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
-                return 'Veuillez entrer votre prénom';
+                return S.of(context).pleaseEnterFirstName;
               }
               if (value.trim().length < 2) {
-                return 'Le prénom doit contenir au moins 2 caractères';
+                return S.of(context).firstNameMinLength;
               }
               return null;
             },
@@ -232,7 +232,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ),
         const SizedBox(height: 32),
         Text(
-          'Quel est votre coté atteint?',
+          S.of(context).whichSideAffected,
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.w600,
           ),
@@ -240,7 +240,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ),
         const SizedBox(height: 16),
         Text(
-          'Cette information nous aidera à personnaliser votre suivi de rééducation',
+          S.of(context).sideInfoDescription,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
@@ -256,7 +256,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 theme: theme,
                 side: ArmSide.left,
                 icon: Icons.waving_hand,
-                label: 'Gauche',
+                label: S.of(context).leftSide,
                 isSelected: _affectedSide == ArmSide.left,
                 onTap: () {
                   setState(() {
@@ -271,7 +271,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 theme: theme,
                 side: ArmSide.right,
                 icon: Icons.waving_hand,
-                label: 'Droit',
+                label: S.of(context).rightSide,
                 isSelected: _affectedSide == ArmSide.right,
                 onTap: () {
                   setState(() {

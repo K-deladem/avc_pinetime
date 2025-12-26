@@ -11,7 +11,7 @@ class WatchVibrationService {
   factory WatchVibrationService() => _instance;
   WatchVibrationService._internal();
 
-  // Sessions actives des montres (injectées depuis le DualInfiniTimeBloc)
+  // Sessions actives des montres (injectées depuis le DeviceBloc)
   InfiniTimeSession? _leftSession;
   InfiniTimeSession? _rightSession;
 

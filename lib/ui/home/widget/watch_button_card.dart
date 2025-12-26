@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc_app_template/generated/l10n.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_bloc_app_template/bloc/infinitime/dual_infinitime_bloc.dart';
-import 'package:flutter_bloc_app_template/bloc/infinitime/dual_infinitime_state.dart';
+import 'package:flutter_bloc_app_template/bloc/device/device.dart';
 import 'package:flutter_bloc_app_template/models/arm_side.dart';
 import 'package:infinitime_dfu_library/infinitime_dfu_library.dart';
 
@@ -176,7 +175,13 @@ class WatchButtonCardPlus extends StatelessWidget {
 
   // Comparaison correcte des données motion (listes)
 
-  Map<String, String>? _extractDeviceInfo(ArmDeviceState arm) {
+  Map<String, String>? _extractDeviceInfo(ArmState arm) {
+    // Utiliser directement deviceInfo de l'état (lu depuis la montre via BLE)
+    if (arm.deviceInfo != null && arm.deviceInfo!.isNotEmpty) {
+      return arm.deviceInfo;
+    }
+
+    // Fallback: parser le log (ancien comportement)
     if (arm.log.isNotEmpty) {
       final info = <String, String>{};
       final lines = arm.log.split('\n');
@@ -197,7 +202,7 @@ class WatchButtonCardPlus extends StatelessWidget {
   }
 
   Widget _buildConnectedSheet(BuildContext context) {
-    return BlocBuilder<DualInfiniTimeBloc, DualInfiniTimeState>(
+    return BlocBuilder<DeviceBloc, DeviceState>(
       buildWhen: (previous, current) {
         try {
           final shouldRebuild = side == ArmSide.left
@@ -222,9 +227,9 @@ class WatchButtonCardPlus extends StatelessWidget {
           return true;
         }
       },
-      builder: (context, dualState) {
-        final ArmDeviceState arm =
-            side == ArmSide.left ? dualState.left : dualState.right;
+      builder: (context, deviceState) {
+        final ArmState arm =
+            side == ArmSide.left ? deviceState.left : deviceState.right;
 
         // Données existantes
         final int currentBatteryLevel = arm.battery ?? batteryLevel ?? 0;
@@ -238,8 +243,8 @@ class WatchButtonCardPlus extends StatelessWidget {
         FirmwareInfo? selectedFirmware;
         try {
           // Vérifiez si la méthode existe avant de l'appeler
-          if (dualState is DualInfiniTimeState) {
-            selectedFirmware = dualState.selectedFirmwares[side];
+          if (deviceState is DeviceState) {
+            selectedFirmware = deviceState.selectedFirmwares[side];
           }
         } catch (e) {
           print("Erreur récupération firmware sélectionné: $e");
@@ -523,7 +528,7 @@ class WatchButtonCardPlus extends StatelessWidget {
                                 // CORRECTION 7: Gestion sécurisée de l'annulation
                                 try {
                                   context
-                                      .read<DualInfiniTimeBloc>()
+                                      .read<DeviceBloc>()
                                       .abortSystemFirmwareUpdate(side);
                                 } catch (e) {
                                   print(
